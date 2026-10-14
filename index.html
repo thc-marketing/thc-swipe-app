@@ -15,6 +15,74 @@
 .deck{height:min(58vh,490px);min-height:365px;position:relative;touch-action:pan-y;user-select:none}.card{position:absolute;inset:0;background:var(--surface);border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 18px 55px #0002;transform-origin:center;transition:transform .24s ease,opacity .24s ease}.card-photo{position:absolute;inset:0 0 0 0;overflow:hidden;background:linear-gradient(145deg,#f2a8c6,#b37bb1 50%,#3d304b)}.portrait{width:100%;height:100%;display:block}.shade{position:absolute;inset:0;background:linear-gradient(180deg,#120c161a 0%,transparent 36%,#100c16aa 100%)}.photo-tag{position:absolute;left:15px;top:15px;border:1px solid #ffffff70;background:#17101955;color:white;border-radius:99px;padding:7px 10px;font-size:10px;backdrop-filter:blur(8px);font-weight:700}.photo-count{position:absolute;right:15px;top:17px;color:white;font-size:11px;text-shadow:0 1px 4px #0008}.profile{position:absolute;bottom:0;left:0;right:0;padding:25px 20px 19px;color:white}.name-row{display:flex;align-items:center;gap:9px}.profile h2{margin:0;font-size:31px;letter-spacing:-.04em}.age{font-size:17px;font-weight:400}.verified{width:17px;height:17px;background:#54aaff;border-radius:50%;display:inline-grid;place-items:center;font-size:10px}.subline{display:flex;gap:7px;align-items:center;margin-top:6px;font-size:12px;color:#f8eaf2}.status{display:inline-flex;align-items:center;gap:6px;background:#1d7b5e;padding:5px 8px;border-radius:7px;font-weight:750;font-size:10px}.bio{font-size:12px;line-height:1.5;color:#f5eaf2;margin:12px 0 0;max-width:290px}.stamp{position:absolute;top:70px;padding:6px 13px;border:3px solid;border-radius:9px;font-weight:900;font-size:24px;letter-spacing:.1em;opacity:0;z-index:3}.stamp.like{left:18px;color:#71f1bd;border-color:#71f1bd;transform:rotate(-14deg)}.stamp.nope{right:18px;color:#ff7fa3;border-color:#ff7fa3;transform:rotate(14deg)}
 .controls{display:flex;align-items:center;justify-content:center;gap:19px;margin:17px 0 14px}.action{border:0;border-radius:50%;display:grid;place-items:center;background:var(--surface);box-shadow:0 5px 18px #0001;border:1px solid var(--line);cursor:pointer;transition:transform .14s ease}.action:active{transform:scale(.93)}.action svg{width:24px;height:24px}.skip{width:56px;height:56px;color:#f16b8f}.like{width:68px;height:68px;color:#25ae7b}.star{width:49px;height:49px;color:#d8ad62}.actions-labels{display:flex;justify-content:center;gap:40px;color:var(--muted);font-size:10px;margin-top:-5px}.actions-labels span:nth-child(2){margin:0 3px}.bottom{display:flex;gap:9px;margin-top:19px}.secondary{flex:1;background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:13px;padding:12px 8px;font-size:12px;font-weight:700;cursor:pointer}.secondary.primary{background:linear-gradient(100deg,#e5c477,#a98237);color:#171019;border:0}.foot{text-align:center;color:var(--muted);font-size:10px;margin-top:15px;line-height:1.5}.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:11px 15px;border-radius:99px;font-size:12px;font-weight:700;transition:.2s;pointer-events:none;white-space:nowrap;z-index:20}.toast.show{opacity:1;transform:translate(-50%,0)}.empty{display:none;position:absolute;inset:0;background:var(--surface);border:1px solid var(--line);border-radius:24px;align-items:center;justify-content:center;text-align:center;padding:25px}.empty h3{margin:8px 0}.empty p{font-size:12px;color:var(--muted)}.empty button{margin-top:10px;background:var(--pink);color:white;border:0;border-radius:10px;padding:11px 18px;font-weight:700}
 @media(min-width:600px){.app{padding-top:30px}.deck{height:510px}.heading h1{font-size:30px}}
+/* Full profile screen */
+#girlProfileScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow-y: auto;
+  background: #100b12;
+  color: #fff7fb;
+  padding: 20px;
+  font-family: system-ui, sans-serif;
+}
+
+#girlProfileScreen .profile-inner {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+#girlProfileScreen .gallery-main {
+  width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #211722;
+}
+
+#girlProfileScreen .gallery-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+#girlProfileScreen .gallery-thumb {
+  width: 76px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #d8ad62;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+#girlProfileScreen .detail-section {
+  background: #211722;
+  border: 1px solid #493544;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 14px 0;
+}
+
+#girlProfileScreen button {
+  padding: 12px 16px;
+  border: 1px solid #6b5432;
+  border-radius: 9px;
+  background: #211722;
+  color: #d8ad62;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#girlProfileScreen .profile-book {
+  width: 100%;
+  background: linear-gradient(100deg,#e5c477,#a98237);
+  color: #171019;
+  border: 0;
+  margin-top: 12px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -36,6 +104,36 @@
 <div class="bottom"><button class="secondary" id="profileBtn">View profile ↗</button><button class="secondary primary" id="bookBtn">Contact to book</button></div>
 <p class="foot">Interactive concept preview · Sample profiles only<br>Live profiles and availability will connect to your website during integration.</p>
 </div></main><div class="toast" id="toast"></div>
+
+<div id="girlProfileScreen">
+  <div class="profile-inner">
+    <button id="closeGirlProfile" type="button">← Back to profiles</button>
+
+    <h2 id="girlProfileName">Girl's Name</h2>
+
+    <img id="girlProfileMainPhoto"
+         class="gallery-main"
+         src=""
+         alt="Profile photo">
+
+    <div id="girlProfileGallery" class="gallery-strip"></div>
+
+    <div class="detail-section">
+      <p id="girlProfileStatus"></p>
+      <p id="girlProfileArea"></p>
+      <p id="girlProfileBio"></p>
+      <p id="girlProfileTag"></p>
+    </div>
+
+    <button id="girlProfileOfficial" type="button">
+      View all photos &amp; full details ↗
+    </button>
+
+    <button id="girlProfileBook" class="profile-book" type="button">
+      Book Now
+    </button>
+  </div>
+</div>
 
 <script>
 const API_URL = "https://thc-live-profiles.thc-girls.workers.dev/";
@@ -609,6 +707,58 @@ $("bookBtn").onclick = () => {
   document.body.append(panel);
 };
 
+
+function openGirlProfile(p) {
+  if (!p) return;
+
+  $("girlProfileName").textContent = p.displayName + (p.age ? " · " + p.age : "");
+  $("girlProfileStatus").textContent = "Status: " + (p.status || "Contact to confirm");
+  $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
+  $("girlProfileBio").textContent = p.bio || "Contact us for more information.";
+  $("girlProfileTag").textContent = p.tag || "";
+
+  const mainPhoto = $("girlProfileMainPhoto");
+  mainPhoto.src = p.photo || "";
+  mainPhoto.alt = p.displayName || "Profile photo";
+
+  const gallery = $("girlProfileGallery");
+  gallery.replaceChildren();
+
+  if (p.photo) {
+    const thumb = document.createElement("img");
+    thumb.className = "gallery-thumb";
+    thumb.src = p.photo;
+    thumb.alt = "View main photo";
+    thumb.onclick = () => {
+      mainPhoto.src = p.photo;
+    };
+    gallery.append(thumb);
+  }
+
+  $("girlProfileOfficial").onclick = () => {
+    if (p.profileUrl) {
+      window.open(p.profileUrl, "_blank", "noopener,noreferrer");
+    } else {
+      toast("Official profile link unavailable");
+    }
+  };
+
+  $("girlProfileScreen").style.display = "block";
+}
+
+$("art").addEventListener("click", event => {
+  event.stopPropagation();
+  openGirlProfile(profiles[index]);
+});
+
+$("closeGirlProfile").onclick = () => {
+  $("girlProfileScreen").style.display = "none";
+};
+
+$("girlProfileBook").onclick = () => {
+  $("girlProfileScreen").style.display = "none";
+  $("bookBtn").click();
+};
 
 const deck = $("deck");
 deck.addEventListener("pointerdown", e => {
