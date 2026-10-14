@@ -215,13 +215,10 @@ if (direction === "like") {
         return;
       }
 
-      const { error } = await db.from("likes").upsert(
-        {
-          user_id: data.user.id,
-          profile_id: String(p.id)
-        },
-        { onConflict: "user_id,profile_id" }
-      );
+   const { error } = await db.from("likes").insert({
+  user_id: data.user.id,
+  profile_id: String(p.id)
+});
 
       if (error) {
         console.error("Save like failed:", error);
