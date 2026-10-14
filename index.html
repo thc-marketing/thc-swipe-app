@@ -628,7 +628,23 @@ loadProfiles();
 </script>
 
 <style>
-#authGate{position:fixed;inset:0;z-index:9999;background:#100d13;color:#fff;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif;overflow:auto}
+
+#authGate{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:
+    linear-gradient(rgba(16,11,18,.65),rgba(16,11,18,.82)),
+    url('tokyo-skyline.jpg') center center / cover no-repeat;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  font-family:system-ui,sans-serif;
+  overflow:auto;
+}
+
 #authGate .authbox{width:100%;max-width:400px;background:#211722;border:1px solid #6b5432;border-radius:20px;padding:28px;box-shadow:0 18px 55px #0005}
 #authGate h2{margin:0 0 8px;font-size:26px}
 #authGate p{color:#c4b7c5;font-size:13px;line-height:1.6}
