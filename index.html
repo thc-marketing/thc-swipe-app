@@ -200,7 +200,41 @@ if (direction === "save") {
     $("card").style.transform = "translateX(-110%) rotate(-15deg)";
   }
 
-  if (direction === "like") toast("You liked " + p.displayName);
+  
+if (direction === "like") {
+  const db = window.thcSupabase;
+
+  if (!db) {
+    toast("Please log in first");
+  } else {
+    (async () => {
+      const { data, error: userError } = await db.auth.getUser();
+
+      if (userError || !data.user) {
+        toast("Please log in again");
+        return;
+      }
+
+      const { error } = await db.from("likes").upsert(
+        {
+          user_id: data.user.id,
+          profile_id: String(p.id)
+        },
+        { onConflict: "user_id,profile_id" }
+      );
+
+      if (error) {
+        console.error("Save like failed:", error);
+        toast("Could not save like");
+        return;
+      }
+
+      liked.add(p.id);
+      toast("You liked " + p.displayName);
+    })();
+  }
+}
+
 
   setTimeout(() => {
     index++;
