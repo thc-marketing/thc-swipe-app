@@ -268,6 +268,23 @@ loadProfiles();
   const $ = id => document.getElementById(id);
   let mode = "signup";
   const gate = $("authGate");
+  const logoutBtn = document.createElement("button");
+logoutBtn.textContent = "Log out";
+logoutBtn.style.cssText =
+  "position:fixed;top:14px;right:14px;z-index:9998;padding:10px 15px;border-radius:10px;border:1px solid #493b4a;background:#1c1820;color:white;cursor:pointer";
+logoutBtn.hidden = true;
+document.body.appendChild(logoutBtn);
+
+logoutBtn.onclick = async () => {
+  const { error } = await client.auth.signOut();
+  if (error) {
+    say(error.message, true);
+    return;
+  }
+  logoutBtn.hidden = true;
+  gate.style.display = "flex";
+  setMode("login");
+};
   const form = $("realAuthForm");
   const message = $("authMessage");
 
@@ -349,7 +366,10 @@ loadProfiles();
       say("Could not check your session. Please log in again.", true);
       return;
     }
-    if (data.session) gate.style.display = "none";
+    if (data.session) {
+  gate.style.display = "none";
+  logoutBtn.hidden = false;
+}
   });
 
   client.auth.onAuthStateChange((event, session) => {
