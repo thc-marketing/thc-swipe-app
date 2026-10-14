@@ -508,10 +508,105 @@ $("profileBtn").onclick = () => {
   if (p) window.open(p.profileUrl, "_blank", "noopener");
 };
 
+
 $("bookBtn").onclick = () => {
-  const p = profiles[index];
-  if (p) window.open(p.bookingUrl, "_blank", "noopener");
+  const oldPanel = document.getElementById("bookingContactPanel");
+  if (oldPanel) oldPanel.remove();
+
+  const panel = document.createElement("div");
+  panel.id = "bookingContactPanel";
+  panel.style.cssText =
+    "position:fixed;inset:0;z-index:10000;background:#000b;" +
+    "display:flex;align-items:center;justify-content:center;padding:20px;";
+
+  const box = document.createElement("div");
+  box.style.cssText =
+    "background:#17171c;color:white;padding:24px;border-radius:18px;" +
+    "width:100%;max-width:380px;";
+
+  const title = document.createElement("h2");
+  title.textContent = "📲 Contact to Book";
+  title.style.marginTop = "0";
+  box.append(title);
+
+  const subtitle = document.createElement("p");
+  subtitle.textContent = "Choose your preferred messaging app.";
+  subtitle.style.color = "#bbb";
+  box.append(subtitle);
+
+  function addContact(label, detail, url, color) {
+    const button = document.createElement("button");
+    button.textContent = label + " · " + detail;
+    button.style.cssText =
+      "display:block;width:100%;padding:14px;margin:10px 0;" +
+      "border:0;border-radius:10px;background:" + color +
+      ";color:white;font-size:14px;font-weight:bold;cursor:pointer;";
+
+    button.onclick = () => {
+      if (url) {
+        window.open(url, "_blank", "noopener");
+      } else {
+        navigator.clipboard.writeText(detail)
+          .then(() => toast("ID copied: " + detail))
+          .catch(() => toast("Please copy this ID: " + detail));
+      }
+    };
+
+    box.append(button);
+  }
+
+  addContact(
+    "WhatsApp",
+    "+81 70-7665-4819",
+    "https://wa.me/817076654819",
+    "#25D366"
+  );
+
+  addContact(
+    "Telegram",
+    "@thc_tokyo",
+    "https://t.me/thc_tokyo",
+    "#229ED9"
+  );
+
+  addContact(
+    "LINE — Shinjuku",
+    "thc-shinjuku",
+    null,
+    "#06C755"
+  );
+
+  addContact(
+    "LINE — Shibuya",
+    "thc-shibuya",
+    null,
+    "#06C755"
+  );
+
+  addContact(
+    "WeChat",
+    "tokyohentaiclub",
+    null,
+    "#07B53B"
+  );
+
+  const close = document.createElement("button");
+  close.textContent = "Close ✕";
+  close.style.cssText =
+    "width:100%;padding:12px;margin-top:8px;border-radius:10px;" +
+    "background:#333;color:white;border:0;cursor:pointer;";
+  close.onclick = () => panel.remove();
+
+  box.append(close);
+  panel.append(box);
+
+  panel.onclick = event => {
+    if (event.target === panel) panel.remove();
+  };
+
+  document.body.append(panel);
 };
+
 
 const deck = $("deck");
 deck.addEventListener("pointerdown", e => {
