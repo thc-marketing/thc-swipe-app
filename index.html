@@ -219,6 +219,91 @@ $("next").onclick = () => move("skip");
 $("like").onclick = () => move("like");
 $("save").onclick = () => move("save");
 
+$("favoritesBtn").onclick = async () => {
+  const db = window.thcSupabase;
+
+  if (!db) {
+    toast("Please log in first");
+    return;
+  }
+
+  const { data: userData, error: userError } =
+    await db.auth.getUser();
+
+  if (userError || !userData.user) {
+    toast("Please log in again");
+    return;
+  }
+
+  const { data, error } = await db
+    .from("favorites")
+    .select("profile_id")
+    .eq("user_id", userData.user.id);
+
+  if (error) {
+    console.error(error);
+    toast("Could not load favorites");
+    return;
+  }
+
+  const favoriteProfiles = (data || [])
+    .map(item =>
+      profiles.find(p => String(p.id) === item.profile_id)
+    )
+    .filter(Boolean);
+
+  const oldPanel = document.getElementById("favoritesPanel");
+  if (oldPanel) oldPanel.remove();
+
+  const panel = document.createElement("div");
+  panel.id = "favoritesPanel";
+  panel.style.cssText =
+    "position:fixed;inset:0;z-index:9999;background:#000c;" +
+    "display:flex;align-items:center;justify-content:center;padding:20px;";
+
+  const content = document.createElement("div");
+  content.style.cssText =
+    "background:#17171c;color:white;padding:24px;border-radius:16px;" +
+    "width:100%;max-width:420px;max-height:80vh;overflow:auto;";
+
+  const heading = document.createElement("h2");
+  heading.textContent = "❤️ My Favorites";
+
+  const close = document.createElement("button");
+  close.textContent = "Close ✕";
+  close.style.cssText = "float:right;padding:8px;cursor:pointer;";
+  close.onclick = () => panel.remove();
+
+  content.append(close, heading);
+
+  if (!favoriteProfiles.length) {
+    const message = document.createElement("p");
+    message.textContent = "No favorites saved yet.";
+    content.append(message);
+  }
+
+  favoriteProfiles.forEach(p => {
+    const item = document.createElement("div");
+    item.style.cssText =
+      "display:flex;align-items:center;gap:12px;margin:16px 0;";
+
+    const img = document.createElement("img");
+    img.src = p.photo;
+    img.alt = p.displayName;
+    img.style.cssText =
+      "width:64px;height:76px;object-fit:cover;border-radius:8px;";
+
+    const name = document.createElement("strong");
+    name.textContent = p.displayName;
+
+    item.append(img, name);
+    content.append(item);
+  });
+
+  panel.append(content);
+  document.body.append(panel);
+};
+
 $("restart").onclick = () => {
   if (!profiles.length) {
     loadProfiles();
