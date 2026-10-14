@@ -39,6 +39,7 @@ let index = 0;
 const liked = new Set();
 const saved = new Set();
 let dragStart = null;
+window.thcSupabase = client;  
 const $ = id => document.getElementById(id);
 
 async function loadProfiles() {
@@ -142,11 +143,48 @@ function move(direction) {
   if (!profiles.length || index >= profiles.length) return;
   const p = profiles[index];
 
-  if (direction === "save") {
-    saved.add(p.id);
-    toast(p.displayName + " added to your favorites");
+ 
+if (direction === "save") {
+  if (p.id == null) {
+    toast("This profile cannot be saved yet");
     return;
   }
+
+  const db = window.thcSupabase;
+  if (!db) {
+    toast("Please log in first");
+    return;
+  }
+
+  (async () => {
+    const { data, error: userError } = await db.auth.getUser();
+
+    if (userError || !data.user) {
+      toast("Please log in again");
+      return;
+    }
+
+    const { error } = await db.from("favorites").upsert(
+      {
+        user_id: data.user.id,
+        profile_id: String(p.id)
+      },
+      { onConflict: "user_id,profile_id" }
+    );
+
+    if (error) {
+      console.error("Save favorite failed:", error);
+      toast("Could not save favorite");
+      return;
+    }
+
+    saved.add(p.id);
+    toast(p.displayName + " saved to your favorites");
+  })();
+
+  return;
+}
+
 
   if (direction === "like") {
     liked.add(p.id);
