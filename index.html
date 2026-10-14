@@ -709,6 +709,7 @@ $("bookBtn").onclick = () => {
 
 
 
+
 async function openGirlProfile(p) {
   if (!p) return;
 
@@ -729,6 +730,21 @@ async function openGirlProfile(p) {
   mainPhoto.alt = p.displayName || "Profile photo";
   gallery.replaceChildren();
 
+  let detailsPanel = $("girlProfileDetails");
+
+  if (!detailsPanel) {
+    detailsPanel = document.createElement("div");
+    detailsPanel.id = "girlProfileDetails";
+    detailsPanel.style.cssText =
+      "margin:16px 0;padding:16px;border-radius:12px;" +
+      "background:rgba(128,128,128,0.10);color:inherit;" +
+      "font-size:14px;line-height:1.7;";
+
+    $("girlProfileBio").after(detailsPanel);
+  }
+
+  detailsPanel.replaceChildren();
+  detailsPanel.textContent = "Loading profile details…";
   screen.style.display = "block";
 
   $("girlProfileOfficial").onclick = () => {
@@ -745,12 +761,72 @@ async function openGirlProfile(p) {
       encodeURIComponent(p.id)
     );
 
-    if (!response.ok) throw new Error("Gallery request failed");
+    if (!response.ok) throw new Error("Profile request failed");
 
     const data = await response.json();
     const photos = [...new Set(data.photos || [])];
+    const details = data.details || {};
 
-    if (!photos.length) photos.push(p.photo);
+    const fields = [
+      ["Age", details.age],
+      ["Height", details.height],
+      ["Measurements", details.measurement],
+      ["Body Type", details.bodyType],
+      ["Smoking", details.smoke],
+      ["Tattoos", details.tattoos],
+      ["Pubic Hair", details.pubicHair],
+      ["Last Checkup", details.lastCheckup]
+    ];
+
+    detailsPanel.replaceChildren();
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Profile Details";
+    heading.style.margin = "0 0 10px";
+    detailsPanel.append(heading);
+
+    fields.forEach(([label, value]) => {
+      if (!value || !String(value).trim()) return;
+
+      const row = document.createElement("div");
+      const strong = document.createElement("strong");
+      strong.textContent = label + ": ";
+
+      row.append(strong, document.createTextNode(value));
+      detailsPanel.append(row);
+    });
+
+    const services = Array.isArray(data.services)
+      ? data.services.filter(Boolean)
+      : [];
+
+    if (services.length) {
+      const serviceHeading = document.createElement("h3");
+      serviceHeading.textContent = "Available Services";
+      serviceHeading.style.margin = "16px 0 8px";
+      detailsPanel.append(serviceHeading);
+
+      const list = document.createElement("div");
+      list.style.cssText =
+        "display:flex;flex-wrap:wrap;gap:6px;";
+
+      services.forEach(service => {
+        const tag = document.createElement("span");
+        tag.textContent = service;
+        tag.style.cssText =
+          "padding:5px 9px;border-radius:8px;" +
+          "background:rgba(128,128,128,0.15);font-size:12px;";
+        list.append(tag);
+      });
+
+      detailsPanel.append(list);
+    }
+
+    if (!detailsPanel.children.length) {
+      detailsPanel.textContent = "No additional details available.";
+    }
+
+    if (!photos.length && p.photo) photos.push(p.photo);
 
     photos.forEach((photo, i) => {
       const thumb = document.createElement("img");
@@ -767,11 +843,15 @@ async function openGirlProfile(p) {
     });
 
     if (photos.length) mainPhoto.src = photos[0];
+
   } catch (error) {
-    console.error("Could not load gallery:", error);
-    toast("Could not load all photos. Try the official profile.");
+    console.error("Could not load profile details:", error);
+    detailsPanel.textContent =
+      "Additional profile details could not be loaded.";
+    toast("Could not load profile details. Try again.");
   }
 }
+
 
 $("closeGirlProfile").onclick = () => {
   $("girlProfileScreen").style.display = "none";
