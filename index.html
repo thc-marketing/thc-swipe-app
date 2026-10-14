@@ -39,7 +39,7 @@ let index = 0;
 const liked = new Set();
 const saved = new Set();
 let dragStart = null;
-window.thcSupabase = client;  
+  
 const $ = id => document.getElementById(id);
 
 async function loadProfiles() {
@@ -303,7 +303,7 @@ loadProfiles();
   const client = window.supabase.createClient(
     "https://dvvyqpdaoprzrarotuin.supabase.co",
     "sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24"
-  );
+  );window.thcSupabase = client;
 
   const $ = id => document.getElementById(id);
   let mode = "signup";
