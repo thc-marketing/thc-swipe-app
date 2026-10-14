@@ -14,6 +14,7 @@
 .controls{display:flex;align-items:center;justify-content:center;gap:19px;margin:17px 0 14px}.action{border:0;border-radius:50%;display:grid;place-items:center;background:var(--surface);box-shadow:0 5px 18px #0001;border:1px solid var(--line);cursor:pointer;transition:transform .14s ease}.action:active{transform:scale(.93)}.action svg{width:24px;height:24px}.skip{width:56px;height:56px;color:#f16b8f}.like{width:68px;height:68px;color:#25ae7b}.star{width:49px;height:49px;color:#d8ad62}.actions-labels{display:flex;justify-content:center;gap:40px;color:var(--muted);font-size:10px;margin-top:-5px}.actions-labels span:nth-child(2){margin:0 3px}.bottom{display:flex;gap:9px;margin-top:19px}.secondary{flex:1;background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:13px;padding:12px 8px;font-size:12px;font-weight:700;cursor:pointer}.secondary.primary{background:linear-gradient(100deg,#e84e87,#b64c9a);color:#fff;border:0}.foot{text-align:center;color:var(--muted);font-size:10px;margin-top:15px;line-height:1.5}.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:11px 15px;border-radius:99px;font-size:12px;font-weight:700;transition:.2s;pointer-events:none;white-space:nowrap;z-index:20}.toast.show{opacity:1;transform:translate(-50%,0)}.empty{display:none;position:absolute;inset:0;background:var(--surface);border:1px solid var(--line);border-radius:24px;align-items:center;justify-content:center;text-align:center;padding:25px}.empty h3{margin:8px 0}.empty p{font-size:12px;color:var(--muted)}.empty button{margin-top:10px;background:var(--pink);color:white;border:0;border-radius:10px;padding:11px 18px;font-weight:700}
 @media(min-width:600px){.app{padding-top:30px}.deck{height:510px}.heading h1{font-size:30px}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <main class="app"><div class="shell">
@@ -212,5 +213,150 @@ deck.addEventListener("pointerup", e => {
 
 loadProfiles();
 </script>
+
+<style>
+#authGate{position:fixed;inset:0;z-index:9999;background:#100d13;color:#fff;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif;overflow:auto}
+#authGate .authbox{width:100%;max-width:400px;background:#1c1820;border:1px solid #40313f;border-radius:20px;padding:28px}
+#authGate h2{margin:0 0 8px;font-size:26px}
+#authGate p{color:#c4b7c5;font-size:13px;line-height:1.6}
+#authGate label{display:block;font-size:12px;margin:14px 0 6px}
+#authGate input[type=text],#authGate input[type=email],#authGate input[type=password]{width:100%;padding:13px;border:1px solid #493b4a;border-radius:9px;background:#110f14;color:#fff;box-sizing:border-box}
+#authGate .authcheck{display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.5}
+#authGate .authcheck input{margin-top:4px}
+#authGate button{cursor:pointer}
+#authGate .authsubmit{width:100%;padding:14px;border:0;border-radius:9px;background:#e84e87;color:white;font-weight:800;margin-top:18px}
+#authGate .authswitch{background:none;border:0;color:#ff83b3;text-decoration:underline}
+#authMessage{font-size:13px;overflow-wrap:anywhere}
+</style>
+
+<div id="authGate">
+  <div class="authbox">
+    <div style="color:#ff83b3;font-size:12px;font-weight:800;letter-spacing:2px">TOKYO HENTAI CLUB</div>
+    <h2 id="authTitle" style="margin-top:18px">Create your account</h2>
+    <p id="authSubtitle">Register to explore profiles and availability.</p>
+    <form id="realAuthForm">
+      <div id="authNameWrap">
+        <label for="authName">Display name</label>
+        <input id="authName" type="text" maxlength="60" autocomplete="nickname" required placeholder="Your display name">
+      </div>
+      <label for="authEmail">Email address</label>
+      <input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com">
+      <label for="authPassword">Password</label>
+      <input id="authPassword" type="password" minlength="8" autocomplete="new-password" required placeholder="At least 8 characters">
+      <div id="authTermsWrap" style="margin-top:18px">
+        <label class="authcheck">
+          <input id="authAdult" type="checkbox" required>
+          <span>I confirm I am at least 18 years old and agree to the applicable terms and privacy policy.</span>
+        </label>
+      </div>
+      <button class="authsubmit" id="authSubmit" type="submit">Create account</button>
+    </form>
+    <p id="authMessage" role="status" aria-live="polite"></p>
+    <p id="authSwitchText">Already registered?
+      <button class="authswitch" id="authSwitch" type="button">Log in</button>
+    </p>
+  </div>
+</div>
+
+<script>
+(() => {
+  const client = window.supabase.createClient(
+    "https://dvvyqpdaoprzrarotuin.supabase.co",
+    "sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24"
+  );
+
+  const $ = id => document.getElementById(id);
+  let mode = "signup";
+  const gate = $("authGate");
+  const form = $("realAuthForm");
+  const message = $("authMessage");
+
+  function say(text, error = false) {
+    message.textContent = text;
+    message.style.color = error ? "#ff9eae" : "#9ce6c0";
+  }
+
+  function setMode(next) {
+    mode = next;
+    const login = mode === "login";
+    $("authTitle").textContent = login ? "Welcome back" : "Create your account";
+    $("authSubtitle").textContent = login
+      ? "Log in to continue to the profiles."
+      : "Register to explore profiles and availability.";
+    $("authNameWrap").hidden = login;
+    $("authTermsWrap").hidden = login;
+    $("authName").required = !login;
+    $("authAdult").required = !login;
+    $("authPassword").autocomplete = login ? "current-password" : "new-password";
+    $("authSubmit").textContent = login ? "Log in" : "Create account";
+    $("authSwitchText").firstChild.textContent =
+      login ? "New here? " : "Already registered? ";
+    $("authSwitch").textContent = login ? "Create an account" : "Log in";
+    say("");
+  }
+
+  $("authSwitch").addEventListener("click", () => {
+    setMode(mode === "signup" ? "login" : "signup");
+  });
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+
+    $("authSubmit").disabled = true;
+    $("authSubmit").textContent = "Please wait…";
+    say("");
+
+    try {
+      const email = $("authEmail").value.trim();
+      const password = $("authPassword").value;
+      let result;
+
+      if (mode === "signup") {
+        result = await client.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              display_name: $("authName").value.trim(),
+              adult_confirmed: true
+            }
+          }
+        });
+      } else {
+        result = await client.auth.signInWithPassword({ email, password });
+      }
+
+      if (result.error) throw result.error;
+
+      if (mode === "signup" && !result.data.session) {
+        say("Account registration started. Check your email for a confirmation link, then log in.");
+        setMode("login");
+      } else {
+        say("Login successful!");
+        gate.style.display = "none";
+      }
+    } catch (error) {
+      say(error.message || "Something went wrong. Please try again.", true);
+    } finally {
+      $("authSubmit").disabled = false;
+      $("authSubmit").textContent = mode === "login" ? "Log in" : "Create account";
+    }
+  });
+
+  client.auth.getSession().then(({ data, error }) => {
+    if (error) {
+      say("Could not check your session. Please log in again.", true);
+      return;
+    }
+    if (data.session) gate.style.display = "none";
+  });
+
+  client.auth.onAuthStateChange((event, session) => {
+    if (session) gate.style.display = "none";
+  });
+})();
+</script>
+</body>
 
 </body></html>
