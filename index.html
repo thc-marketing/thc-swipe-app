@@ -282,23 +282,62 @@ $("favoritesBtn").onclick = async () => {
     content.append(message);
   }
 
-  favoriteProfiles.forEach(p => {
-    const item = document.createElement("div");
-    item.style.cssText =
-      "display:flex;align-items:center;gap:12px;margin:16px 0;";
+  
+favoriteProfiles.forEach(p => {
+  const item = document.createElement("div");
+  item.className = "favorite-item";
+  item.style.cssText =
+    "display:flex;align-items:center;gap:12px;margin:16px 0;";
 
-    const img = document.createElement("img");
-    img.src = p.photo;
-    img.alt = p.displayName;
-    img.style.cssText =
-      "width:64px;height:76px;object-fit:cover;border-radius:8px;";
+  const img = document.createElement("img");
+  img.src = p.photo;
+  img.alt = p.displayName;
+  img.style.cssText =
+    "width:64px;height:76px;object-fit:cover;border-radius:8px;";
 
-    const name = document.createElement("strong");
-    name.textContent = p.displayName;
+  const name = document.createElement("strong");
+  name.textContent = p.displayName;
+  name.style.flex = "1";
 
-    item.append(img, name);
-    content.append(item);
-  });
+  const removeBtn = document.createElement("button");
+  removeBtn.textContent = "Remove";
+  removeBtn.style.cssText =
+    "padding:8px 10px;border:0;border-radius:8px;" +
+    "background:#e94b78;color:white;cursor:pointer;";
+
+  removeBtn.onclick = async () => {
+    removeBtn.disabled = true;
+    removeBtn.textContent = "Removing...";
+
+    const { error } = await db
+      .from("favorites")
+      .delete()
+      .eq("user_id", userData.user.id)
+      .eq("profile_id", String(p.id));
+
+    if (error) {
+      console.error("Remove favorite failed:", error);
+      toast("Could not remove favorite");
+      removeBtn.disabled = false;
+      removeBtn.textContent = "Remove";
+      return;
+    }
+
+    item.remove();
+
+    if (!content.querySelector(".favorite-item")) {
+      const message = document.createElement("p");
+      message.textContent = "No favorites saved yet.";
+      content.append(message);
+    }
+
+    toast(p.displayName + " removed from favorites");
+  };
+
+  item.append(img, name, removeBtn);
+  content.append(item);
+});
+
 
   panel.append(content);
   document.body.append(panel);
