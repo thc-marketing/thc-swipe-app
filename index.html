@@ -1083,12 +1083,21 @@ logoutBtn.onclick = async () => {
   const style = document.createElement('style');
   style.textContent = `
     #thc-reserve-btn {
-      position: fixed; bottom: 22px; left: 50%;
-      transform: translateX(-50%); z-index: 9998;
-      padding: 15px 26px; border: 0; border-radius: 30px;
-      background: linear-gradient(100deg,#f04f91,#d84fbd);
-      color: white; font-size: 15px; font-weight: 800;
-      cursor: pointer; box-shadow: 0 6px 24px #0005;
+  background: linear-gradient(135deg, #f5d778, #c99a32) !important;
+  color: #19130a !important;
+}
+#thc-reserve-send,
+#thc-reserve-close,
+#thc-reserve-result button {
+  background: linear-gradient(135deg, #f5d778, #c99a32);
+  color: #19130a;
+}
+#thc-reserve-result button {
+  width: auto;
+  padding: 7px 12px;
+  margin-top: 8px;
+  font-size: 12px;
+}
     }
     #thc-reserve-modal {
       position: fixed; inset: 0; z-index: 9999;
@@ -1211,8 +1220,8 @@ logoutBtn.onclick = async () => {
       open = document.createElement('a');
       open.target = '_blank';
       open.rel = 'noopener noreferrer';
-      open.style.cssText = 'display:block;color:#ff8ebd;margin-top:14px;';
-      result.appendChild(open);
+      open.style.cssText = 'display:block;box-sizing:border-box;width:100%;padding:13px;margin-top:12px;border-radius:9px;background:linear-gradient(135deg,#f5d778,#c99a32);color:#19130a;text-align:center;font-weight:800;text-decoration:none;';
+      result.appendChild(copy);
     }
     open.href = url;
     open.textContent = 'Open ' + contact;
@@ -1230,7 +1239,7 @@ logoutBtn.onclick = async () => {
           window.prompt('Copy your reservation message:', message);
         }
       };
-      result.appendChild(copy);
+      result.appendChild(open);
     }
   });
 })();
