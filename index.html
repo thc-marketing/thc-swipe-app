@@ -1083,21 +1083,12 @@ logoutBtn.onclick = async () => {
   const style = document.createElement('style');
   style.textContent = `
     #thc-reserve-btn {
-  position: fixed;
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9998;
-  padding: 15px 26px;
-  border: 0;
-  border-radius: 30px;
-  background: linear-gradient(135deg, #f5d778, #c99a32);
-  color: #19130a;
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 6px 24px #0005;
-}
+      position: fixed; bottom: 22px; left: 50%;
+      transform: translateX(-50%); z-index: 9998;
+      padding: 15px 26px; border: 0; border-radius: 30px;
+      background: linear-gradient(100deg,#f04f91,#d84fbd);
+      color: white; font-size: 15px; font-weight: 800;
+      cursor: pointer; box-shadow: 0 6px 24px #0005;
     }
     #thc-reserve-modal {
       position: fixed; inset: 0; z-index: 9999;
@@ -1204,7 +1195,7 @@ logoutBtn.onclick = async () => {
     if (contact === 'WhatsApp') {
       url = 'https://wa.me/817076654819?text=' + encodeURIComponent(message);
     } else if (contact === 'Telegram') {
-       url = 'https://t.me/thc_tokyo';
+      url = 'https://t.me/share/url?url=&text=' + encodeURIComponent(message);
     } else if (contact.startsWith('LINE')) {
       url = 'https://line.me/';
     } else if (contact === 'WeChat') {
@@ -1220,8 +1211,7 @@ logoutBtn.onclick = async () => {
       open = document.createElement('a');
       open.target = '_blank';
       open.rel = 'noopener noreferrer';
-      open.style.cssText = 'display:block;box-sizing:border-box;width:100%;padding:13px;margin-top:12px;border-radius:9px;background:linear-gradient(135deg,#f5d778,#c99a32);color:#19130a;text-align:center;font-weight:800;text-decoration:none;';
-      result.appendChild(copy);
+      open.style.cssText = 'display:block;color:#ff8ebd;margin-top:14px;';
       result.appendChild(open);
     }
     open.href = url;
@@ -1240,7 +1230,7 @@ logoutBtn.onclick = async () => {
           window.prompt('Copy your reservation message:', message);
         }
       };
-      result.appendChild(open);
+      result.appendChild(copy);
     }
   });
 })();
