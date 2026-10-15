@@ -1195,7 +1195,7 @@ logoutBtn.onclick = async () => {
     if (contact === 'WhatsApp') {
       url = 'https://wa.me/817076654819?text=' + encodeURIComponent(message);
     } else if (contact === 'Telegram') {
-      url = 'https://t.me/share/url?url=&text=' + encodeURIComponent(message);
+      url = 'https://t.me/share/url?url=' + encodeURIComponent('https://hentaitokyo.com/') + '&text=' + encodeURIComponent(message);
     } else if (contact.startsWith('LINE')) {
       url = 'https://line.me/';
     } else if (contact === 'WeChat') {
