@@ -1199,7 +1199,14 @@ logoutBtn.onclick = async () => {
       url = 'https://wa.me/817076654819?text=' + encodeURIComponent(message);
     } else if (contact === 'Telegram') {
       url = 'https://t.me/share/url?url=&text=' + encodeURIComponent(message);
-    } else if (contact.startsWith('LINE')) {
+    } else if (contact === 'LINE Shinjuku') {
+  url = 'https://line.me/R/oaMessage/' +
+    encodeURIComponent('thc-shinjuku') + '/?' +
+    encodeURIComponent(message);
+} else if (contact === 'LINE Shibuya') {
+  url = 'https://line.me/R/oaMessage/' +
+    encodeURIComponent('thc-shibuya') + '/?' +
+    encodeURIComponent(message);
       url = 'https://line.me/';
     } else if (contact === 'WeChat') {
       url = 'https://weixin.qq.com/';
