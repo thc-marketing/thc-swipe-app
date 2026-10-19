@@ -1208,9 +1208,11 @@ logoutBtn.onclick = async () => {
   url = 'https://line.me/ti/p/jmx8ZMgaLQ';
 
 
-    } else if (contact === 'WeChat') {
-      url = 'https://weixin.qq.com/';
-    }
+    
+} else if (contact === 'WeChat') {
+  url = 'weixin://dl/chat?tokyohentaiclub';
+}
+
 
     const result = document.getElementById('thc-reserve-result');
     result.textContent = 'Your request is ready. Contact: ' + contact +
