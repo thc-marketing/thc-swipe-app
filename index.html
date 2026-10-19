@@ -1200,10 +1200,14 @@ logoutBtn.onclick = async () => {
     } else if (contact === 'Telegram') {
   url = 'https://t.me/thc_tokyo?text=' +
     encodeURIComponent(message);
-    } else if (contact === 'LINE Shinjuku') {
-  url = 'https://line.me/ti/p/NFbKDCcMYu';
+    
+} else if (contact === 'LINE Shinjuku') {
+  url = 'https://line.me/R/oaMessage/%40thc-shinjuku/?' +
+    encodeURIComponent(message);
 } else if (contact === 'LINE Shibuya') {
-  url = 'https://line.me/ti/p/jmx8ZMgaLQ';
+  url = 'https://line.me/R/oaMessage/%40thc-shibuya/?' +
+    encodeURIComponent(message);
+
     } else if (contact === 'WeChat') {
       url = 'https://weixin.qq.com/';
     }
