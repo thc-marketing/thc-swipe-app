@@ -165,6 +165,52 @@ function normalizeRank(value) {
   if (rank.includes("av star") || rank.includes("avstar")) return "AV Star";
   return "";
 }
+
+// Rank labels taken from the HentaiTokyo "Available Today" list.
+// The live profile API does not currently expose rank in the fields checked above.
+const availableTodayRanks = {
+  "futaba": "Gold",
+  "mirei": "AV Star",
+  "akina": "Silver",
+  "satomi": "AV Star",
+  "kohane": "Silver",
+  "hikaru": "Silver",
+  "kasumi": "Silver",
+  "kei": "Silver",
+  "sora": "Gold",
+  "hotaru": "Gold",
+  "eve": "Silver",
+  "nagisa": "Diamond",
+  "rui": "Diamond",
+  "chloe": "Diamond",
+  "yuna": "Silver",
+  "maya": "Silver",
+  "momiji": "Diamond",
+  "aika": "Gold",
+  "misa": "Silver",
+  "valentina": "Silver",
+  "rin": "Gold",
+  "yuri": "Silver",
+  "ran": "Silver",
+  "yukina": "Silver",
+  "asuka": "Gold",
+  "himeka": "Silver",
+  "koharu": "Gold",
+  "noa": "Diamond",
+  "asahi": "Diamond",
+  "sophie": "Diamond",
+  "gia": "Silver",
+  "rino": "Gold",
+  "honoka": "Silver",
+  "miri": "Diamond",
+  "mone": "Gold"
+};
+function rankForProfile(g, displayName) {
+  const apiRank = normalizeRank(g.rank || g.grade || g.category || g.rankName || g.rank_name || g.type || g.course);
+  if (apiRank) return apiRank;
+  const key = String(displayName || g.name || "").replace(/\s*\(\d+\)\s*$/, "").trim().toLowerCase();
+  return availableTodayRanks[key] || "";
+}
 function yen(value) { return "¥" + Number(value).toLocaleString("ja-JP"); }
 
   
@@ -187,7 +233,7 @@ async function loadProfiles() {
         ...g,
         displayName: match ? match[1].trim() : g.name,
         age: match ? match[2] : "",
-        rank: normalizeRank(g.rank || g.grade || g.category || g.rankName || g.rank_name || g.type || g.course),
+        rank: rankForProfile(g, match ? match[1].trim() : g.name),
         area: "Tokyo",
         bio: "View her official profile for details and available options.",
         tag: g.statusType === "now" ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
