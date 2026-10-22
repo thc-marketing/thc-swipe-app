@@ -1093,6 +1093,7 @@ logoutBtn.onclick = async () => {
   $("authSwitch").addEventListener("click", () => {
     setMode(mode === "signup" ? "login" : "signup");
   });
+  setMode("login");
 
   form.addEventListener("submit", async event => {
     event.preventDefault();
