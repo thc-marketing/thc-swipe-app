@@ -158,22 +158,12 @@ const bookingPricesJPY = {
   }
 };
 function normalizeRank(value) {
-  const rank = String(value || "").trim().toLowerCase().replace(/[_-]+/g, " ");
+  const rank = String(value || "").trim().toLowerCase();
   if (rank.includes("silver")) return "Silver";
   if (rank.includes("gold")) return "Gold";
   if (rank.includes("diamond")) return "Diamond";
-  if (rank.includes("av star") || rank.includes("avstar") || rank.includes("av-star")) return "AV Star";
-  if (rank.includes("new girl") || rank === "new") return "New Girl";
+  if (rank.includes("av star") || rank.includes("avstar")) return "AV Star";
   return "";
-}
-
-function normalizeGirlName(value) {
-  return String(value || "")
-    .replace(/\s*\(\s*\d+\s*\)\s*$/, "")
-    .normalize("NFKD")
-    .replace(/[\\u0300-\\u036f]/g, "")
-    .replace(/[^a-z0-9]/gi, "")
-    .toLowerCase();
 }
 
 // Rank labels taken from the HentaiTokyo "Available Today" list.
@@ -321,25 +311,10 @@ const availableTodayRanks = {
   "maria": "Diamond"
 };
 function rankForProfile(g, displayName) {
-  const possibleRanks = [
-    g.rank, g.grade, g.class, g.className, g.class_name, g.course,
-    g.rankName, g.rank_name, g.rankType, g.rank_type, g.category, g.type,
-    g.castClass, g.cast_class, g.plan, g.title
-  ];
-  for (const value of possibleRanks) {
-    const apiRank = normalizeRank(value);
-    if (apiRank) return apiRank;
-  }
-
-  const key = normalizeGirlName(displayName || g.name);
-  if (availableTodayRanks[key]) return availableTodayRanks[key];
-
-  // Try a conservative normalized lookup for entries that were stored with
-  // spaces, punctuation, accents, or age suffixes in older roster versions.
-  for (const [name, rank] of Object.entries(availableTodayRanks)) {
-    if (normalizeGirlName(name) === key) return rank;
-  }
-  return "";
+  const apiRank = normalizeRank(g.rank || g.grade || g.category || g.rankName || g.rank_name || g.type || g.course);
+  if (apiRank) return apiRank;
+  const key = String(displayName || g.name || "").replace(/\s*\(\d+\)\s*$/, "").trim().toLowerCase();
+  return availableTodayRanks[key] || "";
 }
 function yen(value) { return "¥" + Number(value).toLocaleString("ja-JP"); }
 
