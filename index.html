@@ -1498,12 +1498,26 @@ logoutBtn.onclick = async () => {
     result.textContent = 'Your request is ready. Contact: ' + contact +
       '\n\n' + message;
 
+    const isLine = contact === 'LINE Shinjuku' || contact === 'LINE Shibuya';
+    if (isLine) {
+      const copyStatus = document.createElement('p');
+      copyStatus.style.cssText = 'margin:8px 0 0;font-size:13px;';
+      copyStatus.textContent = 'Copying your request for LINE…';
+      result.appendChild(copyStatus);
+      try {
+        await navigator.clipboard.writeText(message);
+        copyStatus.textContent = 'Request copied! Tap Open LINE, then paste and send.';
+      } catch {
+        copyStatus.textContent = 'Tap Copy request message, then open LINE and paste it.';
+      }
+    }
+
     const open = document.createElement('a');
     open.target = '_blank';
     open.rel = 'noopener noreferrer';
     open.style.cssText = 'display:block;box-sizing:border-box;width:100%;padding:13px;margin-top:14px;border-radius:9px;background:linear-gradient(135deg,#f5d778,#c99a32);color:#19130a;text-align:center;font-weight:800;text-decoration:none;';
     open.href = url;
-    open.textContent = 'Open ' + contact;
+    open.textContent = isLine ? 'Open ' + contact + ' (paste request)' : 'Open ' + contact;
     result.appendChild(open);
 
     const copy = document.createElement('button');
