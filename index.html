@@ -1330,10 +1330,6 @@ logoutBtn.onclick = async () => {
       if (!response.ok) throw new Error('Could not load options');
       const data = await response.json();
       renderOptions(normalizeOptions(data));
-      if (!currentPersonalOptions.length) {
-        optionWrap.hidden = false;
-        optionHint.textContent = 'No personal options listed for this girl.';
-      }
     } catch (error) {
       console.error('Could not load reservation options:', error);
       currentPersonalOptions = [];
