@@ -823,6 +823,82 @@ async function openGirlProfile(p) {
       detailsPanel.append(list);
     }
 
+    // Personal Options are separate from Additional Services and are optional
+    // per companion. Accept common API field names without changing booking.
+    const rawPersonalOptions =
+      data.personalOptions ??
+      data.personal_options ??
+      data.personal_options_list ??
+      details.personalOptions ??
+      details.personal_options ??
+      data.personalOption ??
+      data.personal_option;
+
+    const personalOptions = Array.isArray(rawPersonalOptions)
+      ? rawPersonalOptions
+      : rawPersonalOptions
+        ? [rawPersonalOptions]
+        : [];
+
+    const normalizedPersonalOptions = personalOptions
+      .map(option => {
+        if (typeof option === "string") {
+          const text = option.trim();
+          return text ? { text } : null;
+        }
+        if (!option || typeof option !== "object") return null;
+        const name = option.name || option.title || option.label ||
+          option.option || option.description || "";
+        const price = option.price || option.fee || option.cost || "";
+        const note = option.note || option.notes || option.remark || "";
+        const text = [price, name].filter(Boolean).join(": ");
+        return (text || note)
+          ? { text: text || name || "Personal option", note }
+          : null;
+      })
+      .filter(Boolean);
+
+    if (normalizedPersonalOptions.length) {
+      const personalSection = document.createElement("section");
+      personalSection.style.cssText =
+        "margin-top:18px;padding-top:14px;border-top:1px solid #493544;";
+
+      const personalHeading = document.createElement("h3");
+      personalHeading.textContent = "Personal Options";
+      personalHeading.style.margin = "0 0 8px";
+      personalSection.append(personalHeading);
+
+      normalizedPersonalOptions.forEach(option => {
+        const item = document.createElement("div");
+        item.style.cssText =
+          "padding:10px 12px;margin:8px 0;border-radius:9px;" +
+          "background:rgba(216,173,98,0.10);border:1px solid #493544;";
+
+        const label = document.createElement("div");
+        label.textContent = option.text;
+        label.style.fontWeight = "700";
+        item.append(label);
+
+        if (option.note) {
+          const note = document.createElement("p");
+          note.textContent = option.note;
+          note.style.cssText =
+            "margin:6px 0 0;color:#c0aebb;font-size:12px;";
+          item.append(note);
+        }
+
+        personalSection.append(item);
+      });
+
+      const reservationNote = document.createElement("p");
+      reservationNote.textContent =
+        "Please reserve Personal Options in advance.";
+      reservationNote.style.cssText =
+        "margin:8px 0 0;color:#c0aebb;font-size:12px;";
+      personalSection.append(reservationNote);
+      detailsPanel.append(personalSection);
+    }
+
     if (!detailsPanel.children.length) {
       detailsPanel.textContent = "No additional details available.";
     }
