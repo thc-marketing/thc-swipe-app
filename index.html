@@ -1232,12 +1232,16 @@ logoutBtn.onclick = async () => {
           <option>Outcall</option>
         </select>
         <label for="thc-contact">Preferred contact method</label>
-        <select id="thc-contact">
-          <option value="WhatsApp">WhatsApp</option>
-          <option value="Telegram">Telegram</option>
-          <option value="LINE Shinjuku">LINE — thc-shinjuku</option>
-          <option value="LINE Shibuya">LINE — thc-shibuya</option>
-        </select>
+<select id="thc-contact">
+  <option value="WhatsApp">WhatsApp</option>
+  <option value="Telegram">Telegram</option>
+  <option value="LINE Shinjuku">LINE — thc-shinjuku</option>
+  <option value="LINE Shibuya">LINE — thc-shibuya</option>
+</select>
+
+<p class="line-note">
+  <strong>NOTE:</strong> If you choose LINE, please copy your completed reservation form and paste it into our LINE chat.
+</p>
         <label for="thc-notes">Other notes (optional)</label>
         <textarea id="thc-notes" rows="2" placeholder="Anything else the team should know"></textarea>
         <button id="thc-reserve-send" type="submit">Prepare Request</button>
