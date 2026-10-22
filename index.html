@@ -1450,16 +1450,29 @@ logoutBtn.onclick = async () => {
         .replace(/\\bPersonal Options\\b:?/gi, '')
         .trim();
     };
-    const selectedOptions = Array.from(
+    const checkedOptions = Array.from(
       optionList.querySelectorAll('input[type="checkbox"]:checked')
-    ).map(input => abbreviateOption(input.dataset.optionText));
+    ).map(input => {
+      const raw = input.dataset.optionText || '';
+      const separator = raw.indexOf(': ');
+      const group = separator >= 0 ? raw.slice(0, separator) : 'Additional Services';
+      const name = separator >= 0 ? raw.slice(separator + 2) : raw;
+      return { group, name: abbreviateOption(name) };
+    });
+    const serviceOptions = checkedOptions
+      .filter(option => option.group === 'Additional Services')
+      .map(option => option.name);
+    const personalOptions = checkedOptions
+      .filter(option => option.group === 'Personal Options')
+      .map(option => option.name);
     const message = [
       'Hello THC! I would like to request a reservation.',
       'Girl: ' + profile.displayName,
       'Date: ' + get('thc-date'),
       'Time: ' + get('thc-time'),
       'Type: ' + get('thc-type'),
-      ...(selectedOptions.length ? ['Options: ' + selectedOptions.join(', ')] : []),
+      ...(serviceOptions.length ? ['Additional Services: ' + serviceOptions.join(', ')] : []),
+      ...(personalOptions.length ? ['Personal Options: ' + personalOptions.join(', ')] : []),
       ...(get('thc-notes').trim() ? ['Notes: ' + get('thc-notes').trim()] : []),
       'Please confirm availability. Thank you!'
     ].join('\\n');
