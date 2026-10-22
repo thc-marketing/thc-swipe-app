@@ -1264,6 +1264,13 @@ logoutBtn.onclick = async () => {
         <input id="thc-date" type="date" required>
         <label for="thc-time">Preferred time</label>
         <input id="thc-time" type="time" required>
+        <label for="thc-duration">Booking duration</label>
+        <select id="thc-duration" required>
+          <option value="60 minutes">60 minutes</option>
+          <option value="90 minutes">90 minutes</option>
+          <option value="120 minutes">120 minutes</option>
+          <option value="Extension — 30 minutes">Extension — 30 minutes</option>
+        </select>
         <label for="thc-type">Booking type</label>
         <select id="thc-type">
           <option>Incall</option>
@@ -1555,6 +1562,7 @@ logoutBtn.onclick = async () => {
       'Girl: ' + profile.displayName,
       'Date: ' + get('thc-date'),
       'Time: ' + get('thc-time'),
+      'Duration: ' + get('thc-duration'),
       'Type: ' + get('thc-type'),
       'Additional Services: ' + serviceOptions.join(', '),
       'Personal Options: ' + personalOptions.join(', '),
