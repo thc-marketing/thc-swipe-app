@@ -1309,7 +1309,8 @@ logoutBtn.onclick = async () => {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.value = String(i);
-        checkbox.dataset.optionText = title + ': ' + option.text;
+        checkbox.dataset.optionGroup = title;
+        checkbox.dataset.optionName = option.text;
         const textWrap = document.createElement('span');
         textWrap.textContent = option.note ? option.text + ' — ' + option.note : option.text;
         label.append(checkbox, textWrap);
@@ -1453,11 +1454,18 @@ logoutBtn.onclick = async () => {
     const checkedOptions = Array.from(
       optionList.querySelectorAll('input[type="checkbox"]:checked')
     ).map(input => {
-      const raw = input.dataset.optionText || '';
-      const separator = raw.indexOf(': ');
-      const group = separator >= 0 ? raw.slice(0, separator) : 'Additional Services';
-      const name = separator >= 0 ? raw.slice(separator + 2) : raw;
-      return { group, name: abbreviateOption(name) };
+      const group = input.dataset.optionGroup || 'Additional Services';
+      const originalName = input.dataset.optionName || '';
+      const name = originalName.trim();
+      let shortName = name;
+      if (/\\bcum\\s+in\\s+mouth\\b/i.test(name)) {
+        shortName = name.replace(/cum\\s+in\\s+mouth/i, 'CIM');
+      } else if (/\\bdeep\\s+throat\\b/i.test(name)) {
+        shortName = name.replace(/deep\\s+throat/i, 'DT');
+      } else if (/\\bvibrator\\b/i.test(name)) {
+        shortName = name.replace(/vibrator/i, 'Vib');
+      }
+      return { group, name: shortName };
     });
     const serviceOptions = checkedOptions
       .filter(option => option.group === 'Additional Services')
