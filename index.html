@@ -1161,14 +1161,6 @@ logoutBtn.onclick = async () => {
 
   const style = document.createElement('style');
   style.textContent = `
-    #thc-reserve-btn {
-      position: fixed; bottom: 22px; left: 50%;
-      transform: translateX(-50%); z-index: 9998;
-      padding: 15px 26px; border: 0; border-radius: 30px;
-      background: linear-gradient(135deg, #f5d778, #c99a32);
-      color: #19130a; font-size: 15px; font-weight: 800;
-      cursor: pointer; box-shadow: 0 6px 24px #0005;
-    }
     #thc-reserve-modal {
       position: fixed; inset: 0; z-index: 9999;
       background: #000b; display: none; overflow-y: auto;
@@ -1215,11 +1207,6 @@ logoutBtn.onclick = async () => {
     #thc-option-hint { color:#c0aebb; font-size:12px; margin:7px 0 0; }
   `;
   document.head.appendChild(style);
-
-  const btn = document.createElement('button');
-  btn.id = 'thc-reserve-btn';
-  btn.textContent = 'Request Reservation';
-  document.body.appendChild(btn);
 
   const modal = document.createElement('div');
   modal.id = 'thc-reserve-modal';
@@ -1277,11 +1264,7 @@ logoutBtn.onclick = async () => {
     return [price, name].filter(Boolean).join(': ') || String(option.note || option.notes || '').trim();
   }
 
-  function normalizeOptions(data) {
-    const details = data.details || {};
-    const raw = data.personalOptions ?? data.personal_options ??
-      data.personal_options_list ?? details.personalOptions ??
-      details.personal_options ?? data.personalOption ?? data.personal_option;
+  function normalizeItems(raw) {
     const arr = Array.isArray(raw) ? raw : (raw ? [raw] : []);
     return arr.map(item => {
       const text = getOptionText(item);
@@ -1291,30 +1274,50 @@ logoutBtn.onclick = async () => {
     }).filter(Boolean);
   }
 
-  function renderOptions(options) {
-    currentPersonalOptions = options;
+  function normalizeOptions(data) {
+    const details = data.details || {};
+    const rawPersonal = data.personalOptions ?? data.personal_options ??
+      data.personal_options_list ?? details.personalOptions ??
+      details.personal_options ?? data.personalOption ?? data.personal_option;
+    return {
+      services: normalizeItems(data.services ?? data.additionalServices ?? data.additional_services),
+      personal: normalizeItems(rawPersonal)
+    };
+  }
+
+  function renderOptions(groups) {
+    const services = groups.services || [];
+    const personal = groups.personal || [];
+    currentPersonalOptions = [...services, ...personal];
     optionList.replaceChildren();
     result.replaceChildren();
-    if (!options.length) {
+    if (!services.length && !personal.length) {
       optionWrap.hidden = true;
       return;
     }
     optionWrap.hidden = false;
-    optionHint.textContent = 'Only options listed for this girl are shown.';
-    options.forEach((option, i) => {
-      const label = document.createElement('label');
-      label.className = 'thc-option';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.value = String(i);
-      checkbox.dataset.optionText = option.text;
-      const textWrap = document.createElement('span');
-      textWrap.textContent = option.note
-        ? option.text + ' — ' + option.note
-        : option.text;
-      label.append(checkbox, textWrap);
-      optionList.append(label);
-    });
+    optionHint.textContent = 'Only options available for this girl are shown.';
+    const addGroup = (title, options) => {
+      if (!options.length) return;
+      const heading = document.createElement('div');
+      heading.textContent = title;
+      heading.style.cssText = 'font-weight:800;margin:10px 0 2px;';
+      optionList.append(heading);
+      options.forEach((option, i) => {
+        const label = document.createElement('label');
+        label.className = 'thc-option';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = String(i);
+        checkbox.dataset.optionText = title + ': ' + option.text;
+        const textWrap = document.createElement('span');
+        textWrap.textContent = option.note ? option.text + ' — ' + option.note : option.text;
+        label.append(checkbox, textWrap);
+        optionList.append(label);
+      });
+    };
+    addGroup('Additional Services', services);
+    addGroup('Personal Options', personal);
   }
 
   async function loadOptionsForGirl(profile) {
@@ -1416,7 +1419,6 @@ logoutBtn.onclick = async () => {
     loadOptionsForGirl(profile);
   });
 
-  btn.addEventListener('click', () => openReservation(null));
   document.getElementById('thc-reserve-close').onclick = () => {
     modal.style.display = 'none';
   };
@@ -1484,9 +1486,6 @@ logoutBtn.onclick = async () => {
     result.appendChild(copy);
   });
 
-  // The global selector gets the live profile list after loadProfiles completes.
-  const originalLoadProfiles = window.thcGetProfiles;
-  const originalLoadHook = () => populateFromList(originalLoadProfiles());
   const readyTimer = setInterval(() => {
     const list = window.thcGetProfiles && window.thcGetProfiles();
     if (Array.isArray(list) && list.length) {
