@@ -1233,6 +1233,16 @@ logoutBtn.onclick = async () => {
       width:auto; margin:3px 0 0; accent-color:#d8ad62; flex-shrink:0;
     }
     #thc-option-hint { color:#c0aebb; font-size:12px; margin:7px 0 0; }
+    #thc-reserve-card .line-note {
+      margin: 12px 0 16px; padding: 12px 14px;
+      border: 1px solid #8b6b35; border-left: 4px solid #d8ad62;
+      border-radius: 10px; background: #302719; color: #f5e4bd;
+      font-size: 12px; line-height: 1.6;
+    }
+    #thc-reserve-card .line-note strong {
+      display: block; margin-bottom: 4px; color: #f5d778;
+      font-size: 12px; letter-spacing: .06em;
+    }
   `;
   document.head.appendChild(style);
 
@@ -1267,9 +1277,10 @@ logoutBtn.onclick = async () => {
   <option value="LINE Shibuya">LINE — thc-shibuya</option>
 </select>
 
-<p class="line-note">
-  <strong>NOTE:</strong> If you choose LINE, please copy your completed reservation form and paste it into our LINE chat.
-</p>
+<div class="line-note" role="note">
+  <strong>NOTE</strong>
+  If you choose LINE, please copy your completed reservation form and paste it into our LINE chat.
+</div>
         <label for="thc-notes">Other notes (optional)</label>
         <textarea id="thc-notes" rows="2" placeholder="Anything else the team should know"></textarea>
         <button id="thc-reserve-send" type="submit">Prepare Request</button>
