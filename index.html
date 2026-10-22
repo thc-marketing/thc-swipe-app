@@ -1455,14 +1455,13 @@ logoutBtn.onclick = async () => {
       optionList.querySelectorAll('input[type="checkbox"]:checked')
     ).map(input => {
       const group = input.dataset.optionGroup || 'Additional Services';
-      const originalName = input.dataset.optionName || '';
-      const name = originalName.trim();
+      const name = (input.dataset.optionName || '').trim();
       let shortName = name;
-      if (/\\bcum\\s+in\\s+mouth\\b/i.test(name)) {
-        shortName = name.replace(/cum\\s+in\\s+mouth/i, 'CIM');
-      } else if (/\\bdeep\\s+throat\\b/i.test(name)) {
-        shortName = name.replace(/deep\\s+throat/i, 'DT');
-      } else if (/\\bvibrator\\b/i.test(name)) {
+      if (/\bcum\s+in\s+mouth\b/i.test(name)) {
+        shortName = name.replace(/cum\s+in\s+mouth/i, 'CIM');
+      } else if (/\bdeep\s+throat\b/i.test(name)) {
+        shortName = name.replace(/deep\s+throat/i, 'DT');
+      } else if (/\bvibrator\b/i.test(name)) {
         shortName = name.replace(/vibrator/i, 'Vib');
       }
       return { group, name: shortName };
@@ -1479,11 +1478,10 @@ logoutBtn.onclick = async () => {
       'Date: ' + get('thc-date'),
       'Time: ' + get('thc-time'),
       'Type: ' + get('thc-type'),
-      ...(serviceOptions.length ? ['Additional Services: ' + serviceOptions.join(', ')] : []),
-      ...(personalOptions.length ? ['Personal Options: ' + personalOptions.join(', ')] : []),
-      ...(get('thc-notes').trim() ? ['Notes: ' + get('thc-notes').trim()] : []),
+      'Additional Services: ' + serviceOptions.join(', '),
+      'Personal Options: ' + personalOptions.join(', '),
       'Please confirm availability. Thank you!'
-    ].join('\\n');
+    ].join('\n');
 
     let url = '';
     if (contact === 'WhatsApp') {
