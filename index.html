@@ -418,7 +418,21 @@ favoriteProfiles.forEach(p => {
   const item = document.createElement("div");
   item.className = "favorite-item";
   item.style.cssText =
-    "display:flex;align-items:center;gap:12px;margin:16px 0;";
+    "display:flex;align-items:center;gap:12px;margin:16px 0;cursor:pointer;";
+  item.setAttribute("role", "button");
+  item.tabIndex = 0;
+  const openProfile = event => {
+    if (event.target.closest("button")) return;
+    panel.remove();
+    openGirlProfile(p);
+  };
+  item.addEventListener("click", openProfile);
+  item.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openProfile(event);
+    }
+  });
 
   const img = document.createElement("img");
   img.src = p.photo;
@@ -541,7 +555,21 @@ $("likesBtn").onclick = async () => {
     const item = document.createElement("div");
     item.className = "liked-item";
     item.style.cssText =
-      "display:flex;align-items:center;gap:12px;margin:16px 0;";
+      "display:flex;align-items:center;gap:12px;margin:16px 0;cursor:pointer;";
+    item.setAttribute("role", "button");
+    item.tabIndex = 0;
+    const openProfile = event => {
+      if (event.target.closest("button")) return;
+      panel.remove();
+      openGirlProfile(p);
+    };
+    item.addEventListener("click", openProfile);
+    item.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openProfile(event);
+      }
+    });
 
     const img = document.createElement("img");
     img.src = p.photo;
