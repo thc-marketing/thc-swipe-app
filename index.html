@@ -1674,16 +1674,34 @@ logoutBtn.onclick = async () => {
   const manualQuoteAreas = ['Narita', 'Yokosuka', 'Omiya'];
   const longDistanceAreas = ['Yokohama', 'Tachikawa', 'Kawasaki', 'Machida', 'Makuhari', 'Maihama'];
 
-  function findAreaFromGeocode(result) {
-    const address = result && result.address;
-    if (!address) return null;
+  function findAreaFromGeocode(result, originalQuery) {
+    const address = result && result.address ? result.address : {};
     const values = Object.values(address).map(v => String(v).toLowerCase());
-    const joined = values.join(' | ');
+    const joined = (values.join(' | ') + ' | ' + String(result && result.display_name || '') + ' | ' + String(originalQuery || '')).toLowerCase();
+    // Prefer explicit administrative components from geocoding; also recognize common English/Japanese address spellings.
     const wardNames = Object.keys(transportFees);
-    const ward = wardNames.find(name => values.some(v => v.toLowerCase().includes(name.toLowerCase())) ||
-      joined.includes(name.toLowerCase() + '-ku') || joined.includes(name.toLowerCase() + ' city'));
+    const ward = wardNames.find(name => {
+      const n = name.toLowerCase();
+      const jp = {
+        Shibuya:'渋谷', Shinjuku:'新宿', Meguro:'目黒', Minato:'港区', Chiyoda:'千代田', Chuo:'中央区',
+        Shinagawa:'品川', Taito:'台東', Bunkyo:'文京', Toshima:'豊島', Nakano:'中野',
+        Suginami:'杉並', Setagaya:'世田谷', Ota:'大田', Koto:'江東', Sumida:'墨田',
+        Arakawa:'荒川', Kita:'北区', Nerima:'練馬', Itabashi:'板橋', Adachi:'足立',
+        Katsushika:'葛飾', Edogawa:'江戸川'
+      }[name] || '';
+      return values.some(v => v === n || v.includes(n + '-ku') || v.includes(n + ' city') || v.includes(n + ' ward')) ||
+        joined.includes(n + '-ku') || joined.includes(n + ' city') || (jp && joined.includes(jp));
+    });
     if (ward) return { area: ward, fee: transportFees[ward], kind: 'ward' };
-    const namedArea = [...manualQuoteAreas, ...longDistanceAreas].find(name => joined.includes(name.toLowerCase()));
+    const areaAliases = {
+      Yokohama: ['yokohama', '横浜'], Tachikawa: ['tachikawa', '立川'],
+      Kawasaki: ['kawasaki', '川崎'], Machida: ['machida', '町田'],
+      Makuhari: ['makuhari', '幕張'], Maihama: ['maihama', '舞浜'],
+      Narita: ['narita', '成田'], Yokosuka: ['yokosuka', '横須賀'], Omiya: ['omiya', '大宮']
+    };
+    const namedArea = [...manualQuoteAreas, ...longDistanceAreas].find(name =>
+      (areaAliases[name] || [name.toLowerCase()]).some(alias => joined.includes(alias.toLowerCase()))
+    );
     if (namedArea) return {
       area: namedArea,
       fee: manualQuoteAreas.includes(namedArea) ? null : 8000,
@@ -1709,31 +1727,34 @@ logoutBtn.onclick = async () => {
     try {
       // User-triggered single lookup; do not use this endpoint for autocomplete or bulk requests.
       const query = encodeURIComponent(addressText + ', Japan');
-      const response = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=' + query, {
-        headers: { 'Accept-Language': 'en' }
-      });
+      const response = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&countrycodes=jp&accept-language=en&q=' + query);
       if (!response.ok) throw new Error('Address lookup failed');
       const results = await response.json();
-      const match = results[0] && findAreaFromGeocode(results[0]);
-      if (!match) {
-        transportPrice.textContent = 'We could not confidently identify the fee area. Our team will confirm the transportation fee manually.';
+      const match = results[0] && findAreaFromGeocode(results[0], addressText);
+      // If geocoding returns no result, only use a clearly stated area in the user's own address text.
+      const explicitArea = Object.keys(transportFees).find(name =>
+        new RegExp('(^|[^a-z])' + name.toLowerCase() + '([^a-z]|$)', 'i').test(addressText)
+      );
+      const finalMatch = match || (explicitArea ? { area: explicitArea, fee: transportFees[explicitArea], kind: 'ward' } : null);
+      if (!finalMatch) {
+        transportPrice.textContent = 'We could not confidently identify the fee area. Try entering the full address including the ward/city, or our team will confirm the fee manually.';
         transportPrice.dataset.area = 'Manual review required';
         return;
       }
-      if (match.kind === 'long-distance' && Number(duration) < 120) {
-        transportPrice.textContent = match.area + ' · Outcalls of 120 minutes or longer only. Please change the duration or contact our team.';
-        transportPrice.dataset.area = match.area;
+      if (finalMatch.kind === 'long-distance' && Number.parseInt(duration, 10) < 120) {
+        transportPrice.textContent = finalMatch.area + ' · Outcalls of 120 minutes or longer only. Please change the duration or contact our team.';
+        transportPrice.dataset.area = finalMatch.area;
         return;
       }
-      if (match.kind === 'quote') {
-        transportPrice.textContent = match.area + ' · Please contact our team for a transportation quote (120 minutes or longer only).';
-        transportPrice.dataset.area = match.area;
+      if (finalMatch.kind === 'quote') {
+        transportPrice.textContent = finalMatch.area + ' · Please contact our team for a transportation quote (120 minutes or longer only).';
+        transportPrice.dataset.area = finalMatch.area;
         return;
       }
-      transportPrice.dataset.fee = String(match.fee);
-      transportPrice.dataset.area = match.area;
-      transportPrice.textContent = match.area + ' · Transportation fee: ¥' + match.fee.toLocaleString('ja-JP') +
-        (match.kind === 'long-distance' ? ' · 120-minute minimum' : '');
+      transportPrice.dataset.fee = String(finalMatch.fee);
+      transportPrice.dataset.area = finalMatch.area;
+      transportPrice.textContent = finalMatch.area + ' · Transportation fee: ¥' + finalMatch.fee.toLocaleString('ja-JP') +
+        (finalMatch.kind === 'long-distance' ? ' · 120-minute minimum' : '');
     } catch (error) {
       transportPrice.textContent = 'Address lookup is unavailable. Our team will confirm the transportation fee manually.';
       transportPrice.dataset.area = 'Manual review required';
