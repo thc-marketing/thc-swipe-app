@@ -1328,6 +1328,37 @@ logoutBtn.onclick = async () => {
     };
   }
 
+  const optionPricesJPY = new Map([
+    ['Handheld Remote Vibrator', 2000],
+    ['Vibrator', 3000],
+    ['Denma', 2000],
+    ['Movie Recording with Face', 15000],
+    ['Mobile Photography -1pic-', 1000],
+    ['Instant Blowjob', 3000],
+    ['Cum In Mouth', 3000],
+    ['Swallowing', 7000],
+    ['Facial', 5000],
+    ['Masturbation Appreciation', 2000],
+    ['Golden Shower', 2000],
+    ['Stockings', 2000],
+    ['Take Home Panty', 2000],
+    ['Rimjob', 3000],
+    ['Threesome', 5000],
+    ['Threesome Lesbian Play', 10000],
+    ['Lube Bath', 3000],
+    ['Masturbator', 3000],
+    ['Couple Threesome', 5000],
+    ['Couple Threesome Lesbian Play', 10000]
+  ]);
+
+  function optionPriceJPY(optionText) {
+    const normalized = String(optionText || '').trim().toLowerCase();
+    for (const [name, price] of optionPricesJPY) {
+      if (normalized === name.toLowerCase() || normalized.endsWith(name.toLowerCase())) return price;
+    }
+    return null;
+  }
+
   function renderOptions(groups) {
     const services = groups.services || [];
     const personal = groups.personal || [];
@@ -1355,7 +1386,11 @@ logoutBtn.onclick = async () => {
         checkbox.dataset.optionGroup = title;
         checkbox.dataset.optionName = option.text;
         const textWrap = document.createElement('span');
-        textWrap.textContent = option.note ? option.text + ' — ' + option.note : option.text;
+        const priceJPY = optionPriceJPY(option.text);
+        const optionLabel = option.note ? option.text + ' — ' + option.note : option.text;
+        textWrap.textContent = priceJPY == null
+          ? optionLabel
+          : optionLabel + ' — ¥' + priceJPY.toLocaleString('ja-JP') + ' JPY';
         label.append(checkbox, textWrap);
         optionList.append(label);
       });
