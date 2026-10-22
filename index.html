@@ -1010,28 +1010,28 @@ loadProfiles();
 <div id="authGate">
   <div class="authbox">
     <div style="color:#d8ad62;font-size:12px;font-weight:800;letter-spacing:2px">TOKYO HENTAI CLUB</div>
-    <h2 id="authTitle" style="margin-top:18px">Create your account</h2>
-    <p id="authSubtitle">Register to explore profiles and availability.</p>
+    <h2 id="authTitle" style="margin-top:18px">Welcome back</h2>
+    <p id="authSubtitle">Log in to continue to the profiles.</p>
     <form id="realAuthForm">
-      <div id="authNameWrap">
+      <div id="authNameWrap" hidden>
         <label for="authName">Display name</label>
-        <input id="authName" type="text" maxlength="60" autocomplete="nickname" required placeholder="Your display name">
+        <input id="authName" type="text" maxlength="60" autocomplete="nickname" placeholder="Your display name">
       </div>
       <label for="authEmail">Email address</label>
       <input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com">
       <label for="authPassword">Password</label>
-      <input id="authPassword" type="password" minlength="8" autocomplete="new-password" required placeholder="At least 8 characters">
-      <div id="authTermsWrap" style="margin-top:18px">
+      <input id="authPassword" type="password" minlength="8" autocomplete="current-password" required placeholder="Password">
+      <div id="authTermsWrap" style="margin-top:18px" hidden>
         <label class="authcheck">
-          <input id="authAdult" type="checkbox" required>
+          <input id="authAdult" type="checkbox">
           <span>I confirm I am at least 18 years old and agree to the applicable terms and privacy policy.</span>
         </label>
       </div>
-      <button class="authsubmit" id="authSubmit" type="submit">Create account</button>
+      <button class="authsubmit" id="authSubmit" type="submit">Log in</button>
     </form>
     <p id="authMessage" role="status" aria-live="polite"></p>
-    <p id="authSwitchText">Already registered?
-      <button class="authswitch" id="authSwitch" type="button">Log in</button>
+    <p id="authSwitchText">New here?
+      <button class="authswitch" id="authSwitch" type="button">Create an account</button>
     </p>
   </div>
 </div>
