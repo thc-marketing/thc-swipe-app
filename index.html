@@ -1435,19 +1435,34 @@ logoutBtn.onclick = async () => {
     }
     const get = id => document.getElementById(id).value;
     const contact = get('thc-contact');
+    const abbreviateOption = text => {
+      const clean = String(text || '').replace(/^Additional Services:\\s*/i, '').replace(/^Personal Options:\\s*/i, '').trim();
+      const known = {
+        'Cum In Mouth': 'CIM',
+        'Cum in Mouth': 'CIM',
+        'Deep Throat': 'DT',
+        'Vibrator': 'Vib',
+        'Denma': 'Denma'
+      };
+      if (known[clean]) return known[clean];
+      return clean
+        .replace(/\\bAdditional Services\\b:?/gi, '')
+        .replace(/\\bPersonal Options\\b:?/gi, '')
+        .trim();
+    };
     const selectedOptions = Array.from(
       optionList.querySelectorAll('input[type="checkbox"]:checked')
-    ).map(input => input.dataset.optionText);
+    ).map(input => abbreviateOption(input.dataset.optionText));
     const message = [
       'Hello THC! I would like to request a reservation.',
       'Girl: ' + profile.displayName,
       'Date: ' + get('thc-date'),
       'Time: ' + get('thc-time'),
       'Type: ' + get('thc-type'),
-      'Personal Options: ' + (selectedOptions.length ? selectedOptions.join(', ') : 'None'),
-      'Other notes: ' + (get('thc-notes').trim() || 'None'),
-      'Please confirm availability and the reservation. Thank you!'
-    ].join('\n');
+      ...(selectedOptions.length ? ['Options: ' + selectedOptions.join(', ')] : []),
+      ...(get('thc-notes').trim() ? ['Notes: ' + get('thc-notes').trim()] : []),
+      'Please confirm availability. Thank you!'
+    ].join('\\n');
 
     let url = '';
     if (contact === 'WhatsApp') {
