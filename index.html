@@ -93,7 +93,7 @@
 <section class="deck" id="deck" aria-label="Swipeable profiles">
 <div class="card" id="card">
 <div class="card-photo" id="art"></div><div class="shade"></div><div class="photo-tag" id="tag">✦ FEATURED PROFILE</div><div class="photo-count" id="count">01 / 03</div><div class="stamp like" id="yesStamp">LIKE ♥</div><div class="stamp nope" id="noStamp">NEXT →</div>
-<div class="profile"><div class="name-row"><h2 id="name">Mika <span class="age">24</span></h2><span class="verified">✓</span></div><div class="subline"><span class="status"><i class="dot"></i><span id="status">AVAILABLE NOW</span></span><span id="area">📍 Shinjuku</span></div><p class="bio" id="bio">Playful, confident, and ready to make your Tokyo night memorable.</p></div>
+<div class="profile"><div class="name-row"><h2 id="name">Mika <span class="age">24</span></h2><span class="verified">✓</span></div><div class="subline"><span class="status"><i class="dot"></i><span id="status">AVAILABLE NOW</span></span><span id="area">📍 Shinjuku</span></div><div id="rankBadge" style="display:inline-block;margin-top:8px;padding:5px 9px;border-radius:7px;background:#d8ad62;color:#171019;font-size:11px;font-weight:800">RANK UNAVAILABLE</div><p class="bio" id="bio">Playful, confident, and ready to make your Tokyo night memorable.</p></div>
 </div><div class="empty" id="empty"><div><div style="font-size:34px">♡</div><h3>You've seen everyone</h3><p>Start again to browse the demo profiles.</p><button id="restart">Start over</button></div></div>
 </section>
 <div class="controls"><button class="action star" id="save" aria-label="Save profile" title="Save profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg></button><button class="action skip" id="skip" aria-label="Skip profile" title="Skip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button><button class="action like" id="like" aria-label="Like profile" title="Like"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></button><button class="action skip" id="next" aria-label="Next profile" title="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button></div>
@@ -142,6 +142,31 @@ let index = 0;
 const liked = new Set();
 const saved = new Set();
 let dragStart = null;
+
+const bookingPricesJPY = {
+  Incall: {
+    Silver: { "60": 24000, "90": 34000, "120": 44000, extension: 12000 },
+    Gold: { "60": 26000, "90": 36000, "120": 46000, extension: 13000 },
+    Diamond: { "60": 29000, "90": 39000, "120": 49000, extension: 14000 },
+    "AV Star": { "60": 29000, "90": 39000, "120": 49000, extension: 14000 }
+  },
+  Outcall: {
+    Silver: { "60": 27000, "90": 37000, "120": 47000, extension: 12000 },
+    Gold: { "60": 29000, "90": 39000, "120": 49000, extension: 13000 },
+    Diamond: { "60": 32000, "90": 42000, "120": 52000, extension: 14000 },
+    "AV Star": { "60": 32000, "90": 42000, "120": 52000, extension: 14000 }
+  }
+};
+function normalizeRank(value) {
+  const rank = String(value || "").trim().toLowerCase();
+  if (rank.includes("silver")) return "Silver";
+  if (rank.includes("gold")) return "Gold";
+  if (rank.includes("diamond")) return "Diamond";
+  if (rank.includes("av star") || rank.includes("avstar")) return "AV Star";
+  return "";
+}
+function yen(value) { return "¥" + Number(value).toLocaleString("ja-JP"); }
+
   
 const $ = id => document.getElementById(id);
 
@@ -162,6 +187,7 @@ async function loadProfiles() {
         ...g,
         displayName: match ? match[1].trim() : g.name,
         age: match ? match[2] : "",
+        rank: normalizeRank(g.rank || g.grade || g.category || g.rankName || g.rank_name || g.type || g.course),
         area: "Tokyo",
         bio: "View her official profile for details and available options.",
         tag: g.statusType === "now" ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
@@ -227,6 +253,8 @@ function render() {
   document.querySelector(".status").style.background =
     p.statusType === "now" ? "#1d7b5e" : "#75552a";
   $("area").textContent = "📍 " + p.area;
+  $("rankBadge").textContent = p.rank ? p.rank.toUpperCase() : "RANK UNAVAILABLE";
+  $("rankBadge").style.background = p.rank === "Silver" ? "#c9c9c9" : p.rank === "Gold" ? "#e5c477" : p.rank === "Diamond" ? "#31bfe9" : p.rank === "AV Star" ? "#ff9fcf" : "#777";
   $("bio").textContent = p.bio;
   $("tag").textContent = p.tag;
   $("count").textContent =
@@ -1266,11 +1294,12 @@ logoutBtn.onclick = async () => {
         <input id="thc-time" type="time" required>
         <label for="thc-duration">Booking duration</label>
         <select id="thc-duration" required>
-          <option value="60 minutes">60 minutes</option>
-          <option value="90 minutes">90 minutes</option>
-          <option value="120 minutes">120 minutes</option>
-          <option value="Extension — 30 minutes">Extension — 30 minutes</option>
+          <option value="60">60 minutes</option>
+          <option value="90">90 minutes</option>
+          <option value="120">120 minutes</option>
+          <option value="extension">Extension — 30 minutes</option>
         </select>
+        <p id="thc-duration-price" data-price="" style="margin:6px 0 12px;padding:10px;border:1px solid #8b6b35;border-radius:9px;color:#f5e4bd;font-size:13px">Select a girl to see duration prices.</p>
         <label for="thc-type">Booking type</label>
         <select id="thc-type">
           <option>Incall</option>
@@ -1428,12 +1457,30 @@ logoutBtn.onclick = async () => {
     }
   }
 
+  function updateDurationPrice() {
+    const profile = profileById.get(girlSelect.value);
+    const duration = document.getElementById('thc-duration').value;
+    const type = document.getElementById('thc-type').value;
+    const box = document.getElementById('thc-duration-price');
+    const rank = profile && profile.rank;
+    const price = rank && bookingPricesJPY[type] && bookingPricesJPY[type][rank]
+      ? bookingPricesJPY[type][rank][duration] : null;
+    box.dataset.price = price == null ? '' : yen(price) + ' JPY';
+    box.textContent = price == null
+      ? (profile ? 'Price unavailable: this girl’s rank was not provided by the profile data.' : 'Select a girl to see duration prices.')
+      : rank + ' · ' + type + ' · ' + (duration === 'extension' ? 'Extension 30min' : duration + 'min') + ': ' + yen(price) + ' JPY';
+  }
+
+  document.getElementById('thc-duration').addEventListener('change', updateDurationPrice);
+  document.getElementById('thc-type').addEventListener('change', updateDurationPrice);
+
   function setSelectedGirl(profile) {
     if (!profile) return;
     girlSelect.value = String(profile.id);
     document.getElementById('thc-reserve-title').textContent =
       'Request ' + profile.displayName;
     loadOptionsForGirl(profile);
+    updateDurationPrice();
   }
 
   function openReservation(profile) {
@@ -1443,6 +1490,7 @@ logoutBtn.onclick = async () => {
     else {
       document.getElementById('thc-reserve-title').textContent = 'Request Reservation';
       renderOptions([]);
+      updateDurationPrice();
     }
     if (profile && profile.id != null) {
       girlSelect.disabled = true;
@@ -1503,6 +1551,7 @@ logoutBtn.onclick = async () => {
       ? 'Request ' + profile.displayName
       : 'Request Reservation';
     loadOptionsForGirl(profile);
+    updateDurationPrice();
   });
 
   document.getElementById('thc-reserve-close').onclick = () => {
@@ -1562,7 +1611,9 @@ logoutBtn.onclick = async () => {
       'Girl: ' + profile.displayName,
       'Date: ' + get('thc-date'),
       'Time: ' + get('thc-time'),
-      'Duration: ' + get('thc-duration'),
+      'Duration: ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes'),
+      'Duration price: ' + (document.getElementById('thc-duration-price').dataset.price || 'Please confirm with staff'),
+      'Girl rank: ' + (profile.rank || 'Rank unavailable'),
       'Type: ' + get('thc-type'),
       'Additional Services: ' + serviceOptions.join(', '),
       'Personal Options: ' + personalOptions.join(', '),
