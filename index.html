@@ -1861,19 +1861,37 @@ logoutBtn.onclick = async () => {
     const personalOptions = checkedOptions
       .filter(option => option.group === 'Personal Options')
       .map(option => option.name);
-    const message = [
+    const durationPrice = profile.rank && bookingPricesJPY[get('thc-type')] && bookingPricesJPY[get('thc-type')][profile.rank]
+      ? bookingPricesJPY[get('thc-type')][profile.rank][get('thc-duration')]
+      : null;
+    const selectedOptionInputs = Array.from(
+      optionList.querySelectorAll('input[type="checkbox"]:checked')
+    );
+    const selectedOptionPrices = selectedOptionInputs.map(input =>
+      optionPriceJPY(input.dataset.optionName)
+    );
+    const allSelectedOptionsPriced = selectedOptionPrices.every(price => price != null);
+    const totalAmount = durationPrice != null && allSelectedOptionsPriced
+      ? durationPrice + selectedOptionPrices.reduce((sum, price) => sum + price, 0)
+      : null;
+    const messageLines = [
       'Hello THC! I would like to request a reservation.',
       'Girl: ' + profile.displayName,
       'Date: ' + get('thc-date'),
       'Time: ' + get('thc-time'),
       'Duration: ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes'),
-      'Duration price: ' + (document.getElementById('thc-duration-price').dataset.price || 'Please confirm with staff'),
+      'Duration price: ' + (durationPrice == null ? 'Please confirm with staff' : yen(durationPrice) + ' JPY'),
       'Girl rank: ' + (profile.rank || 'Rank unavailable'),
       'Type: ' + get('thc-type'),
       'Additional Services: ' + serviceOptions.join(', '),
       'Personal Options: ' + personalOptions.join(', '),
-      'Please confirm availability. Thank you!'
-    ].join('\n');
+      'Total amount: ' + (totalAmount == null ? 'Please confirm with staff' : yen(totalAmount) + ' JPY')
+    ];
+    if (get('thc-type') === 'Outcall') {
+      messageLines.push('Delivery fee: Not yet included');
+    }
+    messageLines.push('Please confirm availability. Thank you!');
+    const message = messageLines.join('\\n');
 
     let url = '';
     if (contact === 'WhatsApp') {
