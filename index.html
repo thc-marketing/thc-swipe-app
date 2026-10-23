@@ -1643,9 +1643,15 @@ logoutBtn.onclick = async () => {
   ]);
 
   function optionPriceJPY(optionText) {
-    const normalized = String(optionText || '').trim().toLowerCase();
+    // API option labels may include a price, note, or other text around the name.
+    const normalized = String(optionText || '')
+      .toLowerCase()
+      .replace(/\\bcum\\s*in\\s*mouth\\b|\\bcim\\b/g, 'cum in mouth')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
     for (const [name, price] of optionPricesJPY) {
-      if (normalized === name.toLowerCase() || normalized.endsWith(name.toLowerCase())) return price;
+      const key = name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      if (normalized === key || normalized.includes(key)) return price;
     }
     return null;
   }
@@ -1874,23 +1880,22 @@ logoutBtn.onclick = async () => {
     const totalAmount = durationPrice != null && allSelectedOptionsPriced
       ? durationPrice + selectedOptionPrices.reduce((sum, price) => sum + price, 0)
       : null;
+    const totalPriceText = totalAmount == null
+      ? 'Please confirm with staff'
+      : yen(totalAmount) + ' JPY' +
+        (get('thc-type') === 'Outcall' ? ' (Delivery fee not included yet)' : '');
     const messageLines = [
       'Hello THC! I would like to request a reservation.',
       'Girl: ' + profile.displayName,
       'Date: ' + get('thc-date'),
       'Time: ' + get('thc-time'),
       'Duration: ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes'),
-      'Duration price: ' + (durationPrice == null ? 'Please confirm with staff' : yen(durationPrice) + ' JPY'),
       'Girl rank: ' + (profile.rank || 'Rank unavailable'),
       'Type: ' + get('thc-type'),
       'Additional Services: ' + serviceOptions.join(', '),
       'Personal Options: ' + personalOptions.join(', '),
-      'Total amount: ' + (totalAmount == null ? 'Please confirm with staff' : yen(totalAmount) + ' JPY')
+      'Total price: ' + totalPriceText
     ];
-    if (get('thc-type') === 'Outcall') {
-      messageLines.push('Delivery fee: Not yet included');
-    }
-    messageLines.push('Please confirm availability. Thank you!');
     const message = messageLines.join('\\n');
 
     let url = '';
