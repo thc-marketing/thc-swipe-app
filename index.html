@@ -384,6 +384,82 @@ async function loadProfiles() {
   }
 }
 
+let profileRefreshInProgress = false;
+
+async function refreshProfilesSilently() {
+  if (profileRefreshInProgress) return;
+  profileRefreshInProgress = true;
+
+  try {
+    const response = await fetch(API_URL, { cache: "no-store" });
+    if (!response.ok) return;
+
+    const data = await response.json();
+    if (!Array.isArray(data.girls) || !data.girls.length) return;
+
+    const latestProfiles = data.girls.map(g => {
+      const rawName = String(g.name || "");
+      const match = rawName.match(/^(.*?)\s*\((\d+)\)/);
+      const displayName = match ? match[1].trim() : rawName;
+      return {
+        ...g,
+        displayName,
+        age: match ? match[2] : "",
+        rank: rankForProfile(g, displayName),
+        area: "Tokyo",
+        bio: "View her official profile for details and available options.",
+        tag: g.statusType === "now" ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
+      };
+    });
+
+    const profileKey = profile => {
+      if (profile.id != null) return "id:" + String(profile.id);
+      if (profile.profileUrl) return "url:" + String(profile.profileUrl);
+      return "name:" + String(profile.name || profile.displayName || "").trim().toLowerCase();
+    };
+
+    // Update existing objects in place so the active profile and swipe index stay put.
+    const existingByKey = new Map(profiles.map(profile => [profileKey(profile), profile]));
+    latestProfiles.forEach(latest => {
+      const existing = existingByKey.get(profileKey(latest));
+      if (existing) {
+        Object.assign(existing, latest);
+      } else {
+        // Append new profiles instead of inserting/reordering, preserving the current position.
+        profiles.push(latest);
+        existingByKey.set(profileKey(latest), latest);
+      }
+    });
+
+    const current = profiles[index];
+    if (current) {
+      $("rankBadge").textContent = current.rank ? current.rank.toUpperCase() : "RANK UNAVAILABLE";
+      $("rankBadge").style.background =
+        current.rank === "Silver" ? "#c9c9c9" :
+        current.rank === "Gold" ? "#e5c477" :
+        current.rank === "Diamond" ? "#31bfe9" :
+        current.rank === "AV Star" ? "#ff9fcf" : "#777";
+
+      $("status").textContent = current.status || "";
+      const statusElement = document.querySelector(".status");
+      if (statusElement) {
+        statusElement.style.background =
+          current.statusType === "now" ? "#1d7b5e" : "#75552a";
+      }
+      $("tag").textContent = current.tag || "";
+      $("area").textContent = "📍 " + (current.area || "Tokyo");
+      $("bio").textContent = current.bio || "";
+      $("count").textContent =
+        String(index + 1).padStart(2, "0") + " / " +
+        String(profiles.length).padStart(2, "0");
+    }
+  } catch (error) {
+    // A background refresh must never interrupt the current swipe session.
+  } finally {
+    profileRefreshInProgress = false;
+  }
+}
+
 function render() {
   if (index >= profiles.length) {
     $("card").style.display = "none";
@@ -1200,6 +1276,15 @@ deck.addEventListener("pointerup", e => {
 });
 
 loadProfiles();
+
+// Silently refresh live profile data every five minutes.
+if (!window.__thcProfileRefreshTimer) {
+  window.__thcProfileRefreshTimer = window.setInterval(() => {
+    if (document.visibilityState === "visible") {
+      refreshProfilesSilently();
+    }
+  }, 5 * 60 * 1000);
+}
 </script>
 
 <style>
@@ -1558,9 +1643,15 @@ logoutBtn.onclick = async () => {
   ]);
 
   function optionPriceJPY(optionText) {
-    const normalized = String(optionText || '').trim().toLowerCase();
+    // Match known option names even when API labels include notes or prices.
+    const normalized = String(optionText || '')
+      .toLowerCase()
+      .replace(/\bcim\b|\bcum\s*in\s*mouth\b/g, 'cum in mouth')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
     for (const [name, price] of optionPricesJPY) {
-      if (normalized === name.toLowerCase() || normalized.endsWith(name.toLowerCase())) return price;
+      const key = name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      if (normalized === key || normalized.includes(key)) return price;
     }
     return null;
   }
@@ -1776,19 +1867,36 @@ logoutBtn.onclick = async () => {
     const personalOptions = checkedOptions
       .filter(option => option.group === 'Personal Options')
       .map(option => option.name);
-    const message = [
+    const durationPrice = profile.rank && bookingPricesJPY[get('thc-type')] && bookingPricesJPY[get('thc-type')][profile.rank]
+      ? bookingPricesJPY[get('thc-type')][profile.rank][get('thc-duration')]
+      : null;
+    const selectedOptionInputs = Array.from(
+      optionList.querySelectorAll('input[type="checkbox"]:checked')
+    );
+    const selectedOptionPrices = selectedOptionInputs.map(input =>
+      optionPriceJPY(input.dataset.optionName)
+    );
+    const allSelectedOptionsPriced = selectedOptionPrices.every(price => price != null);
+    const totalAmount = durationPrice != null && allSelectedOptionsPriced
+      ? durationPrice + selectedOptionPrices.reduce((sum, price) => sum + price, 0)
+      : null;
+    const totalPriceText = totalAmount == null
+      ? 'Please confirm with staff'
+      : yen(totalAmount) + ' JPY' +
+        (get('thc-type') === 'Outcall' ? ' (Delivery fee not included yet)' : '');
+    const messageLines = [
       'Hello THC! I would like to request a reservation.',
       'Girl: ' + profile.displayName,
       'Date: ' + get('thc-date'),
       'Time: ' + get('thc-time'),
       'Duration: ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes'),
-      'Duration price: ' + (document.getElementById('thc-duration-price').dataset.price || 'Please confirm with staff'),
       'Girl rank: ' + (profile.rank || 'Rank unavailable'),
       'Type: ' + get('thc-type'),
       'Additional Services: ' + serviceOptions.join(', '),
       'Personal Options: ' + personalOptions.join(', '),
-      'Please confirm availability. Thank you!'
-    ].join('\n');
+      'Total price: ' + totalPriceText
+    ];
+    const message = messageLines.join('\\n');
 
     let url = '';
     if (contact === 'WhatsApp') {
