@@ -1476,14 +1476,10 @@ logoutBtn.onclick = async () => {
           <option>Outcall</option>
         </select>
         <div id="thc-outcall-fields" hidden>
-          <label for="thc-hotel-name">Hotel or Airbnb name</label>
-          <input id="thc-hotel-name" type="text" placeholder="Enter hotel or Airbnb name">
-          <label for="thc-outcall-address">Full destination address</label>
-          <input id="thc-outcall-address" type="text" placeholder="Enter the full address in Japan">
-          <button id="thc-calculate-transport" type="button">Check transportation fee</button>
-          <p id="thc-transport-price" data-fee="" data-area="" style="margin:6px 0 12px;padding:10px;border:1px solid #8b6b35;border-radius:9px;color:#f5e4bd;font-size:13px">Enter the destination address to calculate the fee.</p>
-          <p style="font-size:11px;color:#c0aebb;line-height:1.5">Please enter the full address. If the location cannot be identified confidently, our team will confirm the fee manually.</p>
-        </div>
+  <p style="margin:6px 0 12px;padding:10px;border:1px solid #8b6b35;border-radius:9px;color:#f5e4bd;font-size:13px;line-height:1.5">
+    Outcall transportation fees apply. The fee depends on your destination and will be confirmed by our team.
+  </p>
+</div>
         <label for="thc-contact">Preferred contact method</label>
 <select id="thc-contact">
   <option value="WhatsApp">WhatsApp</option>
@@ -1652,15 +1648,11 @@ logoutBtn.onclick = async () => {
 
   document.getElementById('thc-duration').addEventListener('change', updateDurationPrice);
   document.getElementById('thc-type').addEventListener('change', () => {
-    updateDurationPrice();
-    const outcall = document.getElementById('thc-type').value === 'Outcall';
-    document.getElementById('thc-outcall-fields').hidden = !outcall;
-    document.getElementById('thc-transport-price').dataset.fee = '';
-    document.getElementById('thc-transport-price').dataset.area = '';
-    document.getElementById('thc-transport-price').textContent = outcall
-      ? 'Enter the destination address to calculate the fee.'
-      : 'Transportation fee applies to outcalls only.';
-  });
+  updateDurationPrice();
+
+  const outcall = document.getElementById('thc-type').value === 'Outcall';
+  document.getElementById('thc-outcall-fields').hidden = !outcall;
+});
 
   const transportPrice = document.getElementById('thc-transport-price');
   const transportFees = {
