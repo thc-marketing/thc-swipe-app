@@ -1554,7 +1554,15 @@ logoutBtn.onclick = async () => {
           <option value="120">120 minutes</option>
           <option value="extension">Extension — 30 minutes</option>
         </select>
-        <p id="thc-duration-price" data-price="" style="margin:6px 0 12px;padding:10px;border:1px solid #8b6b35;border-radius:9px;color:#f5e4bd;font-size:13px">Select a girl to see duration prices.</p>
+        <p id="thc-duration-price" data-price=""
+   style="margin:6px 0 8px;padding:10px;border:1px solid #8b6b35;border-radius:9px;color:#f5e4bd;font-size:13px">
+  Select a girl to see duration prices.
+</p>
+
+<p id="thc-total-price"
+   style="margin:6px 0 12px;padding:12px;border:1px solid #d8ad62;border-radius:9px;color:#f5d778;font-size:16px;font-weight:800">
+  Estimated total: —
+</p>
         <label for="thc-type">Booking type</label>
         <select id="thc-type">
           <option>Incall</option>
@@ -1719,21 +1727,91 @@ logoutBtn.onclick = async () => {
   }
 
   function updateDurationPrice() {
-    const profile = profileById.get(girlSelect.value);
-    const duration = document.getElementById('thc-duration').value;
-    const type = document.getElementById('thc-type').value;
-    const box = document.getElementById('thc-duration-price');
-    const rank = profile && profile.rank;
-    const price = rank && bookingPricesJPY[type] && bookingPricesJPY[type][rank]
-      ? bookingPricesJPY[type][rank][duration] : null;
-    box.dataset.price = price == null ? '' : yen(price) + ' JPY';
-    box.textContent = price == null
-      ? (profile ? 'Price unavailable: this girl’s rank was not provided by the profile data.' : 'Select a girl to see duration prices.')
-      : rank + ' · ' + type + ' · ' + (duration === 'extension' ? 'Extension 30min' : duration + 'min') + ': ' + yen(price) + ' JPY';
+  const profile = profileById.get(girlSelect.value);
+  const duration = document.getElementById('thc-duration').value;
+  const type = document.getElementById('thc-type').value;
+  const durationBox = document.getElementById('thc-duration-price');
+  const totalBox = document.getElementById('thc-total-price');
+
+  const rank = profile && profile.rank;
+
+  const durationPrice =
+    rank &&
+    bookingPricesJPY[type] &&
+    bookingPricesJPY[type][rank]
+      ? bookingPricesJPY[type][rank][duration]
+      : null;
+
+  durationBox.dataset.price =
+    durationPrice == null ? '' : String(durationPrice);
+
+  durationBox.textContent = durationPrice == null
+    ? (
+        profile
+          ? 'Price unavailable: this girl’s rank or duration price is missing.'
+          : 'Select a girl to see duration prices.'
+      )
+    : rank + ' · ' + type + ' · ' +
+      (duration === 'extension'
+        ? 'Extension 30min'
+        : duration + 'min') +
+      ': ' + yen(durationPrice) + ' JPY';
+
+  // Get every selected option, including Additional Services
+  // and Personal Options.
+  const selectedInputs = Array.from(
+    optionList.querySelectorAll('input[type="checkbox"]:checked')
+  );
+
+  const selectedPrices = selectedInputs.map(input =>
+    optionPriceJPY(input.dataset.optionName)
+  );
+
+  const allOptionsPriced = selectedPrices.every(
+    price => price !== null
+  );
+
+  if (durationPrice == null || !allOptionsPriced) {
+    totalBox.textContent =
+      'Estimated total: Please confirm with staff';
+    return;
+  }
+
+  const optionsTotal = selectedPrices.reduce(
+    (sum, price) => sum + price,
+    0
+  );
+
+  const total = durationPrice + optionsTotal;
+
+  totalBox.textContent =
+    'Estimated total: ' + yen(total) + ' JPY' +
+    (type === 'Outcall'
+      ? ' (delivery fee not included)'
+      : '');
+}
+
+document.getElementById('thc-duration')
+  .addEventListener('change', updateDurationPrice);
+
+document.getElementById('thc-type')
+  .addEventListener('change', updateDurationPrice);
+
+// Recalculate immediately whenever an option is checked or unchecked.
+optionList.addEventListener('change', event => {
+  if (event.target.matches('input[type="checkbox"]')) {
+    updateDurationPrice();
+  }
+});   : rank + ' · ' + type + ' · ' + (duration === 'extension' ? 'Extension 30min' : duration + 'min') + ': ' + yen(price) + ' JPY';
   }
 
   document.getElementById('thc-duration').addEventListener('change', updateDurationPrice);
   document.getElementById('thc-type').addEventListener('change', updateDurationPrice);
+  optionList.addEventListener('change', event => {
+  if (event.target.matches('input[type="checkbox"]')) {
+    updateDurationPrice();
+  }
+});
 
   function setSelectedGirl(profile) {
     if (!profile) return;
