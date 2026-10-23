@@ -1643,10 +1643,10 @@ logoutBtn.onclick = async () => {
   ]);
 
   function optionPriceJPY(optionText) {
-    // API option labels may include a price, note, or other text around the name.
+    // Match known option names even when API labels include notes or prices.
     const normalized = String(optionText || '')
       .toLowerCase()
-      .replace(/\\bcum\\s*in\\s*mouth\\b|\\bcim\\b/g, 'cum in mouth')
+      .replace(/\bcim\b|\bcum\s*in\s*mouth\b/g, 'cum in mouth')
       .replace(/[^a-z0-9]+/g, ' ')
       .trim();
     for (const [name, price] of optionPricesJPY) {
