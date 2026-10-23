@@ -384,82 +384,6 @@ async function loadProfiles() {
   }
 }
 
-let profileRefreshInProgress = false;
-
-async function refreshProfilesSilently() {
-  if (profileRefreshInProgress) return;
-  profileRefreshInProgress = true;
-
-  try {
-    const response = await fetch(API_URL, { cache: "no-store" });
-    if (!response.ok) return;
-
-    const data = await response.json();
-    if (!Array.isArray(data.girls) || !data.girls.length) return;
-
-    const latestProfiles = data.girls.map(g => {
-      const rawName = String(g.name || "");
-      const match = rawName.match(/^(.*?)\s*\((\d+)\)/);
-      const displayName = match ? match[1].trim() : rawName;
-      return {
-        ...g,
-        displayName,
-        age: match ? match[2] : "",
-        rank: rankForProfile(g, displayName),
-        area: "Tokyo",
-        bio: "View her official profile for details and available options.",
-        tag: g.statusType === "now" ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
-      };
-    });
-
-    const profileKey = profile => {
-      if (profile.id != null) return "id:" + String(profile.id);
-      if (profile.profileUrl) return "url:" + String(profile.profileUrl);
-      return "name:" + String(profile.name || profile.displayName || "").trim().toLowerCase();
-    };
-
-    // Update existing objects in place so the active profile and swipe index stay put.
-    const existingByKey = new Map(profiles.map(profile => [profileKey(profile), profile]));
-    latestProfiles.forEach(latest => {
-      const existing = existingByKey.get(profileKey(latest));
-      if (existing) {
-        Object.assign(existing, latest);
-      } else {
-        // Append new profiles instead of inserting/reordering, preserving the current position.
-        profiles.push(latest);
-        existingByKey.set(profileKey(latest), latest);
-      }
-    });
-
-    const current = profiles[index];
-    if (current) {
-      $("rankBadge").textContent = current.rank ? current.rank.toUpperCase() : "RANK UNAVAILABLE";
-      $("rankBadge").style.background =
-        current.rank === "Silver" ? "#c9c9c9" :
-        current.rank === "Gold" ? "#e5c477" :
-        current.rank === "Diamond" ? "#31bfe9" :
-        current.rank === "AV Star" ? "#ff9fcf" : "#777";
-
-      $("status").textContent = current.status || "";
-      const statusElement = document.querySelector(".status");
-      if (statusElement) {
-        statusElement.style.background =
-          current.statusType === "now" ? "#1d7b5e" : "#75552a";
-      }
-      $("tag").textContent = current.tag || "";
-      $("area").textContent = "📍 " + (current.area || "Tokyo");
-      $("bio").textContent = current.bio || "";
-      $("count").textContent =
-        String(index + 1).padStart(2, "0") + " / " +
-        String(profiles.length).padStart(2, "0");
-    }
-  } catch (error) {
-    // A background refresh must never interrupt the current swipe session.
-  } finally {
-    profileRefreshInProgress = false;
-  }
-}
-
 function render() {
   if (index >= profiles.length) {
     $("card").style.display = "none";
@@ -1276,15 +1200,6 @@ deck.addEventListener("pointerup", e => {
 });
 
 loadProfiles();
-
-// Silently refresh live profile data every five minutes.
-if (!window.__thcProfileRefreshTimer) {
-  window.__thcProfileRefreshTimer = window.setInterval(() => {
-    if (document.visibilityState === "visible") {
-      refreshProfilesSilently();
-    }
-  }, 5 * 60 * 1000);
-}
 </script>
 
 <style>
@@ -1554,20 +1469,21 @@ logoutBtn.onclick = async () => {
           <option value="120">120 minutes</option>
           <option value="extension">Extension — 30 minutes</option>
         </select>
-        <p id="thc-duration-price" data-price=""
-   style="margin:6px 0 8px;padding:10px;border:1px solid #8b6b35;border-radius:9px;color:#f5e4bd;font-size:13px">
-  Select a girl to see duration prices.
-</p>
-
-<p id="thc-total-price"
-   style="margin:6px 0 12px;padding:12px;border:1px solid #d8ad62;border-radius:9px;color:#f5d778;font-size:16px;font-weight:800">
-  Estimated total: —
-</p>
+        <p id="thc-duration-price" data-price="" style="margin:6px 0 12px;padding:10px;border:1px solid #8b6b35;border-radius:9px;color:#f5e4bd;font-size:13px">Select a girl to see duration prices.</p>
         <label for="thc-type">Booking type</label>
         <select id="thc-type">
           <option>Incall</option>
           <option>Outcall</option>
         </select>
+        <div id="thc-outcall-fields" hidden>
+          <label for="thc-hotel-name">Hotel or Airbnb name</label>
+          <input id="thc-hotel-name" type="text" placeholder="Enter hotel or Airbnb name">
+          <label for="thc-outcall-address">Full destination address</label>
+          <input id="thc-outcall-address" type="text" placeholder="Enter the full address in Japan">
+          <button id="thc-calculate-transport" type="button">Check transportation fee</button>
+          <p id="thc-transport-price" data-fee="" data-area="" style="margin:6px 0 12px;padding:10px;border:1px solid #8b6b35;border-radius:9px;color:#f5e4bd;font-size:13px">Enter the destination address to calculate the fee.</p>
+          <p style="font-size:11px;color:#c0aebb;line-height:1.5">Please enter the full address. If the location cannot be identified confidently, our team will confirm the fee manually.</p>
+        </div>
         <label for="thc-contact">Preferred contact method</label>
 <select id="thc-contact">
   <option value="WhatsApp">WhatsApp</option>
@@ -1651,15 +1567,9 @@ logoutBtn.onclick = async () => {
   ]);
 
   function optionPriceJPY(optionText) {
-    // Match known option names even when API labels include notes or prices.
-    const normalized = String(optionText || '')
-      .toLowerCase()
-      .replace(/\bcim\b|\bcum\s*in\s*mouth\b/g, 'cum in mouth')
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim();
+    const normalized = String(optionText || '').trim().toLowerCase();
     for (const [name, price] of optionPricesJPY) {
-      const key = name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-      if (normalized === key || normalized.includes(key)) return price;
+      if (normalized === name.toLowerCase() || normalized.endsWith(name.toLowerCase())) return price;
     }
     return null;
   }
@@ -1727,91 +1637,138 @@ logoutBtn.onclick = async () => {
   }
 
   function updateDurationPrice() {
-  const profile = profileById.get(girlSelect.value);
-  const duration = document.getElementById('thc-duration').value;
-  const type = document.getElementById('thc-type').value;
-  const durationBox = document.getElementById('thc-duration-price');
-  const totalBox = document.getElementById('thc-total-price');
-
-  const rank = profile && profile.rank;
-
-  const durationPrice =
-    rank &&
-    bookingPricesJPY[type] &&
-    bookingPricesJPY[type][rank]
-      ? bookingPricesJPY[type][rank][duration]
-      : null;
-
-  durationBox.dataset.price =
-    durationPrice == null ? '' : String(durationPrice);
-
-  durationBox.textContent = durationPrice == null
-    ? (
-        profile
-          ? 'Price unavailable: this girl’s rank or duration price is missing.'
-          : 'Select a girl to see duration prices.'
-      )
-    : rank + ' · ' + type + ' · ' +
-      (duration === 'extension'
-        ? 'Extension 30min'
-        : duration + 'min') +
-      ': ' + yen(durationPrice) + ' JPY';
-
-  // Get every selected option, including Additional Services
-  // and Personal Options.
-  const selectedInputs = Array.from(
-    optionList.querySelectorAll('input[type="checkbox"]:checked')
-  );
-
-  const selectedPrices = selectedInputs.map(input =>
-    optionPriceJPY(input.dataset.optionName)
-  );
-
-  const allOptionsPriced = selectedPrices.every(
-    price => price !== null
-  );
-
-  if (durationPrice == null || !allOptionsPriced) {
-    totalBox.textContent =
-      'Estimated total: Please confirm with staff';
-    return;
-  }
-
-  const optionsTotal = selectedPrices.reduce(
-    (sum, price) => sum + price,
-    0
-  );
-
-  const total = durationPrice + optionsTotal;
-
-  totalBox.textContent =
-    'Estimated total: ' + yen(total) + ' JPY' +
-    (type === 'Outcall'
-      ? ' (delivery fee not included)'
-      : '');
-}
-
-document.getElementById('thc-duration')
-  .addEventListener('change', updateDurationPrice);
-
-document.getElementById('thc-type')
-  .addEventListener('change', updateDurationPrice);
-
-// Recalculate immediately whenever an option is checked or unchecked.
-optionList.addEventListener('change', event => {
-  if (event.target.matches('input[type="checkbox"]')) {
-    updateDurationPrice();
-  }
-});   : rank + ' · ' + type + ' · ' + (duration === 'extension' ? 'Extension 30min' : duration + 'min') + ': ' + yen(price) + ' JPY';
+    const profile = profileById.get(girlSelect.value);
+    const duration = document.getElementById('thc-duration').value;
+    const type = document.getElementById('thc-type').value;
+    const box = document.getElementById('thc-duration-price');
+    const rank = profile && profile.rank;
+    const price = rank && bookingPricesJPY[type] && bookingPricesJPY[type][rank]
+      ? bookingPricesJPY[type][rank][duration] : null;
+    box.dataset.price = price == null ? '' : yen(price) + ' JPY';
+    box.textContent = price == null
+      ? (profile ? 'Price unavailable: this girl’s rank was not provided by the profile data.' : 'Select a girl to see duration prices.')
+      : rank + ' · ' + type + ' · ' + (duration === 'extension' ? 'Extension 30min' : duration + 'min') + ': ' + yen(price) + ' JPY';
   }
 
   document.getElementById('thc-duration').addEventListener('change', updateDurationPrice);
-  document.getElementById('thc-type').addEventListener('change', updateDurationPrice);
-  optionList.addEventListener('change', event => {
-  if (event.target.matches('input[type="checkbox"]')) {
+  document.getElementById('thc-type').addEventListener('change', () => {
     updateDurationPrice();
+    const outcall = document.getElementById('thc-type').value === 'Outcall';
+    document.getElementById('thc-outcall-fields').hidden = !outcall;
+    document.getElementById('thc-transport-price').dataset.fee = '';
+    document.getElementById('thc-transport-price').dataset.area = '';
+    document.getElementById('thc-transport-price').textContent = outcall
+      ? 'Enter the destination address to calculate the fee.'
+      : 'Transportation fee applies to outcalls only.';
+  });
+
+  const transportPrice = document.getElementById('thc-transport-price');
+  const transportFees = {
+    'Shibuya': 2000, 'Shinjuku': 2000, 'Meguro': 2000, 'Minato': 2000,
+    'Chiyoda': 2000, 'Chuo': 2000,
+    'Shinagawa': 3000, 'Taito': 3000, 'Bunkyo': 3000, 'Toshima': 3000, 'Nakano': 3000,
+    'Suginami': 4000, 'Setagaya': 4000, 'Ota': 4000, 'Koto': 4000,
+    'Sumida': 4000, 'Arakawa': 4000, 'Kita': 4000,
+    'Nerima': 5000, 'Itabashi': 5000, 'Adachi': 5000, 'Katsushika': 5000, 'Edogawa': 5000
+  };
+  const manualQuoteAreas = ['Narita', 'Yokosuka', 'Omiya'];
+  const longDistanceAreas = ['Yokohama', 'Tachikawa', 'Kawasaki', 'Machida', 'Makuhari', 'Maihama'];
+
+  function findAreaFromGeocode(result, originalQuery) {
+    const address = result && result.address ? result.address : {};
+    const values = Object.values(address).map(v => String(v).toLowerCase());
+    const joined = (values.join(' | ') + ' | ' + String(result && result.display_name || '') + ' | ' + String(originalQuery || '')).toLowerCase();
+    // Prefer explicit administrative components from geocoding; also recognize common English/Japanese address spellings.
+    const wardNames = Object.keys(transportFees);
+    const ward = wardNames.find(name => {
+      const n = name.toLowerCase();
+      const jp = {
+        Shibuya:'渋谷', Shinjuku:'新宿', Meguro:'目黒', Minato:'港区', Chiyoda:'千代田', Chuo:'中央区',
+        Shinagawa:'品川', Taito:'台東', Bunkyo:'文京', Toshima:'豊島', Nakano:'中野',
+        Suginami:'杉並', Setagaya:'世田谷', Ota:'大田', Koto:'江東', Sumida:'墨田',
+        Arakawa:'荒川', Kita:'北区', Nerima:'練馬', Itabashi:'板橋', Adachi:'足立',
+        Katsushika:'葛飾', Edogawa:'江戸川'
+      }[name] || '';
+      return values.some(v => v === n || v.includes(n + '-ku') || v.includes(n + ' city') || v.includes(n + ' ward')) ||
+        joined.includes(n + '-ku') || joined.includes(n + ' city') || (jp && joined.includes(jp));
+    });
+    if (ward) return { area: ward, fee: transportFees[ward], kind: 'ward' };
+    const areaAliases = {
+      Yokohama: ['yokohama', '横浜'], Tachikawa: ['tachikawa', '立川'],
+      Kawasaki: ['kawasaki', '川崎'], Machida: ['machida', '町田'],
+      Makuhari: ['makuhari', '幕張'], Maihama: ['maihama', '舞浜'],
+      Narita: ['narita', '成田'], Yokosuka: ['yokosuka', '横須賀'], Omiya: ['omiya', '大宮']
+    };
+    const namedArea = [...manualQuoteAreas, ...longDistanceAreas].find(name =>
+      (areaAliases[name] || [name.toLowerCase()]).some(alias => joined.includes(alias.toLowerCase()))
+    );
+    if (namedArea) return {
+      area: namedArea,
+      fee: manualQuoteAreas.includes(namedArea) ? null : 8000,
+      kind: manualQuoteAreas.includes(namedArea) ? 'quote' : 'long-distance'
+    };
+    return null;
   }
-});
+
+  document.getElementById('thc-calculate-transport').addEventListener('click', async () => {
+    const addressInput = document.getElementById('thc-outcall-address');
+    const addressText = addressInput.value.trim();
+    const duration = document.getElementById('thc-duration').value;
+    transportPrice.dataset.fee = '';
+    transportPrice.dataset.area = '';
+    if (!addressText) {
+      transportPrice.textContent = 'Please enter the full destination address first.';
+      addressInput.focus();
+      return;
+    }
+    transportPrice.textContent = 'Checking destination…';
+    const button = document.getElementById('thc-calculate-transport');
+    button.disabled = true;
+    try {
+      // User-triggered single lookup; do not use this endpoint for autocomplete or bulk requests.
+      const query = encodeURIComponent(addressText + ', Japan');
+      const response = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&countrycodes=jp&accept-language=en&q=' + query);
+      if (!response.ok) throw new Error('Address lookup failed');
+      const results = await response.json();
+      const match = results[0] && findAreaFromGeocode(results[0], addressText);
+      // If geocoding returns no result, only use a clearly stated area in the user's own address text.
+      const explicitArea = Object.keys(transportFees).find(name =>
+        new RegExp('(^|[^a-z])' + name.toLowerCase() + '([^a-z]|$)', 'i').test(addressText)
+      );
+      const finalMatch = match || (explicitArea ? { area: explicitArea, fee: transportFees[explicitArea], kind: 'ward' } : null);
+      if (!finalMatch) {
+        transportPrice.textContent = 'We could not confidently identify the fee area. Try entering the full address including the ward/city, or our team will confirm the fee manually.';
+        transportPrice.dataset.area = 'Manual review required';
+        return;
+      }
+      if (finalMatch.kind === 'long-distance' && Number.parseInt(duration, 10) < 120) {
+        transportPrice.textContent = finalMatch.area + ' · Outcalls of 120 minutes or longer only. Please change the duration or contact our team.';
+        transportPrice.dataset.area = finalMatch.area;
+        return;
+      }
+      if (finalMatch.kind === 'quote') {
+        transportPrice.textContent = finalMatch.area + ' · Please contact our team for a transportation quote (120 minutes or longer only).';
+        transportPrice.dataset.area = finalMatch.area;
+        return;
+      }
+      transportPrice.dataset.fee = String(finalMatch.fee);
+      transportPrice.dataset.area = finalMatch.area;
+      transportPrice.textContent = finalMatch.area + ' · Transportation fee: ¥' + finalMatch.fee.toLocaleString('ja-JP') +
+        (finalMatch.kind === 'long-distance' ? ' · 120-minute minimum' : '');
+    } catch (error) {
+      transportPrice.textContent = 'Address lookup is unavailable. Our team will confirm the transportation fee manually.';
+      transportPrice.dataset.area = 'Manual review required';
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  document.getElementById('thc-duration').addEventListener('change', () => {
+    if (document.getElementById('thc-type').value === 'Outcall') {
+      transportPrice.dataset.fee = '';
+      transportPrice.textContent = 'Duration changed. Check the transportation fee again.';
+    }
+  });
 
   function setSelectedGirl(profile) {
     if (!profile) return;
@@ -1945,36 +1902,25 @@ optionList.addEventListener('change', event => {
     const personalOptions = checkedOptions
       .filter(option => option.group === 'Personal Options')
       .map(option => option.name);
-    const durationPrice = profile.rank && bookingPricesJPY[get('thc-type')] && bookingPricesJPY[get('thc-type')][profile.rank]
-      ? bookingPricesJPY[get('thc-type')][profile.rank][get('thc-duration')]
-      : null;
-    const selectedOptionInputs = Array.from(
-      optionList.querySelectorAll('input[type="checkbox"]:checked')
-    );
-    const selectedOptionPrices = selectedOptionInputs.map(input =>
-      optionPriceJPY(input.dataset.optionName)
-    );
-    const allSelectedOptionsPriced = selectedOptionPrices.every(price => price != null);
-    const totalAmount = durationPrice != null && allSelectedOptionsPriced
-      ? durationPrice + selectedOptionPrices.reduce((sum, price) => sum + price, 0)
-      : null;
-    const totalPriceText = totalAmount == null
-      ? 'Please confirm with staff'
-      : yen(totalAmount) + ' JPY' +
-        (get('thc-type') === 'Outcall' ? ' (Delivery fee not included yet)' : '');
-    const messageLines = [
+    const message = [
       'Hello THC! I would like to request a reservation.',
       'Girl: ' + profile.displayName,
       'Date: ' + get('thc-date'),
       'Time: ' + get('thc-time'),
       'Duration: ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes'),
+      'Duration price: ' + (document.getElementById('thc-duration-price').dataset.price || 'Please confirm with staff'),
       'Girl rank: ' + (profile.rank || 'Rank unavailable'),
       'Type: ' + get('thc-type'),
+      ...(get('thc-type') === 'Outcall' ? [
+        'Hotel/Airbnb: ' + (get('thc-hotel-name').trim() || 'Not provided'),
+        'Destination address: ' + (get('thc-outcall-address').trim() || 'Not provided'),
+        'Transportation area: ' + (transportPrice.dataset.area || 'Manual review required'),
+        'Transportation fee: ' + (transportPrice.dataset.fee ? '¥' + Number(transportPrice.dataset.fee).toLocaleString('ja-JP') : 'Please confirm with staff')
+      ] : []),
       'Additional Services: ' + serviceOptions.join(', '),
       'Personal Options: ' + personalOptions.join(', '),
-      'Total price: ' + totalPriceText
-    ];
-    const message = messageLines.join('\\n');
+      'Please confirm availability. Thank you!'
+    ].join('\n');
 
     let url = '';
     if (contact === 'WhatsApp') {
