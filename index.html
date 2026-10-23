@@ -90,6 +90,7 @@
 <main class="app"><div class="shell">
 <header class="top"><div class="brand"><img src="thc-logo.png" alt="Tokyo Hentai Club logo" class="mark"><div><b>TOKYO HENTAI CLUB</b><small>DISCOVER YOUR TYPE</small></div></div><div class="pill"><i class="dot"></i> Profiles demo</div></header>
 <section class="heading"><div class="eyebrow">Meet someone new</div><h1>Find your Tokyo fantasy.</h1><p>Swipe through profiles. Save your favorites. Book now.</p></section>
+<div id="rankTestBanner" style="display:none;margin:0 2px 12px;padding:10px 12px;border:1px solid #e5c477;border-radius:10px;background:#302719;color:#f5d778;font-size:12px;font-weight:700">PREVIEW TEST MODE: simulated rank changes every 10 seconds. No live rank data is changed.</div>
 <section class="deck" id="deck" aria-label="Swipeable profiles">
 <div class="card" id="card">
 <div class="card-photo" id="art"></div><div class="shade"></div><div class="photo-tag" id="tag">✦ FEATURED PROFILE</div><div class="photo-count" id="count">01 / 03</div><div class="stamp like" id="yesStamp">LIKE ♥</div><div class="stamp nope" id="noStamp">NEXT →</div>
@@ -137,6 +138,8 @@
 
 <script>
 const API_URL = "https://thc-live-profiles.thc-girls.workers.dev/";
+const rankTestMode = new URLSearchParams(window.location.search).get("rankTest") === "1";
+let rankTestToggle = false;
 let profiles = [];
 let index = 0;
 const liked = new Set();
@@ -411,6 +414,18 @@ async function refreshProfilesSilently() {
         tag: g.statusType === "now" ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
       };
     });
+
+    // Preview-only simulation: flip the currently visible profile between Silver and Gold.
+    // This changes only the in-browser test response, never the API or saved rank data.
+    if (rankTestMode && profiles[index]) {
+      rankTestToggle = !rankTestToggle;
+      const visible = profiles[index];
+      const visibleName = String(visible.name || visible.displayName || "").trim().toLowerCase();
+      const testProfile = latestProfiles.find(profile =>
+        String(profile.name || profile.displayName || "").trim().toLowerCase() === visibleName
+      );
+      if (testProfile) testProfile.rank = rankTestToggle ? "Gold" : "Silver";
+    }
 
     const profileKey = profile => {
       if (profile.id != null) return "id:" + String(profile.id);
@@ -1275,15 +1290,19 @@ deck.addEventListener("pointerup", e => {
   }
 });
 
+if (rankTestMode) {
+  $("rankTestBanner").style.display = "block";
+}
+
 loadProfiles();
 
-// Refresh live profile details and ranks every five minutes without rebuilding the card.
+// Normal mode refreshes every five minutes. Preview test mode refreshes every 10 seconds.
 if (!window.__thcProfileRefreshTimer) {
   window.__thcProfileRefreshTimer = window.setInterval(() => {
     if (document.visibilityState === "visible") {
       refreshProfilesSilently();
     }
-  }, 5 * 60 * 1000);
+  }, rankTestMode ? 10 * 1000 : 5 * 60 * 1000);
 }
 </script>
 
