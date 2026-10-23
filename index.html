@@ -366,18 +366,24 @@ async function loadProfiles() {
     }
     if (!data) throw lastError || new Error("Profile service unavailable");
 
-    profiles = data.girls.map(g => {
-      const match = g.name.match(/^(.*?)\s*\((\d+)\)/);
-      return {
-        ...g,
-        displayName: match ? match[1].trim() : g.name,
-        age: match ? match[2] : "",
-        rank: rankForProfile(g, match ? match[1].trim() : g.name),
-        area: "Tokyo",
-        bio: "View her official profile for details and available options.",
-        tag: g.statusType === "now" ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
-      };
-    });
+    profiles = data.girls
+      .filter(g => g && typeof g === "object")
+      .map(g => {
+        const rawName = String(g.name || g.displayName || g.title || "Companion").trim();
+        const match = rawName.match(/^(.*?)\s*\((\d+)\)/);
+        const displayName = match ? match[1].trim() : rawName;
+        return {
+          ...g,
+          name: rawName,
+          displayName,
+          age: match ? match[2] : String(g.age || ""),
+          rank: rankForProfile(g, displayName),
+          area: "Tokyo",
+          bio: "View her official profile for details and available options.",
+          tag: g.statusType === "now" ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
+        };
+      })
+      .filter(g => g.name && g.name !== "Companion");
 
     $("count").textContent = "01 / " + String(profiles.length).padStart(2, "0");
     document.querySelector(".pill").innerHTML =
@@ -387,7 +393,7 @@ async function loadProfiles() {
     $("name").textContent = "Profiles unavailable";
     $("status").textContent = "PLEASE TRY AGAIN";
     $("bio").textContent =
-      "Live profiles could not load. Check your connection and try again.";
+      "Live profiles could not load (" + String(error && error.message || "unknown error") + "). Please retry.";
     $("art").innerHTML = "";
     $("count").textContent = "—";
     $("empty").style.display = "flex";
