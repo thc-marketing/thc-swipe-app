@@ -343,13 +343,28 @@ const $ = id => document.getElementById(id);
 async function loadProfiles() {
   try {
     $("status").textContent = "LOADING PROFILES";
-    const response = await fetch(API_URL);
-    if (!response.ok) throw new Error("Profile service unavailable");
 
-    const data = await response.json();
-    if (!Array.isArray(data.girls) || !data.girls.length) {
-      throw new Error("No profiles returned");
+    // Retry transient network/API failures before showing the unavailable state.
+    let data = null;
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await fetch(API_URL, { cache: "no-store" });
+        if (!response.ok) throw new Error("Profile service unavailable (" + response.status + ")");
+        const result = await response.json();
+        if (!Array.isArray(result.girls) || !result.girls.length) {
+          throw new Error("No profiles returned");
+        }
+        data = result;
+        break;
+      } catch (error) {
+        lastError = error;
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+        }
+      }
     }
+    if (!data) throw lastError || new Error("Profile service unavailable");
 
     profiles = data.girls.map(g => {
       const match = g.name.match(/^(.*?)\s*\((\d+)\)/);
