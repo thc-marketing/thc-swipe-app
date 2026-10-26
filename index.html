@@ -1820,16 +1820,16 @@ logoutBtn.onclick = async () => {
       : totalJPY.toLocaleString('en-US') + ' yen' + (get('thc-type') === 'Outcall' ? ' + *Delivery fee*' : '');
     const message = [
       'Hello THC! I would like to request a reservation.',
-      '**Girl:** ' + profile.displayName,
-      '**Date:** ' + get('thc-date'),
-      '**Time:** ' + get('thc-time'),
-      '**Duration:** ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes') +
+      'Girl: ' + profile.displayName,
+      'Date: ' + get('thc-date'),
+      'Time: ' + get('thc-time'),
+      'Duration: ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes') +
         ' (' + (durationPriceText || 'Please confirm with staff') + ')',
-      '**Type:** ' + get('thc-type'),
-      ...(get('thc-type') === 'Outcall' ? ['**Outcall transportation fee:** *To be confirmed by staff based on destination*'] : []),
-      '**Additional Services:** ' + serviceOptions.join(', '),
-      '**Personal Options:** ' + personalOptions.join(', '),
-      '**Total:** ' + totalText,
+      'Type: ' + get('thc-type'),
+      ...(get('thc-type') === 'Outcall' ? ['Outcall transportation fee: To be confirmed by staff based on destination'] : []),
+      'Additional Services: ' + serviceOptions.join(', '),
+      'Personal Options: ' + personalOptions.join(', '),
+      'Total: ' + totalText,
       '',
       'Please confirm availability. Thank you!'
     ].join('\n');
