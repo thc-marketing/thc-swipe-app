@@ -1584,13 +1584,15 @@ logoutBtn.onclick = async () => {
   ]);
 
   function optionPriceJPY(optionText) {
-    const normalized = String(optionText || '').trim().toLowerCase();
+    const text = String(optionText || '').trim();
+    const explicitPrice = text.match(/([0-9][0-9,]*)\\s*(?:yen|円|jpy)/i);
+    if (explicitPrice) return Number(explicitPrice[1].replace(/,/g, ''));
+    const normalized = text.toLowerCase();
     for (const [name, price] of optionPricesJPY) {
       if (normalized === name.toLowerCase() || normalized.endsWith(name.toLowerCase())) return price;
     }
     return null;
   }
-
   function renderOptions(groups) {
     const services = groups.services || [];
     const personal = groups.personal || [];
@@ -1790,43 +1792,47 @@ logoutBtn.onclick = async () => {
       optionList.querySelectorAll('input[type="checkbox"]:checked')
     ).map(input => {
       const group = input.dataset.optionGroup || 'Additional Services';
-      const name = (input.dataset.optionName || '').trim();
+      const rawName = (input.dataset.optionName || '').trim();
+      const priceJPY = optionPriceJPY(rawName);
+      const name = rawName.replace(/^\\s*[¥￥]?[0-9][0-9,]*\\s*(?:yen|円|jpy)\\s*[:：-]?\\s*/i, '').trim();
       let shortName = name;
-      if (/\bcum\s+in\s+mouth\b/i.test(name)) {
-        shortName = name.replace(/cum\s+in\s+mouth/i, 'CIM');
-      } else if (/\bdeep\s+throat\b/i.test(name)) {
-        shortName = name.replace(/deep\s+throat/i, 'DT');
-      } else if (/\bvibrator\b/i.test(name)) {
-        shortName = name.replace(/vibrator/i, 'Vib');
-      }
-      return { group, name: shortName };
+      if (/\\bcum\\s+in\\s+mouth\\b/i.test(name)) shortName = name.replace(/cum\\s+in\\s+mouth/i, 'CIM');
+      else if (/\\bdeep\\s+throat\\b/i.test(name)) shortName = name.replace(/deep\\s+throat/i, 'DT');
+      else if (/\\bvibrator\\b/i.test(name)) shortName = name.replace(/vibrator/i, 'Vib');
+      return { group, name: shortName, priceJPY };
     });
-    const serviceOptions = checkedOptions
-      .filter(option => option.group === 'Additional Services')
-      .map(option => option.name);
-    const personalOptions = checkedOptions
-      .filter(option => option.group === 'Personal Options')
-      .map(option => option.name);
+    const formatOption = option => option.priceJPY == null
+      ? option.name
+      : option.name + ' (' + option.priceJPY.toLocaleString('en-US') + ' yen)';
+    const serviceItems = checkedOptions.filter(option => option.group === 'Additional Services');
+    const personalItems = checkedOptions.filter(option => option.group === 'Personal Options');
+    const serviceOptions = serviceItems.map(formatOption);
+    const personalOptions = personalItems.map(formatOption);
+    const durationPriceText = document.getElementById('thc-duration-price').dataset.price || '';
+    const durationPriceMatch = durationPriceText.match(/([0-9][0-9,]*)/);
+    const durationPriceJPY = durationPriceMatch ? Number(durationPriceMatch[1].replace(/,/g, '')) : null;
+    const allOptionPricesKnown = checkedOptions.every(option => option.priceJPY != null);
+    const totalJPY = durationPriceJPY == null || !allOptionPricesKnown
+      ? null
+      : durationPriceJPY + checkedOptions.reduce((sum, option) => sum + option.priceJPY, 0);
+    const totalText = totalJPY == null
+      ? 'Please confirm with staff'
+      : totalJPY.toLocaleString('en-US') + ' yen' + (get('thc-type') === 'Outcall' ? ' + *Delivery fee*' : '');
     const message = [
-  'Hello THC! I would like to request a reservation.',
-  '**Girl:** ' + profile.displayName,
-  '**Date:** ' + get('thc-date'),
-  '**Time:** ' + get('thc-time'),
-  '**Duration:** ' +
-    (get('thc-duration') === 'extension'
-      ? 'Extension — 30 minutes'
-      : get('thc-duration') + ' minutes') +
-    ' (' + (document.getElementById('thc-duration-price').dataset.price || 'Please confirm with staff') + ')',
-  '**Type:** ' + get('thc-type'),
-  ...(get('thc-type') === 'Outcall'
-    ? ['**Outcall transportation fee:** *To be confirmed by staff based on destination*']
-    : []),
-  '**Additional Services:** ' + serviceOptions.join(', '),
-  '**Personal Options:** ' + personalOptions.join(', '),
-  '**Total:** Please confirm with staff',
-  '',
-  'Please confirm availability. Thank you!'
-].join('\n');
+      'Hello THC! I would like to request a reservation.',
+      '**Girl:** ' + profile.displayName,
+      '**Date:** ' + get('thc-date'),
+      '**Time:** ' + get('thc-time'),
+      '**Duration:** ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes') +
+        ' (' + (durationPriceText || 'Please confirm with staff') + ')',
+      '**Type:** ' + get('thc-type'),
+      ...(get('thc-type') === 'Outcall' ? ['**Outcall transportation fee:** *To be confirmed by staff based on destination*'] : []),
+      '**Additional Services:** ' + serviceOptions.join(', '),
+      '**Personal Options:** ' + personalOptions.join(', '),
+      '**Total:** ' + totalText,
+      '',
+      'Please confirm availability. Thank you!'
+    ].join('\\n');
     let url = '';
     if (contact === 'WhatsApp') {
       url = 'https://wa.me/817076654819?text=' + encodeURIComponent(message);
