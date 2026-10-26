@@ -1690,7 +1690,7 @@ logoutBtn.onclick = async () => {
     const girlId = document.getElementById('thc-girl').value;
     const previousValue = timeSelect.value;
     timeSelect.replaceChildren(new Option('Choose a start time', ''));
-    if (!girlId || !dateValue) return;
+    if (!dateValue || !girlId) return;
     const profile = profileById.get(String(girlId));
     // Per-girl/per-day schedule can be configured here when the staff editor is added.
     const schedule = profile && profile.scheduleByDate && profile.scheduleByDate[dateValue];
