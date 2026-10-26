@@ -1484,19 +1484,8 @@ logoutBtn.onclick = async () => {
         <label for="thc-time">Preferred start time</label>
         <select id="thc-time" required>
           <option value="">Choose a start time</option>
-          <option value="12:00">12:00</option>
-          <option value="13:00">13:00</option>
-          <option value="14:00">14:00</option>
-          <option value="15:00">15:00</option>
-          <option value="16:00">16:00</option>
-          <option value="17:00">17:00</option>
-          <option value="18:00">18:00</option>
-          <option value="19:00">19:00</option>
-          <option value="20:00">20:00</option>
-          <option value="21:00">21:00</option>
-          <option value="22:00">22:00</option>
         </select>
-        <p style="margin:4px 0 12px;color:#c0aebb;font-size:12px">Example schedule: 12:00–23:00, with start times every 60 minutes. Availability must be confirmed by staff.</p>
+        <p id="thc-time-hint" style="margin:4px 0 12px;color:#c0aebb;font-size:12px">Choose a girl and date to see start times. Availability must be confirmed by staff.</p>
         <label for="thc-duration">Booking duration</label>
         <select id="thc-duration" required>
           <option value="60">60 minutes</option>
@@ -1683,13 +1672,47 @@ logoutBtn.onclick = async () => {
       : rank + ' · ' + type + ' · ' + (duration === 'extension' ? 'Extension 30min' : duration + 'min') + ': ' + yen(price) + ' JPY';
   }
 
-  document.getElementById('thc-duration').addEventListener('change', updateDurationPrice);
+  document.getElementById('thc-duration').addEventListener('change', () => { updateDurationPrice(); refreshStartTimes(); });
+  document.getElementById('thc-date').addEventListener('change', refreshStartTimes);
+  document.getElementById('thc-girl').addEventListener('change', refreshStartTimes);
   document.getElementById('thc-type').addEventListener('change', () => {
   updateDurationPrice();
 
   const outcall = document.getElementById('thc-type').value === 'Outcall';
   document.getElementById('thc-outcall-fields').hidden = !outcall;
 });
+
+  // Temporary schedule configuration until the staff timetable can be integrated.
+  // Defaults to 12:00–23:00 for each girl; staff confirmation is still required.
+  function refreshStartTimes() {
+    const timeSelect = document.getElementById('thc-time');
+    const dateValue = document.getElementById('thc-date').value;
+    const girlId = document.getElementById('thc-girl').value;
+    const previousValue = timeSelect.value;
+    timeSelect.replaceChildren(new Option('Choose a start time', ''));
+    if (!girlId || !dateValue) return;
+    const profile = profileById.get(String(girlId));
+    // Per-girl/per-day schedule can be configured here when the staff editor is added.
+    const schedule = profile && profile.scheduleByDate && profile.scheduleByDate[dateValue];
+    const start = schedule && schedule.start ? schedule.start : '12:00';
+    const end = schedule && schedule.end ? schedule.end : '23:00';
+    const toMinutes = value => {
+      const parts = value.split(':').map(Number);
+      return parts[0] * 60 + parts[1];
+    };
+    const startMinutes = toMinutes(start);
+    const endMinutes = toMinutes(end);
+    const durationValue = document.getElementById('thc-duration').value;
+    const durationMinutes = durationValue === 'extension' ? 30 : Number(durationValue || 60);
+    for (let minute = startMinutes; minute < endMinutes; minute += 30) {
+      if (minute + durationMinutes > endMinutes) continue;
+      const hh = String(Math.floor(minute / 60)).padStart(2, '0');
+      const mm = String(minute % 60).padStart(2, '0');
+      const value = hh + ':' + mm;
+      timeSelect.add(new Option(value, value));
+    }
+    if ([...timeSelect.options].some(option => option.value === previousValue)) timeSelect.value = previousValue;
+  }
 
   function setSelectedGirl(profile) {
     if (!profile) return;
@@ -1698,6 +1721,7 @@ logoutBtn.onclick = async () => {
       'Request ' + profile.displayName;
     loadOptionsForGirl(profile);
     updateDurationPrice();
+    refreshStartTimes();
   }
 
   function openReservation(profile) {
