@@ -1481,8 +1481,22 @@ logoutBtn.onclick = async () => {
         </div>
         <label for="thc-date">Preferred date</label>
         <input id="thc-date" type="date" required>
-        <label for="thc-time">Preferred time</label>
-        <input id="thc-time" type="time" required>
+        <label for="thc-time">Preferred start time</label>
+        <select id="thc-time" required>
+          <option value="">Choose a start time</option>
+          <option value="12:00">12:00</option>
+          <option value="13:00">13:00</option>
+          <option value="14:00">14:00</option>
+          <option value="15:00">15:00</option>
+          <option value="16:00">16:00</option>
+          <option value="17:00">17:00</option>
+          <option value="18:00">18:00</option>
+          <option value="19:00">19:00</option>
+          <option value="20:00">20:00</option>
+          <option value="21:00">21:00</option>
+          <option value="22:00">22:00</option>
+        </select>
+        <p style="margin:4px 0 12px;color:#c0aebb;font-size:12px">Example schedule: 12:00–23:00, with start times every 60 minutes. Availability must be confirmed by staff.</p>
         <label for="thc-duration">Booking duration</label>
         <select id="thc-duration" required>
           <option value="60">60 minutes</option>
