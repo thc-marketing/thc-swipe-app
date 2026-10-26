@@ -1638,7 +1638,7 @@ logoutBtn.onclick = async () => {
     optionWrap.hidden = false;
     try {
       const response = await fetch(
-        'https://thc-live-profiles.thc-girls.workers.dev/?cc=' +
+        API_URL + '?cc=' +
         encodeURIComponent(profile.id)
       );
       if (!response.ok) throw new Error('Could not load options');
