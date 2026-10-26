@@ -1808,22 +1808,25 @@ logoutBtn.onclick = async () => {
       .filter(option => option.group === 'Personal Options')
       .map(option => option.name);
     const message = [
-      'Hello THC! I would like to request a reservation.',
-      'Girl: ' + profile.displayName,
-      'Date: ' + get('thc-date'),
-      'Time: ' + get('thc-time'),
-      'Duration: ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes'),
-      'Duration price: ' + (document.getElementById('thc-duration-price').dataset.price || 'Please confirm with staff'),
-      'Girl rank: ' + (profile.rank || 'Rank unavailable'),
-      'Type: ' + get('thc-type'),
-      ...(get('thc-type') === 'Outcall' ? [
-        'Outcall transportation fee: To be confirmed by staff based on destination'
-      ] : []),
-      'Additional Services: ' + serviceOptions.join(', '),
-      'Personal Options: ' + personalOptions.join(', '),
-      'Please confirm availability. Thank you!'
-    ].join('\n');
-
+  'Hello THC! I would like to request a reservation.',
+  '**Girl:** ' + profile.displayName,
+  '**Date:** ' + get('thc-date'),
+  '**Time:** ' + get('thc-time'),
+  '**Duration:** ' +
+    (get('thc-duration') === 'extension'
+      ? 'Extension — 30 minutes'
+      : get('thc-duration') + ' minutes') +
+    ' (' + (document.getElementById('thc-duration-price').dataset.price || 'Please confirm with staff') + ')',
+  '**Type:** ' + get('thc-type'),
+  ...(get('thc-type') === 'Outcall'
+    ? ['**Outcall transportation fee:** *To be confirmed by staff based on destination*']
+    : []),
+  '**Additional Services:** ' + serviceOptions.join(', '),
+  '**Personal Options:** ' + personalOptions.join(', '),
+  '**Total:** Please confirm with staff',
+  '',
+  'Please confirm availability. Thank you!'
+].join('\n');
     let url = '';
     if (contact === 'WhatsApp') {
       url = 'https://wa.me/817076654819?text=' + encodeURIComponent(message);
