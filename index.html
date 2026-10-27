@@ -1692,10 +1692,16 @@ logoutBtn.onclick = async () => {
     timeSelect.replaceChildren(new Option('Choose a start time', ''));
     if (!dateValue || !girlId) return;
     const profile = profileById.get(String(girlId));
-    // Per-girl/per-day schedule can be configured here when the staff editor is added.
+    // Only show times when this girl's schedule for the selected date is available in profile data.
+    // Do not invent a default shift: the staff timetable is not integrated yet.
     const schedule = profile && profile.scheduleByDate && profile.scheduleByDate[dateValue];
-    const start = schedule && schedule.start ? schedule.start : '12:00';
-    const end = schedule && schedule.end ? schedule.end : '23:00';
+    const hint = document.getElementById('thc-time-hint');
+    if (!schedule || !schedule.start || !schedule.end) {
+      hint.textContent = 'This girl’s schedule for the selected date is not available in the app yet. Please confirm times with staff.';
+      return;
+    }
+    const start = schedule.start;
+    const end = schedule.end;
     const toMinutes = value => {
       const parts = value.split(':').map(Number);
       return parts[0] * 60 + parts[1];
@@ -1704,6 +1710,7 @@ logoutBtn.onclick = async () => {
     const endMinutes = toMinutes(end);
     const durationValue = document.getElementById('thc-duration').value;
     const durationMinutes = durationValue === 'extension' ? 30 : Number(durationValue || 60);
+    hint.textContent = 'Start times are shown in 30-minute intervals within this girl’s scheduled hours. Staff will confirm your request.';
     for (let minute = startMinutes; minute < endMinutes; minute += 30) {
       if (minute + durationMinutes > endMinutes) continue;
       const hh = String(Math.floor(minute / 60)).padStart(2, '0');
