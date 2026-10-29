@@ -55,18 +55,9 @@ create policy "Read approved creator profiles"
   on public.creator_profiles for select
   using (is_creator = true and is_approved = true or auth.uid() = user_id);
 
--- Users may create/update their own profile fields, but cannot self-assign creator/approval flags.
--- These policies are intentionally restrictive: profile provisioning and creator approval should
--- be performed by a trusted admin/server function. No client INSERT policy is provided.
+-- Profile provisioning, profile edits, and creator approval are managed by a trusted admin/server
+-- function. No client INSERT or UPDATE policies are provided for creator_profiles.
 drop policy if exists "Users update own non-role profile fields" on public.creator_profiles;
-create policy "Users update own non-role profile fields"
-  on public.creator_profiles for update
-  using (auth.uid() = user_id)
-  with check (
-    auth.uid() = user_id
-    and is_creator = (select cp.is_creator from public.creator_profiles cp where cp.user_id = auth.uid())
-    and is_approved = (select cp.is_approved from public.creator_profiles cp where cp.user_id = auth.uid())
-  );
 
 drop policy if exists "Read published free posts" on public.creator_posts;
 create policy "Read published free posts"
@@ -109,6 +100,7 @@ create policy "Creators update own posts"
   )
   with check (
     auth.uid() = creator_id
+    and status = 'draft'
     and is_paid = false
     and exists (
       select 1 from public.creator_profiles cp
