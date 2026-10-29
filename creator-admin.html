@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THC Creator Admin</title>
+<style>
+:root{color-scheme:dark;--bg:#100b12;--panel:#211722;--line:#493544;--text:#fff7fb;--muted:#c0aebb;--gold:#d8ad62;--red:#a83c55}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,sans-serif}.wrap{width:min(100% - 28px,760px);margin:auto;padding:24px 0 44px}h1{margin:22px 0 6px}.muted{color:var(--muted);font-size:13px;line-height:1.5}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:16px;margin:14px 0}.field{display:block;width:100%;margin:7px 0 14px;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--text);font:inherit}button{border:1px solid var(--line);border-radius:10px;padding:11px 14px;background:var(--panel);color:var(--text);font-weight:750;cursor:pointer}.primary{background:linear-gradient(100deg,#e5c477,#a98237);color:#171019;border:0}.reject{border-color:var(--red);color:#ffb6c4}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.media{width:100%;max-height:480px;object-fit:contain;background:var(--bg);border-radius:10px;margin-top:12px}.status{padding:12px 0;color:var(--muted);font-size:13px;white-space:pre-wrap}.hidden{display:none}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body><main class="wrap">
+<header><strong>THC · ADMIN REVIEW</strong> · <a href="./creator-hub" style="color:var(--gold)">Open Creator Hub</a></header>
+<h1>Creator post review</h1><p class="muted">Approve posts to publish them to the free feed, or reject them. Only accounts explicitly added to creator_admins can review posts.</p>
+<section id="loginCard" class="card">
+<h2>Administrator sign in</h2>
+<form id="loginForm"><label>Email</label><input id="email" class="field" type="email" autocomplete="username" required><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password" required><button class="primary" type="submit">Sign in</button></form>
+</section>
+<div class="status" id="status">Sign in with the Supabase Auth account granted administrator access.</div>
+<section id="queue"></section>
+<button id="refresh" class="hidden" type="button">Refresh queue</button>
+<button id="logout" class="hidden" type="button">Sign out</button>
+</main>
+<script>
+(() => {
+ const SUPABASE_URL='https://dvvyqpdaoprzrarotuin.supabase.co';
+ const SUPABASE_KEY='sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24';
+ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+ const $=id=>document.getElementById(id);
+ const say=s=>$('status').textContent=s;
+ async function loadQueue(){
+  $('queue').replaceChildren();say('Loading review queue…');
+  const {data,error}=await db.rpc('list_pending_creator_posts');
+  if(error){say('Could not load review queue: '+error.message);return}
+  if(!data?.length){say('No draft posts waiting for review.');return}
+  say(data.length+' draft post(s) awaiting review.');
+  for(const p of data){
+   const card=document.createElement('article');card.className='card';
+   const title=document.createElement('h3');title.textContent=p.display_name||'Creator';
+   const caption=document.createElement('p');caption.style.whiteSpace='pre-wrap';caption.textContent=p.caption||'';
+   const meta=document.createElement('div');meta.className='muted';meta.textContent=new Date(p.created_at).toLocaleString()+' · '+p.media_type;
+   card.append(title,caption,meta);
+   const {data:signed,error:se}=await db.storage.from('creator-media').createSignedUrl(p.media_url,900);
+   if(!se&&signed?.signedUrl){const media=document.createElement(p.media_type==='video'?'video':'img');media.className='media';media.src=signed.signedUrl;if(p.media_type==='video'){media.controls=true;media.playsInline=true}else{media.alt='Submitted creator media'}card.append(media)}
+   else {const warning=document.createElement('p');warning.className='muted';warning.textContent='Preview unavailable: '+(se?.message||'could not create preview URL');card.append(warning)}
+   const actions=document.createElement('div');actions.className='actions';
+   const approve=document.createElement('button');approve.className='primary';approve.textContent='Approve & publish';
+   const reject=document.createElement('button');reject.className='reject';reject.textContent='Reject';
+   approve.onclick=()=>review(p.post_id,'publish',approve,reject);
+   reject.onclick=()=>review(p.post_id,'reject',approve,reject);
+   actions.append(approve,reject);card.append(actions);$('queue').append(card);
+  }
+ }
+ async function review(id,decision,a,b){
+  a.disabled=b.disabled=true;say(decision==='publish'?'Publishing post…':'Rejecting post…');
+  const {error}=await db.rpc('review_creator_post',{p_post_id:id,p_decision:decision});
+  if(error){say('Review failed: '+error.message);a.disabled=b.disabled=false;return}
+  say(decision==='publish'?'Post published to the free feed.':'Post rejected and removed from the review queue.');
+  await loadQueue();
+ }
+ $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');await loadQueue()};
+ $('refresh').onclick=loadQueue;
+ $('logout').onclick=async()=>{await db.auth.signOut();$('loginCard').classList.remove('hidden');$('refresh').classList.add('hidden');$('logout').classList.add('hidden');$('queue').replaceChildren();say('Signed out.')};
+ db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue()}});
+})();
+</script></body></html>
