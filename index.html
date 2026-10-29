@@ -1610,8 +1610,11 @@ logoutBtn.onclick = async () => {
 
   function optionPriceJPY(optionText) {
     const text = String(optionText || '').trim();
-    const explicitPrice = text.match(/([0-9][0-9,]*)\\s*(?:yen|円|jpy)/i);
-    if (explicitPrice) return Number(explicitPrice[1].replace(/,/g, ''));
+    const explicitPrice = text.match(/(?:[¥￥]\\s*([0-9][0-9,]*)|([0-9][0-9,]*)\\s*(?:yen|円|jpy)|^\\s*([0-9][0-9,]*)\\s*[:：-])/i);
+    if (explicitPrice) {
+      const amount = explicitPrice[1] || explicitPrice[2] || explicitPrice[3];
+      return Number(amount.replace(/,/g, ''));
+    }
     const normalized = text.toLowerCase();
     for (const [name, price] of optionPricesJPY) {
       if (normalized === name.toLowerCase() || normalized.endsWith(name.toLowerCase())) return price;
