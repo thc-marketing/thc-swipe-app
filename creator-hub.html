@@ -16,7 +16,8 @@
 <div class="tabs"><button class="active" data-tab="feed">✦ Feed</button><button data-tab="studio">＋ Creator Studio</button></div>
 <section id="feed" class="panel active"><div id="feedStatus" class="status">Connecting to feed…</div><div id="posts"></div><button id="more" style="display:none;width:100%">Load more</button></section>
 <section id="studio" class="panel"><div class="card"><p id="studioStatus" class="muted">Sign in to check creator access.</p>
-<form id="postForm"><label for="caption">Caption</label><textarea id="caption" class="field" rows="4" maxlength="3000" placeholder="Write a caption…" required></textarea><label for="mediaFile">Photo or video</label><input id="mediaFile" class="field" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" required><p class="muted">Max 25 MB. Upload only content you own or have permission to publish, with consent from everyone shown.</p><div id="preview"></div><button id="publish" class="primary" type="submit">Submit free post for review</button></form></div></section>
+<form id="postForm"><label for="caption">Caption</label><textarea id="caption" class="field" rows="4" maxlength="3000" placeholder="Write a caption…" required></textarea><label for="mediaFile">Photo or video</label><input id="mediaFile" class="field" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" required><p class="muted">Max 25 MB. Upload only content you own or have permission to publish, with consent from everyone shown.</p>
+<p class="muted" role="note"><strong>Video format tip:</strong> For best compatibility, upload MP4 videos encoded with H.264 video and AAC audio. HEVC/H.265 videos may upload successfully but might not display correctly in some browsers.</p><div id="preview"></div><button id="publish" class="primary" type="submit">Submit free post for review</button></form></div></section>
 </main>
 <script>
 (() => {
