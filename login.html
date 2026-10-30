@@ -59,9 +59,9 @@ body{min-height:100vh;padding:34px 24px;background:radial-gradient(ellipse at 18
 .hero-emblem:before{content:"";position:absolute;width:74%;height:74%;border-radius:50%;background:radial-gradient(circle,#f24d9829 0%,#8b62d922 48%,transparent 72%);filter:blur(18px);z-index:-1}
 .hero-emblem img{position:relative;width:66%;height:66%;object-fit:contain;z-index:2;filter:drop-shadow(0 0 16px #f24d9866) drop-shadow(0 8px 24px #0009)}
 .logo-halo{position:absolute;inset:8%;border:1px solid #f48bb955;border-radius:50%;box-shadow:0 0 24px #f24d981c,inset 0 0 20px #f24d9810}
-.logo-swoosh{position:absolute;width:108%;height:38%;border:2px solid transparent;border-top-color:#ff8fc0;border-right-color:#d28bea;border-radius:50%;transform:rotate(-24deg);filter:drop-shadow(0 0 7px #f24d98aa);animation:swoosh-turn 14s ease-in-out infinite}
+.logo-swoosh{position:absolute;width:108%;height:38%;border:2px solid transparent;border-top-color:#ff8fc0;border-right-color:#d28bea;border-radius:50%;transform:rotate(-24deg);filter:drop-shadow(0 0 7px #f24d98aa);animation:swoosh-spin 7s linear infinite}
 .logo-swoosh:after{content:"";position:absolute;right:8%;top:2%;width:7px;height:7px;border-radius:50%;background:#ffd0e6;box-shadow:0 0 12px 4px #f24d98aa}
-@keyframes swoosh-turn{0%,100%{transform:rotate(-24deg) scale(1)}50%{transform:rotate(-18deg) scale(1.035)}}
+@keyframes swoosh-spin{from{transform:rotate(-24deg)}to{transform:rotate(336deg)}}
 @media(max-width:800px){.hero-emblem{width:205px;height:205px;margin:0 auto 18px}}
 @media(prefers-reduced-motion:reduce){.logo-swoosh{animation:none}}
 </style></head>
