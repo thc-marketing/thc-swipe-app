@@ -86,7 +86,7 @@ body.auth-checking main{visibility:hidden}
 <div id="settingsBackdrop" class="settings-backdrop" hidden><section class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><button type="button" id="closeSettings" class="settings-close" aria-label="Close">×</button><div class="kicker">YOUR ACCOUNT</div><h2 id="settingsTitle">Settings</h2><p id="settingsAccount" class="muted">Checking account…</p><div id="settingsActions"></div><p id="settingsMessage" role="status" class="muted"></p></section></div>
 </main>
 <script>
-(() => {
+(async () => {
  const SUPABASE_URL='https://dvvyqpdaoprzrarotuin.supabase.co';
  const SUPABASE_KEY='sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24';
  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
