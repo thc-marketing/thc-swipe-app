@@ -69,6 +69,12 @@ $$;
 revoke all on function public.list_creator_post_previews(integer, integer) from public;
 grant execute on function public.list_creator_post_previews(integer, integer) to anon, authenticated;
 
+-- A customer may inspect only their own entitlement rows. No client write policy is created.
+drop policy if exists "Customers read own payment entitlements" on public.payment_entitlements;
+create policy "Customers read own payment entitlements"
+  on public.payment_entitlements for select
+  using (auth.uid() = user_id);
+
 -- Customers can read free published posts and premium posts only after a verified active unlock.
 drop policy if exists "Read published free posts" on public.creator_posts;
 create policy "Read published free or purchased posts"
