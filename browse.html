@@ -83,6 +83,25 @@
   border: 0;
   margin-top: 12px;
 }
+
+/* THC shared premium-playful theme */
+:root{color-scheme:dark;--bg:#0d0b10;--panel:#19151d;--surface:#19151d;--line:#382b39;--text:#fff8fc;--muted:#b8aab7;--pink:#f24d98;--violet:#8b62d9;--gold:#e8c17b}
+html{background:var(--bg)}body{background:radial-gradient(ellipse at 82% 12%,#55244744,transparent 36%),radial-gradient(ellipse at 8% 70%,#38245a44,transparent 40%),var(--bg)!important;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:#ff91c2}h1,h2,h3{letter-spacing:-.045em}h1{color:#fff8fc}
+header{border-bottom:1px solid #ffffff16;padding-bottom:13px;margin-bottom:18px}
+header a,.pill{color:#f6dce9}
+button,.secondary,.tabs button{border:1px solid #ffffff25;border-radius:11px;background:linear-gradient(145deg,#211925,#151119);color:var(--text);transition:border-color .18s,transform .18s}
+button:hover,.secondary:hover,.tabs button:hover{border-color:#f24d9880}
+button:active{transform:scale(.98)}
+.primary,.buy-button,.call-now,.profile-book,.comment-submit{background:linear-gradient(110deg,#f66bab,#e83f8d)!important;color:#190d16!important;border:0!important;box-shadow:0 8px 24px #e83f8d25}
+.card,.detail-section,.call-strip,.checkout-dialog,.empty{background:linear-gradient(145deg,#211925,#151119)!important;border:1px solid #ffffff20!important;border-radius:16px}
+.field,input,textarea,select,.comment-input{background:#100d14!important;color:#fff8fc!important;border:1px solid #493447!important;border-radius:10px}
+.field:focus,input:focus,textarea:focus,select:focus,.comment-input:focus{outline:1px solid var(--pink);border-color:var(--pink)}
+.muted,.foot,.status,.comment-hint{color:#b8aab7!important}
+.tabs button.active,.like-button.liked{background:linear-gradient(110deg,#f66bab,#e83f8d)!important;color:#190d16!important;border-color:transparent}
+.engagement{border-color:#ffffff20}.comment-item{background:#100d14!important;border:1px solid #ffffff12}
+.status,.eyebrow{color:#ff91c2}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
