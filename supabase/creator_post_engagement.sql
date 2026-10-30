@@ -106,7 +106,7 @@ revoke all on function public.get_free_post_engagement(uuid) from public;
 revoke all on function public.list_free_post_comments(uuid,integer) from public;
 grant execute on function public.get_free_post_engagement(uuid) to anon, authenticated;
 grant execute on function public.list_free_post_comments(uuid,integer) to anon, authenticated;
-grant select on public.creator_post_likes, public.creator_post_comments to anon, authenticated;
+revoke select on public.creator_post_likes, public.creator_post_comments from anon, authenticated;
 grant insert, delete on public.creator_post_likes to authenticated;
 grant select, insert, delete on public.creator_post_comments to authenticated;
 
