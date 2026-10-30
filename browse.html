@@ -1393,6 +1393,8 @@ logoutBtn.onclick = async () => {
     say("");
   }
 
+  if (new URLSearchParams(location.search).get("auth") === "login") setMode("login");
+
   $("authSwitch").addEventListener("click", () => {
     setMode(mode === "signup" ? "login" : "signup");
   });
