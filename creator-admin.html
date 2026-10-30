@@ -12,7 +12,7 @@
 </head>
 <body><main class="wrap">
 <header><strong>THC · ADMIN REVIEW</strong> · <a href="./creator-hub" style="color:var(--gold)">Open Creator Hub</a></header>
-<h1>Creator post review</h1><p class="muted">Approve posts to publish them to the free feed, or reject them. Only accounts explicitly added to creator_admins can review posts.</p>
+<h1>Creator post review</h1><p class="muted">Approve posts to publish them, or reject them. Premium posts display their individual price in yen. Only accounts explicitly added to creator_admins can review posts.</p>
 <section id="loginCard" class="card">
 <h2>Administrator sign in</h2>
 <form id="loginForm"><label>Email</label><input id="email" class="field" type="email" autocomplete="username" required><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password" required><button class="primary" type="submit">Sign in</button></form>
@@ -39,7 +39,7 @@
    const card=document.createElement('article');card.className='card';
    const title=document.createElement('h3');title.textContent=p.display_name||'Creator';
    const caption=document.createElement('p');caption.style.whiteSpace='pre-wrap';caption.textContent=p.caption||'';
-   const meta=document.createElement('div');meta.className='muted';meta.textContent=new Date(p.created_at).toLocaleString()+' · '+p.media_type;
+   const meta=document.createElement('div');meta.className='muted';meta.textContent=new Date(p.created_at).toLocaleString()+' · '+p.media_type+' · '+(p.is_paid?'PREMIUM · ¥'+Number(p.price_yen).toLocaleString():'FREE');
    card.append(title,caption,meta);
    const {data:signed,error:se}=await db.storage.from('creator-media').createSignedUrl(p.media_url,900);
    if(!se&&signed?.signedUrl){const media=document.createElement(p.media_type==='video'?'video':'img');media.className='media';media.src=signed.signedUrl;if(p.media_type==='video'){media.controls=true;media.playsInline=true}else{media.alt='Submitted creator media'}card.append(media)}
@@ -56,7 +56,7 @@
   a.disabled=b.disabled=true;say(decision==='publish'?'Publishing post…':'Rejecting post…');
   const {error}=await db.rpc('review_creator_post',{p_post_id:id,p_decision:decision});
   if(error){say('Review failed: '+error.message);a.disabled=b.disabled=false;return}
-  say(decision==='publish'?'Post published to the free feed.':'Post rejected and removed from the review queue.');
+  say(decision==='publish'?'Post published.':'Post rejected and removed from the review queue.');
   await loadQueue();
  }
  $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');await loadQueue()};
