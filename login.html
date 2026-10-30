@@ -31,10 +31,32 @@ input[type=email],input[type=password],input[type=text]{padding:15px 16px;backgr
 .submit{padding:16px;font-size:12px;letter-spacing:.12em}
 @media(max-width:480px){.panel{padding:30px 23px}.panel h1{font-size:36px}}
 
+
+/* Original THC welcome-page login layout */
+body{min-height:100vh;padding:34px 24px;background:radial-gradient(ellipse at 18% 20%,#6c294c55,transparent 38%),radial-gradient(ellipse at 83% 80%,#47306c55,transparent 42%),#0b090e}
+.page{width:min(100%,1120px);display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,440px);column-gap:clamp(30px,6vw,82px);align-items:center}
+.brand{grid-column:1/-1;justify-content:flex-start;margin:0 0 38px 0;gap:15px}
+.brand img{width:74px;height:74px;filter:drop-shadow(0 7px 24px #f24d9844)}
+.brand strong{font-size:14px;letter-spacing:.2em}.brand small{font-size:10px}
+.welcome{grid-column:1;grid-row:2;align-self:center;padding:0 0 22px}
+.welcome .eyebrow{display:inline-block;padding:9px 13px;border:1px solid #f24d9855;border-radius:99px;background:#f24d9810}
+.welcome h2{font-size:clamp(48px,6.3vw,78px);line-height:.99;letter-spacing:-.075em;margin:23px 0 18px;color:#fff8fc}
+.welcome h2 span{background:linear-gradient(95deg,#ff8fc0,#d88af4 65%,#e8c17b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.welcome>p{max-width:470px;color:#c6b5c3;font-size:16px;line-height:1.8;margin:0 0 28px}
+.welcome-cards{display:grid;gap:10px;max-width:460px}
+.welcome-cards>div{display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:10px;padding:13px 15px;border:1px solid #ffffff19;border-radius:13px;background:linear-gradient(110deg,#ffffff0c,#ffffff04)}
+.welcome-cards b{grid-row:span 2;color:#ff91c2;font-size:11px;letter-spacing:.1em}
+.welcome-cards strong{font-size:13px;color:#fff8fc}.welcome-cards small{font-size:11px;color:#a998a8;margin-top:3px}
+.welcome-foot{margin-top:26px;color:#88778a;font-size:9px;font-weight:900;letter-spacing:.25em}
+.panel{grid-column:2;grid-row:2;margin:0;padding:35px 32px}
+.back{grid-column:1/-1;margin-top:30px;text-align:center}
+@media(max-width:800px){body{padding:24px 16px}.page{max-width:500px;display:flex;flex-direction:column;align-items:stretch}.brand{margin:0 0 22px}.welcome{padding:0 0 24px}.welcome h2{font-size:clamp(44px,12vw,60px);margin:16px 0}.welcome>p{font-size:14px;margin-bottom:18px}.welcome-cards{grid-template-columns:1fr 1fr}.welcome-cards>div:last-child{grid-column:1/-1}.panel{width:100%;padding:28px 23px}.back{margin-top:22px}}
+@media(max-width:420px){.welcome-cards{grid-template-columns:1fr}.welcome-cards>div:last-child{grid-column:auto}}
+
 </style></head>
 <body><main class="page">
 <a class="brand" href="index.html"><img src="thc-logo.png" alt="THC logo"><span><strong>TOKYO HENTAI CLUB</strong><small>YOUR TOKYO AFTER-DARK CLUB</small></span></a>
-<section class="panel"><div class="eyebrow">WELCOME BACK · TOKYO AFTER DARK</div><h1 id="title">Log in.</h1><p class="intro" id="intro">Sign in to catch up with the girls, like and comment on free posts, and manage your purchases.</p>
+<section class="welcome"><div class="eyebrow">TOKYO HENTAI CLUB · OFFICIAL MEMBER ACCESS</div><h2>Your night.<br><span>Your rules.</span><br>Your fantasy.</h2><p>Meet the girls, explore the latest updates, and make every night in Tokyo your own.</p><div class="welcome-cards"><div><b>01</b><strong>Meet the Girls</strong><small>Find your perfect match</small></div><div><b>02</b><strong>Fresh from the Girls</strong><small>See the latest updates</small></div><div><b>03</b><strong>Your Purchases</strong><small>Keep everything together</small></div></div><div class="welcome-foot">A LITTLE MYSTERY. A LOT OF TOKYO.</div></section><section class="panel"><div class="eyebrow">WELCOME BACK · TOKYO AFTER DARK</div><h1 id="title">Log in.</h1><p class="intro" id="intro">Sign in to catch up with the girls, like and comment on free posts, and manage your purchases.</p>
 <form id="authForm">
 <div id="nameWrap" hidden><label for="name">Display name</label><input id="name" type="text" maxlength="60" autocomplete="nickname" placeholder="Your display name"></div>
 <label for="email">Email address</label><input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
