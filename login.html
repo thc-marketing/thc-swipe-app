@@ -17,9 +17,23 @@ label{display:block;font-size:12px;font-weight:700;margin:15px 0 7px;color:#f0dc
 #message{min-height:18px;font-size:12px;line-height:1.5;overflow-wrap:anywhere;margin:13px 0 0;color:#b8aab7}
 .back{display:block;text-align:center;color:#ff91c2;text-decoration:none;font-size:12px;margin-top:20px}
 @media(max-width:480px){.panel{padding:26px 22px}.panel h1{font-size:30px}}
+
+/* Premium, editorial login page */
+body{background:radial-gradient(ellipse at 75% 10%,#70234e66,transparent 38%),radial-gradient(ellipse at 12% 88%,#39245f66,transparent 42%),#0b090e}
+.page{width:min(100%,500px)}
+.brand{justify-content:flex-start;margin:0 0 22px 8px}
+.brand img{width:68px;height:68px;filter:drop-shadow(0 6px 20px #f24d9844)}
+.panel{padding:40px;border-radius:26px;background:linear-gradient(145deg,#261b29,#151119 72%);border:1px solid #f24d9855;box-shadow:0 30px 100px #000b,0 0 70px #e83f8d18}
+.panel:after{content:"TOKYO · AFTER DARK · YOUR PRIVATE FEED";display:block;margin-top:25px;padding-top:17px;border-top:1px solid #ffffff16;color:#927d91;font-size:9px;font-weight:900;letter-spacing:.2em;text-align:center}
+.panel h1{font-size:42px;margin-top:16px}
+.intro{font-size:14px;line-height:1.75}
+input[type=email],input[type=password],input[type=text]{padding:15px 16px;background:#0e0b12;border-color:#594054}
+.submit{padding:16px;font-size:12px;letter-spacing:.12em}
+@media(max-width:480px){.panel{padding:30px 23px}.panel h1{font-size:36px}}
+
 </style></head>
 <body><main class="page">
-<a class="brand" href="./"><img src="thc-logo.png" alt="THC logo"><span><strong>TOKYO HENTAI CLUB</strong><small>YOUR TOKYO AFTER-DARK CLUB</small></span></a>
+<a class="brand" href="index.html"><img src="thc-logo.png" alt="THC logo"><span><strong>TOKYO HENTAI CLUB</strong><small>YOUR TOKYO AFTER-DARK CLUB</small></span></a>
 <section class="panel"><div class="eyebrow">WELCOME BACK · TOKYO AFTER DARK</div><h1 id="title">Log in.</h1><p class="intro" id="intro">Sign in to catch up with the girls, like and comment on free posts, and manage your purchases.</p>
 <form id="authForm">
 <div id="nameWrap" hidden><label for="name">Display name</label><input id="name" type="text" maxlength="60" autocomplete="nickname" placeholder="Your display name"></div>
@@ -29,7 +43,7 @@ label{display:block;font-size:12px;font-weight:700;margin:15px 0 7px;color:#f0dc
 <button class="submit" id="submit" type="submit">LOG IN</button></form>
 <p id="message" role="status" aria-live="polite"></p>
 <p class="switch"><span id="switchText">New to THC?</span> <button id="switch" type="button">Create an account</button></p>
-</section><a class="back" href="./">← Back to the creator feed</a>
+</section><a class="back" href="index.html">← Back to the creator feed</a>
 </main>
 <script>
 (()=>{
@@ -38,7 +52,7 @@ const $=id=>document.getElementById(id);let mode="login";
 function say(t,error=false){$("message").textContent=t;$("message").style.color=error?"#ff9eae":"#b8aab7"}
 function setMode(next){mode=next;const signup=mode==="signup";$("title").textContent=signup?"Join the club.":"Log in.";$("intro").textContent=signup?"Create your account to follow creator updates, join the conversation, and manage your purchases.":"Sign in to catch up with the girls, like and comment on free posts, and manage your purchases.";$("nameWrap").hidden=!signup;$("adultWrap").hidden=!signup;$("name").required=signup;$("adult").required=signup;$("password").autocomplete=signup?"new-password":"current-password";$("submit").textContent=signup?"CREATE ACCOUNT":"LOG IN";$("switchText").textContent=signup?"Already have an account?":"New to THC?";$("switch").textContent=signup?"Log in":"Create an account";say("")}
 $("switch").onclick=()=>setMode(mode==="login"?"signup":"login");
-$("authForm").onsubmit=async e=>{e.preventDefault();if(!$("authForm").reportValidity())return;const btn=$("submit");btn.disabled=true;btn.textContent="PLEASE WAIT…";say("");try{const email=$("email").value.trim(),password=$("password").value;let result;if(mode==="signup"){result=await db.auth.signUp({email,password,options:{data:{display_name:$("name").value.trim(),adult_confirmed:true}}})}else{result=await db.auth.signInWithPassword({email,password})}if(result.error)throw result.error;if(mode==="signup"&&!result.data.session){say("Account registration started. Check your email for a confirmation link, then log in.");setMode("login")}else{location.href="./"}}catch(err){say(err.message||"Something went wrong. Please try again.",true)}finally{btn.disabled=false;btn.textContent=mode==="signup"?"CREATE ACCOUNT":"LOG IN"}};
-db.auth.getSession().then(({data,error})=>{if(error){say("Could not check your session: "+error.message,true);return}if(data.session)location.href="./"});
+$("authForm").onsubmit=async e=>{e.preventDefault();if(!$("authForm").reportValidity())return;const btn=$("submit");btn.disabled=true;btn.textContent="PLEASE WAIT…";say("");try{const email=$("email").value.trim(),password=$("password").value;let result;if(mode==="signup"){result=await db.auth.signUp({email,password,options:{data:{display_name:$("name").value.trim(),adult_confirmed:true}}})}else{result=await db.auth.signInWithPassword({email,password})}if(result.error)throw result.error;if(mode==="signup"&&!result.data.session){say("Account registration started. Check your email for a confirmation link, then log in.");setMode("login")}else{location.href="index.html"}}catch(err){say(err.message||"Something went wrong. Please try again.",true)}finally{btn.disabled=false;btn.textContent=mode==="signup"?"CREATE ACCOUNT":"LOG IN"}};
+db.auth.getSession().then(({data,error})=>{if(error){say("Could not check your session: "+error.message,true);return}if(data.session)location.href="index.html"});
 })();
 </script></body></html>
