@@ -1,11 +1,14 @@
+
 {
   "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
-  // wrangler.jsonc
-"name": "thc-live-profiles",
+  "name": "thc-live-profiles",
+  "main": "src/index.js",
   "compatibility_date": "2026-10-23",
   "assets": {
     "directory": ".",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application"
-  },
-  "previews": {}
+  }
 }
+
+
