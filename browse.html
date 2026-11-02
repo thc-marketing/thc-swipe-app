@@ -1645,10 +1645,16 @@ logoutBtn.onclick = async () => {
       });
     } catch (error) {
       console.error('Could not load reservation options:', error);
-      currentPersonalOptions = [];
-      optionList.replaceChildren();
-      optionWrap.hidden = false;
-      optionHint.textContent = 'Could not load this girl’s options. You can still send a reservation without selecting options.';
+      const localOptions = normalizeOptions(profile);
+      if (localOptions.services.length || localOptions.personal.length) {
+        renderOptions(localOptions);
+        optionHint.textContent = 'Showing saved options for this girl.';
+      } else {
+        currentPersonalOptions = [];
+        optionList.replaceChildren();
+        optionWrap.hidden = false;
+        optionHint.textContent = 'No additional options are listed for this girl yet.';
+      }
     }
   }
 
