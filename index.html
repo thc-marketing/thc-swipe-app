@@ -106,30 +106,91 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
  $('headerPurchasesButton')?.addEventListener('click',()=>showPanel('purchases'));
 
  
- async function loadGirlDirectory(){
-  const status=$('girlStatus'),grid=$('girlDirectory'),count=$('girlCount');
-  try{
-   const response=await fetch('./profiles.json',{cache:'no-store'});
-   if(!response.ok) throw new Error('Imported profile list unavailable ('+response.status+')');
-   const rows=await response.json();
-   if(!Array.isArray(rows)||!rows.length) throw new Error('No imported profiles found');
-   count.textContent=rows.length+' profiles';
-   status.textContent='Imported directory · snapshot from the saved official page';
-   grid.replaceChildren();
-   for(const p of rows){
-    const card=document.createElement('article');card.className='girl-card';
-    if(p.photo){const img=document.createElement('img');img.className='girl-photo';img.src=p.photo;img.alt=p.displayName+' profile photo';img.loading='lazy';img.onerror=()=>img.replaceWith(makePlaceholder());card.append(img)}
-    else card.append(makePlaceholder());
-    const info=document.createElement('div');info.className='girl-info';
-    const name=document.createElement('h3');name.className='girl-name';name.textContent=p.displayName+(p.age?' ('+p.age+')':'');
-    const bio=document.createElement('p');bio.className='girl-bio';bio.textContent=[p.rank,p.area,p.status].filter(Boolean).join(' · ')||'View profile details and availability.';
-    const actions=document.createElement('div');actions.className='girl-actions';
-    const view=document.createElement('a');view.href='browse.html?profile='+encodeURIComponent(p.id);view.textContent='View profile';
-    const book=document.createElement('a');book.href='browse.html?booking=1&id='+encodeURIComponent(p.id);book.className='book';book.textContent='Book';
-    actions.append(view,book);info.append(name,bio,actions);card.append(info);grid.append(card);
-   }
-  }catch(e){status.textContent='Could not load imported profiles: '+(e.message||String(e));count.textContent='';}
- }
+async function loadGirlDirectory(){
+  const status = $('girlStatus');
+  const grid = $('girlDirectory');
+  const count = $('girlCount');
+
+  try {
+    const { data: rows, error } = await db
+      .from('companion_profiles')
+      .select(`
+        id,
+        display_name,
+        age,
+        photo_url,
+        rank,
+        area,
+        availability_label
+      `)
+      .eq('is_published', true)
+      .eq('is_active', true)
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+    if (!rows || !rows.length) {
+      throw new Error('No published profiles found');
+    }
+
+    count.textContent = rows.length + ' profiles';
+    status.textContent = 'Live directory · connected to Supabase';
+    grid.replaceChildren();
+
+    for (const p of rows) {
+      const card = document.createElement('article');
+      card.className = 'girl-card';
+
+      if (p.photo_url) {
+        const img = document.createElement('img');
+        img.className = 'girl-photo';
+        img.src = p.photo_url;
+        img.alt = p.display_name + ' profile photo';
+        img.loading = 'lazy';
+        img.onerror = () => img.replaceWith(makePlaceholder());
+        card.append(img);
+      } else {
+        card.append(makePlaceholder());
+      }
+
+      const info = document.createElement('div');
+      info.className = 'girl-info';
+
+      const name = document.createElement('h3');
+      name.className = 'girl-name';
+      name.textContent = p.display_name + (p.age ? ' (' + p.age + ')' : '');
+
+      const bio = document.createElement('p');
+      bio.className = 'girl-bio';
+      bio.textContent = [
+        p.rank,
+        p.area,
+        p.availability_label
+      ].filter(Boolean).join(' · ') || 'View profile details and availability.';
+
+      const actions = document.createElement('div');
+      actions.className = 'girl-actions';
+
+      const view = document.createElement('a');
+      view.href = 'browse.html?profile=' + encodeURIComponent(p.id);
+      view.textContent = 'View profile';
+
+      const book = document.createElement('a');
+      book.href = 'browse.html?booking=1&id=' + encodeURIComponent(p.id);
+      book.className = 'book';
+      book.textContent = 'Book';
+
+      actions.append(view, book);
+      info.append(name, bio, actions);
+      card.append(info);
+      grid.append(card);
+    }
+
+  } catch (e) {
+    status.textContent = 'Could not load profiles: ' + (e.message || String(e));
+    count.textContent = '';
+    console.error('Directory loading error:', e);
+  }
+}
  function makePlaceholder(){const el=document.createElement('div');el.className='girl-photo placeholder';el.textContent='✦';el.setAttribute('aria-label','Profile photo not added');return el}
 
  async function makePreview(file){return new Promise(resolve=>{const url=URL.createObjectURL(file);const isVideo=file.type.startsWith('video/');const source=isVideo?document.createElement('video'):new Image();if(isVideo){source.muted=true;source.playsInline=true;source.preload='metadata'}const cleanup=()=>URL.revokeObjectURL(url);source.onerror=()=>{cleanup();resolve(null)};source.onload=()=>{try{const w=isVideo?source.videoWidth:source.naturalWidth,h=isVideo?source.videoHeight:source.naturalHeight;const scale=Math.min(1,1000/Math.max(w,h));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));canvas.getContext('2d').drawImage(source,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{cleanup();resolve(blob)},'image/jpeg',0.72)}catch(e){cleanup();resolve(null)}};if(isVideo){source.onloadedmetadata=()=>{source.currentTime=Math.min(1,Math.max(0,source.duration/2||0.5))};source.onseeked=source.onload;source.src=url}else{source.src=url}})}
