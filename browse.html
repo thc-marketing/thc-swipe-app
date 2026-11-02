@@ -143,6 +143,16 @@ body.booking-only .top .pill{display:none}
 #girlProfileScreen #girlProfileOfficial{width:100%;margin-top:8px}
 #girlProfileScreen .profile-book{font-size:15px;padding:15px}
 body.profile-view-only .app{display:none!important}
+
+/* Instagram-inspired profile layout */
+#girlProfileScreen{background:#0d0b10!important;padding:18px!important}
+#girlProfileScreen .profile-inner{max-width:760px!important}
+.ig-profile-head{display:flex;align-items:center;gap:28px;padding:24px 0 18px;border-bottom:1px solid #ffffff20}
+.ig-avatar{width:118px;height:118px;flex:0 0 118px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#f66bab,#e8c17b)}
+.ig-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;border:3px solid #0d0b10}
+.ig-identity{min-width:0;flex:1}.ig-identity h2{font-size:24px;margin:0 0 18px}.ig-stats{display:flex;gap:24px;font-size:13px;color:#eee}.ig-stats b{font-weight:850}
+.ig-bio{padding:15px 0;color:#eee;font-size:13px;line-height:1.6}.ig-bio p{margin:5px 0}.ig-profile-actions{display:flex;gap:10px;margin:8px 0 22px}.ig-profile-actions button{flex:1}.ig-post-heading{text-align:center;border-top:1px solid #ffffff20;padding:15px;font-size:11px;font-weight:900;letter-spacing:.18em;color:#ddd}.ig-post-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}.ig-post-tile{padding:0;border:0;border-radius:0;background:#211925;aspect-ratio:1;overflow:hidden}.ig-post-tile img{width:100%;height:100%;object-fit:cover;display:block}.ig-profile-actions #girlProfileOfficial{background:#29202d;color:#fff}.ig-profile-actions #girlProfileBook{background:linear-gradient(110deg,#f66bab,#e83f8d);color:#190d16}
+@media(max-width:520px){.ig-profile-head{gap:16px}.ig-avatar{width:88px;height:88px;flex-basis:88px}.ig-identity h2{font-size:19px;margin-bottom:12px}.ig-stats{gap:12px;font-size:11px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -170,16 +180,15 @@ body.profile-view-only .app{display:none!important}
 <div id="girlProfileScreen">
   <div class="profile-inner">
     <button id="closeGirlProfile" type="button">← Back to profiles</button>
-
-    <h2 id="girlProfileName">Girl's Name</h2>
-
-    <img id="girlProfileMainPhoto"
-         class="gallery-main"
-         src=""
-         alt="Profile photo">
-
+    <div class="ig-profile-head">
+      <div class="ig-avatar"><img id="girlProfileMainPhoto" src="" alt="Profile photo"></div>
+      <div class="ig-identity"><h2 id="girlProfileName">Girl's Name</h2><div class="ig-stats"><span><b id="igPostCount">1</b> posts</span><span><b>—</b> followers</span><span><b>—</b> following</span></div></div>
+    </div>
+    <div class="ig-bio"><strong id="girlProfileTag"></strong><p id="girlProfileBio"></p><span id="girlProfileArea"></span><p id="girlProfileStatus"></p></div>
+    <div class="ig-profile-actions"><button id="girlProfileBook" class="profile-book" type="button">Book Now</button><button id="girlProfileOfficial" type="button">Official profile ↗</button></div>
+    <div class="ig-post-heading">POSTS</div>
+    <div class="ig-post-grid"><button class="ig-post-tile" type="button" aria-label="Profile post"><img id="igPostImage" src="" alt="Profile post"></button></div>
     <div id="girlProfileGallery" class="gallery-strip"></div>
-
     <div class="detail-section">
       <p id="girlProfileStatus"></p>
       <p id="girlProfileArea"></p>
@@ -1041,7 +1050,7 @@ async function openGirlProfile(p) {
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
   $("girlProfileBio").textContent = p.bio || "Contact us for more information.";
   $("girlProfileTag").textContent = p.rank || "";
-  mainPhoto.src = p.photo || "";
+  mainPhoto.src = p.photo || "";\n  $("igPostImage").src = p.photo || "";\n  $("igPostCount").textContent = "1";
   mainPhoto.alt = p.displayName + " profile photo";
   $("girlProfileGallery").replaceChildren();
   let details = $("girlProfileDetails");
