@@ -105,7 +105,14 @@
     "bio": "Absolutely Refreshing",
     "status": "--> Available Now",
     "profileUrl": "https://hentaitokyo.com/profile?cc=2975",
-    "bookingUrl": "https://hentaitokyo.com/booking?cc=2975"
+    "bookingUrl": "https://hentaitokyo.com/booking?cc=2975",
+    "photos": [
+      "https://hentaitokyo.com/common_img/cp/2975/other/l/A258A2B6-9B64-47FB-8C46-079E3F39D90C.jpg",
+      "https://hentaitokyo.com/common_img/cp/2975/other/l/340801AB-0E6C-46E6-98AB-7ED3225F1D1B.jpg",
+      "https://hentaitokyo.com/common_img/cp/2975/other/l/FFD1215B-A391-4E65-AF3E-8908997578F2.jpg",
+      "https://hentaitokyo.com/common_img/cp/2975/other/l/1983A24C-F341-4D07-8C7F-81C9F2818895.jpg",
+      "https://hentaitokyo.com/common_img/cp/2975/other/l/0ABA5745-C078-412D-9A8E-FA036BDF745C.jpg"
+    ]
   },
   {
     "id": 2930,
