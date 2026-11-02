@@ -452,78 +452,139 @@ function yen(value) { return "¥" + Number(value).toLocaleString("ja-JP"); }
   
 const $ = id => document.getElementById(id);
 
+
 async function loadProfiles() {
   try {
     $("status").textContent = "LOADING PROFILES";
-    const response = await fetch("./profiles.json", { cache: "no-store" });
-    if (!response.ok) throw new Error("Imported profile list unavailable (" + response.status + ")");
-    const data = await response.json();
-    if (!Array.isArray(data) || !data.length) throw new Error("No imported profiles found");
 
-    profiles = data.filter(g => g && typeof g === "object").map(g => ({
-      ...g,
-      name: g.displayName + (g.age ? " (" + g.age + ")" : ""),
-      displayName: g.displayName,
-      age: String(g.age || ""),
-      rank: normalizeRank(g.rank) || rankForProfile(g, g.displayName),
-      area: g.area || "Tokyo",
-      bio: g.bio || "View her official profile for details and available options.",
-      status: g.status || "Check availability",
-      statusType: /available now|now/i.test(g.status || "") ? "now" : "later",
-      tag: /available now|now/i.test(g.status || "") ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
-    })).filter(g => g.id != null && g.displayName);
+    const { data, error } = await db
+      .from("companion_profiles")
+      .select(`
+        id,
+        display_name,
+        age,
+        photo_url,
+        photos,
+        rank,
+        area,
+        bio,
+        availability_label,
+        profile_url,
+        booking_url,
+        details,
+        additional_services,
+        personal_options,
+        is_published,
+        is_active
+      `)
+      .eq("is_published", true)
+      .eq("is_active", true)
+      .order("id", { ascending: true });
 
-    $("count").textContent = "01 / " + String(profiles.length).padStart(2, "0");
-    document.querySelector(".pill").innerHTML = '<i class="dot"></i> Imported profiles';
+    if (error) throw error;
+    if (!data || !data.length) {
+      throw new Error("No published profiles found in Supabase");
+    }
+
+    profiles = data.map(g => {
+      const gallery = Array.isArray(g.photos) ? g.photos : [];
+
+      return {
+        ...g,
+        name: g.display_name + (g.age ? " (" + g.age + ")" : ""),
+        displayName: g.display_name,
+        age: String(g.age || ""),
+        photo: g.photo_url || "",
+        photos: gallery.map(item =>
+          typeof item === "string"
+            ? item
+            : item?.url || item?.photo_url || item?.src || ""
+        ).filter(Boolean),
+        rank: normalizeRank(g.rank) || rankForProfile(g, g.display_name),
+        area: g.area || "Tokyo",
+        bio: g.bio || "View her profile for details and available options.",
+        details: g.details || {},
+        services: g.additional_services || [],
+        additionalServices: g.additional_services || [],
+        personalOptions: g.personal_options || [],
+        personal_options: g.personal_options || [],
+        status: "Contact to confirm",
+        statusType: "later",
+        tag: "✦ CHECK AVAILABILITY",
+        profileUrl: g.profile_url || "",
+        bookingUrl: g.booking_url || ""
+      };
+    }).filter(g => g.id != null && g.displayName);
+
+    $("count").textContent =
+      "01 / " + String(profiles.length).padStart(2, "0");
+
+    document.querySelector(".pill").innerHTML =
+      '<i class="dot"></i> Live Supabase profiles';
+
     render();
     window.profiles = profiles;
+
     const profileId = routeParams.get("profile");
+
     if (profileId != null) {
-      const selectedProfile = profiles.find(p => String(p.id) === String(profileId));
-      if (selectedProfile) { document.querySelector(".app").style.display = "none"; openGirlProfile(selectedProfile); }
-      else $("status").textContent = "Selected profile was not found.";
-    }
-    const bookingId = routeParams.get("id");
-    if (routeParams.get("booking") === "1" && bookingId != null) {
-      const selected = profiles.find(p => String(p.id) === String(bookingId));
-      if (selected) {
-        const openWhenReady = () => {
-          if (typeof window.thcOpenReservation === "function") window.thcOpenReservation(selected);
-          else setTimeout(openWhenReady, 150);
-        };
-        openWhenReady();
+      const selectedProfile = profiles.find(
+        p => String(p.id) === String(profileId)
+      );
+
+      if (selectedProfile) {
+        document.querySelector(".app").style.display = "none";
+        openGirlProfile(selectedProfile);
       } else {
-        $("status").textContent = "Selected profile was not found. Please return to the directory.";
+        $("status").textContent = "Selected profile was not found.";
       }
     }
+
+    const bookingId = routeParams.get("id");
+
+    if (routeParams.get("booking") === "1" && bookingId != null) {
+      const selected = profiles.find(
+        p => String(p.id) === String(bookingId)
+      );
+
+      if (selected) {
+        const openWhenReady = () => {
+          if (typeof window.thcOpenReservation === "function") {
+            window.thcOpenReservation(selected);
+          } else {
+            setTimeout(openWhenReady, 150);
+          }
+        };
+
+        openWhenReady();
+      } else {
+        $("status").textContent =
+          "Selected profile was not found. Please return to the directory.";
+      }
+    }
+
   } catch (error) {
+    console.error("Supabase profile loading error:", error);
+
     $("name").textContent = "Profiles unavailable";
     $("status").textContent = "PLEASE TRY AGAIN";
-    $("bio").textContent = "Imported profiles could not load (" + String(error && error.message || "unknown error") + "). Please retry.";
+    $("bio").textContent =
+      "Profiles could not load (" +
+      String(error && error.message || "unknown error") +
+      "). Please retry.";
+
     $("art").innerHTML = "";
     $("count").textContent = "—";
     $("empty").style.display = "flex";
     $("card").style.display = "none";
-    $("empty").querySelector("h3").textContent = "Couldn't load profiles";
-    $("empty").querySelector("p").textContent = "Please try loading the profiles again.";
+    $("empty").querySelector("h3").textContent =
+      "Couldn't load profiles";
+    $("empty").querySelector("p").textContent =
+      "Please try loading the profiles again.";
     $("restart").textContent = "Retry";
   }
 }
-function render() {
-  const previousButton = $("previousGirlBtn");
-  if (previousButton) {
-    previousButton.disabled = previousIndexes.length === 0;
-    previousButton.style.opacity = previousIndexes.length ? "1" : ".45";
-  }
-  if (index >= profiles.length) {
-    $("card").style.display = "none";
-    $("empty").style.display = "flex";
-    $("empty").querySelector("h3").textContent = "You've seen everyone";
-    $("empty").querySelector("p").textContent =
-      "Restart to browse the profiles again.";
-    $("restart").textContent = "Start over";
-    return;
-  }
+
 
   const p = profiles[index];
   $("card").style.display = "block";
