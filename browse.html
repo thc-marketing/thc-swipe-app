@@ -161,6 +161,14 @@ body.profile-view-only .app{display:none!important}
 .ig-photo-grid img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#211925}
 #girlProfileBioFacts p{margin:5px 0;color:#eee}
 #girlProfileBioFacts strong{color:#e8c17b}
+
+.ig-content-tabs{display:flex;justify-content:center;gap:70px;border-top:1px solid #ffffff25;border-bottom:1px solid #ffffff18}
+.ig-content-tab{border:0;border-radius:0;background:transparent;color:#a99ba8;padding:15px 8px;font-size:11px;font-weight:900;letter-spacing:.14em;border-top:2px solid transparent;cursor:pointer}
+.ig-content-tab.active{color:#fff;border-top-color:#e8c17b}
+.ig-content-panel[hidden]{display:none!important}
+.ig-empty{min-height:130px;display:grid;place-items:center;text-align:center;padding:24px;color:#b8aab7;font-size:13px}
+.ig-photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding-top:3px}
+.ig-photo-grid img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#211925}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -194,16 +202,39 @@ body.profile-view-only .app{display:none!important}
     </div>
     <div class="ig-bio"><strong id="girlProfileTag"></strong><p id="girlProfileBio"></p><div id="girlProfileBioFacts"></div></div>
     <div class="ig-profile-actions"><button id="girlProfileBook" class="profile-book" type="button">Book Now</button><button id="girlProfileOfficial" type="button">Official profile ↗</button></div>
-    <div class="ig-post-heading">POSTS</div>
-    <div id="igPostsEmpty" class="ig-empty">No posts have been published yet.</div>
-    <div class="ig-post-heading ig-photos-heading">PHOTOS</div>
-    <div id="girlProfileGallery" class="ig-photo-grid"></div>
+    <div class="ig-content-tabs" role="tablist" aria-label="Profile content">
+      <button class="ig-content-tab active" id="postsTab" type="button" role="tab" aria-selected="true">▦ POSTS</button>
+      <button class="ig-content-tab" id="photosTab" type="button" role="tab" aria-selected="false">▧ PHOTOS</button>
+    </div>
+    <section id="postsPanel" class="ig-content-panel" role="tabpanel">
+      <div id="igPostsEmpty" class="ig-empty">No posts have been published yet.</div>
+      <div id="girlPublishedPosts" class="ig-post-grid"></div>
+    </section>
+    <section id="photosPanel" class="ig-content-panel" role="tabpanel" hidden>
+      <div id="girlProfileGallery" class="ig-photo-grid"></div>
+    </section>
 
   </div>
 </div>
 
 <script>
 const routeParams = new URLSearchParams(location.search);
+function setProfileContentTab(tab){
+  const posts = document.getElementById("postsPanel");
+  const photos = document.getElementById("photosPanel");
+  const postsTab = document.getElementById("postsTab");
+  const photosTab = document.getElementById("photosTab");
+  if(!posts || !photos || !postsTab || !photosTab) return;
+  const showPosts = tab === "posts";
+  posts.hidden = !showPosts;
+  photos.hidden = showPosts;
+  postsTab.classList.toggle("active", showPosts);
+  photosTab.classList.toggle("active", !showPosts);
+  postsTab.setAttribute("aria-selected", String(showPosts));
+  photosTab.setAttribute("aria-selected", String(!showPosts));
+}
+document.getElementById("postsTab")?.addEventListener("click",()=>setProfileContentTab("posts"));
+document.getElementById("photosTab")?.addEventListener("click",()=>setProfileContentTab("photos"));
 if(routeParams.get('booking')==='1') document.body.classList.add('booking-only');
 const API_URL = "https://833d8cc1-thc-live-profiles.thc-girls.workers.dev/";
 // Set this to the deployed thc-schedule-api Worker URL. Keep the profile API above unchanged.
@@ -1064,13 +1095,18 @@ async function openGirlProfile(p) {
   });
   const gallery = $("girlProfileGallery");
   gallery.replaceChildren();
-  if (p.photo) {
+  const photos = Array.isArray(p.photos) && p.photos.length ? p.photos : (p.photo ? [p.photo] : []);
+  photos.forEach((src, index) => {
     const photo = document.createElement("img");
-    photo.src = p.photo;
-    photo.alt = p.displayName + " photo";
+    photo.src = src;
+    photo.alt = p.displayName + " photo " + (index + 1);
     photo.loading = "lazy";
     gallery.append(photo);
-  }
+  });
+  const publishedPosts = $("girlPublishedPosts");
+  if (publishedPosts) publishedPosts.replaceChildren();
+  const postsEmpty = $("igPostsEmpty");
+  if (postsEmpty) postsEmpty.hidden = Array.isArray(p.posts) && p.posts.length > 0;
   let details = $("girlProfileDetails");
   if (!details) { details = document.createElement("div"); details.id = "girlProfileDetails"; $("girlProfileBio").after(details); }
   details.className = "instagram-profile-meta";
