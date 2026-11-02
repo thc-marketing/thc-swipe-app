@@ -153,6 +153,14 @@ body.profile-view-only .app{display:none!important}
 .ig-identity{min-width:0;flex:1}.ig-identity h2{font-size:24px;margin:0 0 18px}.ig-stats{display:flex;gap:24px;font-size:13px;color:#eee}.ig-stats b{font-weight:850}
 .ig-bio{padding:15px 0;color:#eee;font-size:13px;line-height:1.6}.ig-bio p{margin:5px 0}.ig-profile-actions{display:flex;gap:10px;margin:8px 0 22px}.ig-profile-actions button{flex:1}.ig-post-heading{text-align:center;border-top:1px solid #ffffff20;padding:15px;font-size:11px;font-weight:900;letter-spacing:.18em;color:#ddd}.ig-post-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}.ig-post-tile{padding:0;border:0;border-radius:0;background:#211925;aspect-ratio:1;overflow:hidden}.ig-post-tile img{width:100%;height:100%;object-fit:cover;display:block}.ig-profile-actions #girlProfileOfficial{background:#29202d;color:#fff}.ig-profile-actions #girlProfileBook{background:linear-gradient(110deg,#f66bab,#e83f8d);color:#190d16}
 @media(max-width:520px){.ig-profile-head{gap:16px}.ig-avatar{width:88px;height:88px;flex-basis:88px}.ig-identity h2{font-size:19px;margin-bottom:12px}.ig-stats{gap:12px;font-size:11px}}
+
+/* Separate published posts from profile photo gallery */
+.ig-empty{padding:28px 12px;text-align:center;color:#b8aab7;font-size:13px;border-bottom:1px solid #ffffff20}
+.ig-photos-heading{margin-top:8px}
+.ig-photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding-top:8px}
+.ig-photo-grid img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#211925}
+#girlProfileBioFacts p{margin:5px 0;color:#eee}
+#girlProfileBioFacts strong{color:#e8c17b}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -184,11 +192,12 @@ body.profile-view-only .app{display:none!important}
       <div class="ig-avatar"><img id="girlProfileMainPhoto" src="" alt="Profile photo"></div>
       <div class="ig-identity"><h2 id="girlProfileName">Girl's Name</h2><div class="ig-stats"><span><b id="igPostCount">1</b> posts</span><span><b>—</b> followers</span><span><b>—</b> following</span></div></div>
     </div>
-    <div class="ig-bio"><strong id="girlProfileTag"></strong><p id="girlProfileBio"></p><span id="girlProfileArea"></span><p id="girlProfileStatus"></p></div>
+    <div class="ig-bio"><strong id="girlProfileTag"></strong><p id="girlProfileBio"></p><div id="girlProfileBioFacts"></div></div>
     <div class="ig-profile-actions"><button id="girlProfileBook" class="profile-book" type="button">Book Now</button><button id="girlProfileOfficial" type="button">Official profile ↗</button></div>
     <div class="ig-post-heading">POSTS</div>
-    <div class="ig-post-grid"><button class="ig-post-tile" type="button" aria-label="Profile post"><img id="igPostImage" src="" alt="Profile post"></button></div>
-    <div id="girlProfileGallery" class="gallery-strip"></div>
+    <div id="igPostsEmpty" class="ig-empty">No posts have been published yet.</div>
+    <div class="ig-post-heading ig-photos-heading">PHOTOS</div>
+    <div id="girlProfileGallery" class="ig-photo-grid"></div>
 
   </div>
 </div>
@@ -1033,17 +1042,35 @@ async function openGirlProfile(p) {
   const screen = $("girlProfileScreen");
   const mainPhoto = $("girlProfileMainPhoto");
   $("girlProfileName").textContent = p.displayName + (p.age ? ", " + p.age : "");
-  $("girlProfileStatus").textContent = p.status || "Contact to confirm availability";
-  $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
-  $("girlProfileBio").textContent = p.bio || "Contact us for more information.";
-  $("girlProfileTag").textContent = p.rank || "";
+  $("girlProfileBio").textContent = p.bio || "No biography provided.";
+  $("girlProfileTag").textContent = p.rank || "Rank not listed";
+  $("igPostCount").textContent = "0";
   mainPhoto.src = p.photo || "";
-  const postImage = $("igPostImage");
-  if (postImage) postImage.src = p.photo || "";
-  const postCount = $("igPostCount");
-  if (postCount) postCount.textContent = "1";
   mainPhoto.alt = p.displayName + " profile photo";
-  $("girlProfileGallery").replaceChildren();
+  const facts = $("girlProfileBioFacts");
+  facts.replaceChildren();
+  [
+    ["Age", p.age ? p.age + " years old" : "Not listed"],
+    ["Area", p.area || "Not listed"],
+    ["Rank", p.rank || "Not listed"],
+    ["Profile ID", p.id != null ? String(p.id) : "Not listed"],
+    ["Availability", p.status || "Contact to confirm"]
+  ].forEach(([label,value]) => {
+    const line = document.createElement("p");
+    const strong = document.createElement("strong");
+    strong.textContent = label + ": ";
+    line.append(strong, document.createTextNode(value));
+    facts.append(line);
+  });
+  const gallery = $("girlProfileGallery");
+  gallery.replaceChildren();
+  if (p.photo) {
+    const photo = document.createElement("img");
+    photo.src = p.photo;
+    photo.alt = p.displayName + " photo";
+    photo.loading = "lazy";
+    gallery.append(photo);
+  }
   let details = $("girlProfileDetails");
   if (!details) { details = document.createElement("div"); details.id = "girlProfileDetails"; $("girlProfileBio").after(details); }
   details.className = "instagram-profile-meta";
@@ -1063,7 +1090,7 @@ async function openGirlProfile(p) {
 $("closeGirlProfile").onclick = () => {
   $("girlProfileScreen").style.display = "none";
   document.body.classList.remove("profile-view-only");
-  if (routeParams.has("profile")) location.href = "./";
+  if (routeParams.has("profile")) location.href = "./profiles.html";
 };
 
 $("girlProfileBook").onclick = () => {
