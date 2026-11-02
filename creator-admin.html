@@ -92,7 +92,23 @@ button:active{transform:scale(.98)}
    const toggle=document.createElement('button');toggle.textContent=p.status==='hidden'?'Restore to feed':'Hide from feed';
    toggle.onclick=async()=>{toggle.disabled=true;const next=p.status==='hidden'?'published':'hidden';const {error}=await db.from('creator_posts').update({status:next}).eq('id',p.id);if(error){say('Could not update post: '+error.message);toggle.disabled=false;return}say(next==='hidden'?'Post hidden from public feed.':'Post restored to public feed.');await loadPublished()};
    const del=document.createElement('button');del.className='reject';del.textContent='Delete permanently';
-   del.onclick=async()=>{if(!confirm('Permanently delete this post? This cannot be undone.'))return;del.disabled=true;const {error}=await db.from('creator_posts').delete().eq('id',p.id);if(error){say('Could not delete post: '+error.message);del.disabled=false;return}say('Post deleted.');await loadPublished()};
+   del.type='button';
+   del.addEventListener('click',async(event)=>{
+    event.preventDefault();
+    event.stopPropagation();
+    if(!window.confirm('Permanently delete post '+p.id+'? This cannot be undone.')){say('Deletion cancelled.');return}
+    del.disabled=true;
+    say('Deleting post '+p.id+'…');
+    try{
+     const {data:sessionData}=await db.auth.getSession();
+     if(!sessionData?.session){say('Delete failed: administrator session has expired. Sign in again.');del.disabled=false;return}
+     const {data:deleted,error}=await db.from('creator_posts').delete().eq('id',p.id).select('id');
+     if(error){say('Delete failed: '+error.message+' (code '+(error.code||'unknown')+')');del.disabled=false;return}
+     if(!deleted?.length){say('Delete was not applied. Supabase returned no deleted row; check the administrator DELETE policy/RLS.');del.disabled=false;return}
+     say('Post '+p.id+' deleted successfully.');
+     await loadPublished();
+    }catch(err){say('Delete failed: '+(err?.message||String(err)));del.disabled=false}
+   });
    actions.append(toggle,del);card.append(actions);box.append(card);
   }
  }
