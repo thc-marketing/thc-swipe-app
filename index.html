@@ -104,21 +104,28 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
  async function loadGirlDirectory(){
   const status=$('girlStatus'),grid=$('girlDirectory'),count=$('girlCount');
   try{
-   const {data:profiles,error}=await db.from('creator_profiles').select('user_id,display_name,bio,avatar_url').eq('is_creator',true).eq('is_approved',true).order('display_name',{ascending:true});
-   if(error)throw error;
-   const rows=profiles||[];count.textContent=rows.length+' profiles';
-   status.textContent=rows.length?'':'No approved profiles are available yet.';
+   const response=await fetch('https://833d8cc1-thc-live-profiles.thc-girls.workers.dev/',{cache:'no-store'});
+   if(!response.ok) throw new Error('Profile service unavailable ('+response.status+')');
+   const result=await response.json();
+   if(!Array.isArray(result.girls)) throw new Error('Unexpected profile response');
+   const rows=result.girls.filter(g=>g&&typeof g==='object').map(g=>{
+    const rawName=String(g.name||g.displayName||g.title||'').trim();
+    const match=rawName.match(/^(.*?)\\s*\\((\\d+)\\)/);
+    return {...g,displayName:match?match[1].trim():rawName,age:match?match[2]:String(g.age||'')};
+   }).filter(g=>g.id!=null&&g.displayName);
+   count.textContent=rows.length+' profiles';
+   status.textContent=rows.length?'':'No profiles are currently listed.';
    grid.replaceChildren();
    for(const p of rows){
     const card=document.createElement('article');card.className='girl-card';
-    if(p.avatar_url){const img=document.createElement('img');img.className='girl-photo';img.src=p.avatar_url;img.alt=p.display_name+' profile photo';img.loading='lazy';img.onerror=()=>{img.replaceWith(makePlaceholder())};card.append(img)}
+    if(p.photo){const img=document.createElement('img');img.className='girl-photo';img.src=p.photo;img.alt=p.displayName+' profile photo';img.loading='lazy';img.onerror=()=>img.replaceWith(makePlaceholder());card.append(img)}
     else card.append(makePlaceholder());
     const info=document.createElement('div');info.className='girl-info';
-    const name=document.createElement('h3');name.className='girl-name';name.textContent=p.display_name;
-    const bio=document.createElement('p');bio.className='girl-bio';bio.textContent=(p.bio||'Tokyo Hentai Club creator').slice(0,105);
+    const name=document.createElement('h3');name.className='girl-name';name.textContent=p.displayName+(p.age?' ('+p.age+')':'');
+    const bio=document.createElement('p');bio.className='girl-bio';bio.textContent=[p.rank,p.area,p.status].filter(Boolean).join(' · ')||'View profile details and availability.';
     const actions=document.createElement('div');actions.className='girl-actions';
-    const view=document.createElement('a');view.href='creator-profile.html?id='+encodeURIComponent(p.user_id);view.textContent='View profile';
-    const book=document.createElement('a');book.href='browse.html';book.className='book';book.textContent='Book';
+    const view=document.createElement('a');view.href='browse.html?profile='+encodeURIComponent(p.id);view.textContent='View profile';
+    const book=document.createElement('a');book.href='browse.html?booking=1&id='+encodeURIComponent(p.id);book.className='book';book.textContent='Book';
     actions.append(view,book);info.append(name,bio,actions);card.append(info);grid.append(card);
    }
   }catch(e){status.textContent='Could not load profiles: '+(e.message||String(e));count.textContent='';}
