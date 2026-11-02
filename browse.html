@@ -1682,11 +1682,10 @@ logoutBtn.onclick = async () => {
   document.getElementById('thc-outcall-fields').hidden = !outcall;
 });
 
-  // Fetch published shift times from the separate schedule Worker.
-  // The existing profile API endpoint is intentionally unchanged.
+  // Offer standard booking request times without relying on the blocked schedule site.
   let scheduleRequestId = 0;
   async function refreshStartTimes() {
-    const requestId = ++scheduleRequestId;
+    scheduleRequestId++;
     const timeSelect = document.getElementById('thc-time');
     const dateValue = document.getElementById('thc-date').value;
     const girlId = document.getElementById('thc-girl').value;
@@ -1695,53 +1694,22 @@ logoutBtn.onclick = async () => {
     const hint = document.getElementById('thc-time-hint');
     timeSelect.replaceChildren(new Option('Choose a start time', ''));
     if (!dateValue || !girlId) {
-      hint.textContent = 'Choose a girl and date to see scheduled start times. Staff must confirm availability.';
+      hint.textContent = 'Choose a girl and date. Requested booking window: 12:00 AM–4:00 AM; staff confirmation required.';
       return;
     }
-    if (!SCHEDULE_API_URL) {
-      hint.textContent = 'Schedule API URL is not configured yet. Please confirm times with staff.';
+    const duration = durationValue === 'extension' ? 30 : Number(durationValue);
+    if (![30, 60, 90, 120].includes(duration)) {
+      hint.textContent = 'Please choose a valid duration.';
       return;
     }
-    if (durationValue === 'extension') {
-      hint.textContent = 'For a 30-minute extension, please confirm the start time with staff.';
-      return;
+    const times = [];
+    for (let minute = 0; minute + duration <= 240; minute += 30) {
+      times.push(String(Math.floor(minute / 60)).padStart(2, '0') + ':' + String(minute % 60).padStart(2, '0'));
     }
-    const date = dateValue.replace(/-/g, '');
-    const profile = profileById.get(String(girlId));
-    hint.textContent = 'Loading the published schedule…';
-    timeSelect.disabled = true;
-    try {
-      const url = new URL(SCHEDULE_API_URL);
-      url.searchParams.set('date', date);
-      url.searchParams.set('girlId', String(girlId));
-      url.searchParams.set('duration', durationValue);
-      const response = await fetch(url.toString(), { cache: 'no-store' });
-      if (!response.ok) throw new Error('Schedule service returned ' + response.status);
-      const data = await response.json();
-      if (requestId !== scheduleRequestId) return;
-      if (!data || data.ok !== true) throw new Error(data && data.error ? data.error : 'Invalid schedule response');
-      if (!data.scheduled) {
-        hint.textContent = (data.companion || (profile && profile.displayName) || 'This girl') +
-          ' is not listed as scheduled for this date. Please choose another date or confirm with staff.';
-        return;
-      }
-      const times = Array.isArray(data.bookingTimes) ? data.bookingTimes : [];
-      if (!times.length) {
-        hint.textContent = 'A shift was found (' + (data.shift && data.shift.start || '?') + '–' +
-          (data.shift && data.shift.end || '?') + '), but no start times fit this duration. Please choose another duration or confirm with staff.';
-        return;
-      }
-      times.forEach(value => timeSelect.add(new Option(value, value)));
-      if (times.includes(previousValue)) timeSelect.value = previousValue;
-      hint.textContent = 'Published shift: ' + data.shift.start + '–' + data.shift.end +
-        '. Times fit the scheduled shift only; staff must confirm actual availability.';
-    } catch (error) {
-      if (requestId !== scheduleRequestId) return;
-      console.error('Could not load published schedule:', error);
-      hint.textContent = 'Could not load this girl’s schedule. Please retry or confirm times with staff.';
-    } finally {
-      if (requestId === scheduleRequestId) timeSelect.disabled = false;
-    }
+    times.forEach(value => timeSelect.add(new Option(value, value)));
+    if (times.includes(previousValue)) timeSelect.value = previousValue;
+    timeSelect.disabled = false;
+    hint.textContent = 'Requested booking window: 12:00 AM–4:00 AM. These are request times, not confirmed individual shifts; staff must confirm availability.';
   }
 
   function setSelectedGirl(profile) {
