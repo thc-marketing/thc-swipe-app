@@ -1700,13 +1700,17 @@ logoutBtn.onclick = async () => {
       return;
     }
     const times = [];
-    for (let minute = 0; minute + duration <= 240; minute += 30) {
-      times.push(String(Math.floor(minute / 60)).padStart(2, '0') + ':' + String(minute % 60).padStart(2, '0'));
+    // Requested booking window: 12:00 PM through 3:00 AM (crosses midnight).
+    const windowStart = 12 * 60;
+    const windowEnd = 27 * 60;
+    for (let minute = windowStart; minute + duration <= windowEnd; minute += 30) {
+      const clockMinute = minute % 1440;
+      times.push(String(Math.floor(clockMinute / 60)).padStart(2, '0') + ':' + String(clockMinute % 60).padStart(2, '0'));
     }
     times.forEach(value => timeSelect.add(new Option(value, value)));
     if (times.includes(previousValue)) timeSelect.value = previousValue;
     timeSelect.disabled = false;
-    hint.textContent = (girlId && dateValue ? 'Requested booking window: ' : 'Choose a girl and date. Requested booking window: ') + '12:00 AM–4:00 AM. These are request times, not confirmed individual shifts; staff must confirm availability.';
+    hint.textContent = (girlId && dateValue ? 'Requested booking window: ' : 'Choose a girl and date. Requested booking window: ') + '12:00 PM–3:00 AM. These are request times, not confirmed individual shifts; staff must confirm availability.';
   }
 
   function setSelectedGirl(profile) {
