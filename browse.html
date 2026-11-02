@@ -121,6 +121,28 @@ body.booking-only .app>.shell>*:not(.top){display:none!important}
 body.booking-only .app{padding-top:18px}
 body.booking-only .shell{max-width:460px}
 body.booking-only .top .pill{display:none}
+
+/* Instagram-style individual profile view */
+#girlProfileScreen{padding:0;background:#0d0b10}
+#girlProfileScreen .profile-inner{max-width:560px;min-height:100vh;margin:0 auto;padding:14px 16px 32px}
+#girlProfileScreen #closeGirlProfile{margin:4px 0 18px;border:0;background:transparent;color:#f6dce9;padding:8px 0}
+#girlProfileScreen h2{font-size:25px;margin:0 0 14px}
+#girlProfileScreen .gallery-main{display:block;width:100%;height:min(68vh,620px);max-height:none;object-fit:cover;border-radius:12px;background:#19151d}
+#girlProfileScreen .gallery-strip{display:none}
+#girlProfileScreen .detail-section{background:transparent;border:0;border-radius:0;padding:15px 2px;margin:0}
+#girlProfileScreen .detail-section p{margin:7px 0;line-height:1.55}
+#girlProfileScreen #girlProfileStatus{font-size:13px;color:#e8c17b;font-weight:700}
+#girlProfileScreen #girlProfileArea{font-size:12px;color:#b8aab7}
+#girlProfileScreen #girlProfileBio{font-size:14px;color:#fff8fc}
+#girlProfileScreen #girlProfileTag{display:inline-block;padding:5px 10px;border:1px solid #6b5432;border-radius:99px;color:#e8c17b;font-size:11px}
+#girlProfileScreen .instagram-profile-meta{border-top:1px solid #ffffff20;margin-top:8px;padding-top:14px}
+#girlProfileScreen .instagram-stats{display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+#girlProfileScreen .instagram-stats div{display:flex;flex-direction:column;gap:4px}
+#girlProfileScreen .instagram-stats strong{font-size:16px;color:#fff}
+#girlProfileScreen .instagram-stats span{font-size:10px;letter-spacing:.12em;color:#b8aab7}
+#girlProfileScreen #girlProfileOfficial{width:100%;margin-top:8px}
+#girlProfileScreen .profile-book{font-size:15px;padding:15px}
+body.profile-view-only .app{display:none!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -410,6 +432,12 @@ async function loadProfiles() {
     document.querySelector(".pill").innerHTML = '<i class="dot"></i> Imported profiles';
     render();
     window.profiles = profiles;
+    const profileId = routeParams.get("profile");
+    if (profileId != null) {
+      const selectedProfile = profiles.find(p => String(p.id) === String(profileId));
+      if (selectedProfile) { document.querySelector(".app").style.display = "none"; openGirlProfile(selectedProfile); }
+      else $("status").textContent = "Selected profile was not found.";
+    }
     const bookingId = routeParams.get("id");
     if (routeParams.get("booking") === "1" && bookingId != null) {
       const selected = profiles.find(p => String(p.id) === String(bookingId));
@@ -899,10 +927,7 @@ $("previousGirlBtn").onclick = () => {
   });
 };
 
-$("profileBtn").onclick = () => {
-  const p = profiles[index];
-  if (p) window.open(p.profileUrl, "_blank", "noopener");
-};
+$("profileBtn").onclick = () => { const p = profiles[index]; if (p) openGirlProfile(p); };
 
 
 $("bookBtn").onclick = () => {
@@ -1009,226 +1034,36 @@ $("bookBtn").onclick = () => {
 async function openGirlProfile(p) {
   if (!p) return;
   window.thcActiveProfile = p;
-
   const screen = $("girlProfileScreen");
   const mainPhoto = $("girlProfileMainPhoto");
-  const gallery = $("girlProfileGallery");
-
-  $("girlProfileName").textContent =
-    p.displayName + (p.age ? " · " + p.age : "");
-  $("girlProfileStatus").textContent =
-    "Status: " + (p.status || "Contact to confirm");
+  $("girlProfileName").textContent = p.displayName + (p.age ? ", " + p.age : "");
+  $("girlProfileStatus").textContent = p.status || "Contact to confirm availability";
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
-  $("girlProfileBio").textContent =
-    p.bio || "Contact us for more information.";
-  $("girlProfileTag").textContent = p.tag || "";
-
+  $("girlProfileBio").textContent = p.bio || "Contact us for more information.";
+  $("girlProfileTag").textContent = p.rank || "";
   mainPhoto.src = p.photo || "";
-  mainPhoto.alt = p.displayName || "Profile photo";
-  gallery.replaceChildren();
-
-  let detailsPanel = $("girlProfileDetails");
-
-  if (!detailsPanel) {
-    detailsPanel = document.createElement("div");
-    detailsPanel.id = "girlProfileDetails";
-    detailsPanel.style.cssText =
-      "margin:16px 0;padding:16px;border-radius:12px;" +
-      "background:rgba(128,128,128,0.10);color:inherit;" +
-      "font-size:14px;line-height:1.7;";
-
-    $("girlProfileBio").after(detailsPanel);
-  }
-
-  detailsPanel.replaceChildren();
-  detailsPanel.textContent = "Loading profile details…";
+  mainPhoto.alt = p.displayName + " profile photo";
+  $("girlProfileGallery").replaceChildren();
+  let details = $("girlProfileDetails");
+  if (!details) { details = document.createElement("div"); details.id = "girlProfileDetails"; $("girlProfileBio").after(details); }
+  details.className = "instagram-profile-meta";
+  details.innerHTML = "";
+  const stats = document.createElement("div"); stats.className = "instagram-stats";
+  [["RANK",p.rank||"—"],["AREA",p.area||"Tokyo"],["ID",String(p.id)]].forEach(([label,value]) => {
+    const item = document.createElement("div"); const strong = document.createElement("strong"); const small = document.createElement("span");
+    strong.textContent = value; small.textContent = label; item.append(strong,small); stats.append(item);
+  });
+  details.append(stats);
   screen.style.display = "block";
-
-  $("girlProfileOfficial").onclick = () => {
-    if (p.profileUrl) {
-      window.open(p.profileUrl, "_blank", "noopener,noreferrer");
-    } else {
-      toast("Official profile link unavailable");
-    }
-  };
-
-  try {
-    const response = await fetch(
-      API_URL + '?cc=' +
-      encodeURIComponent(p.id)
-    );
-
-    if (!response.ok) throw new Error("Profile request failed");
-
-    const data = await response.json();
-    const photos = [...new Set(data.photos || [])];
-    const details = data.details || {};
-
-    const fields = [
-      ["Age", details.age],
-      ["Height", details.height],
-      ["Measurements", details.measurement],
-      ["Body Type", details.bodyType],
-      ["English Level", details.english],
-      ["Smoking", details.smoke],
-      ["Tattoos", details.tattoos],
-      ["Pubic Hair", details.pubicHair],
-      ["Last Checkup", details.lastCheckup]
-    ];
-
-    detailsPanel.replaceChildren();
-
-    const heading = document.createElement("h3");
-    heading.textContent = "Profile Details";
-    heading.style.margin = "0 0 10px";
-    detailsPanel.append(heading);
-
-    fields.forEach(([label, value]) => {
-      if (!value || !String(value).trim()) return;
-
-      const row = document.createElement("div");
-      const strong = document.createElement("strong");
-      strong.textContent = label + ": ";
-
-      row.append(strong, document.createTextNode(value));
-      detailsPanel.append(row);
-    });
-
-    const services = Array.isArray(data.services)
-      ? data.services.filter(Boolean)
-      : [];
-
-    if (services.length) {
-      const serviceHeading = document.createElement("h3");
-      serviceHeading.textContent = "Available Services";
-      serviceHeading.style.margin = "16px 0 8px";
-      detailsPanel.append(serviceHeading);
-
-      const list = document.createElement("div");
-      list.style.cssText =
-        "display:flex;flex-wrap:wrap;gap:6px;";
-
-      services.forEach(service => {
-        const tag = document.createElement("span");
-        tag.textContent = service;
-        tag.style.cssText =
-          "padding:5px 9px;border-radius:8px;" +
-          "background:rgba(128,128,128,0.15);font-size:12px;";
-        list.append(tag);
-      });
-
-      detailsPanel.append(list);
-    }
-
-    // Personal Options are separate from Additional Services and are optional
-    // per companion. Accept common API field names without changing booking.
-    const rawPersonalOptions =
-      data.personalOptions ??
-      data.personal_options ??
-      data.personal_options_list ??
-      details.personalOptions ??
-      details.personal_options ??
-      data.personalOption ??
-      data.personal_option;
-
-    const personalOptions = Array.isArray(rawPersonalOptions)
-      ? rawPersonalOptions
-      : rawPersonalOptions
-        ? [rawPersonalOptions]
-        : [];
-
-    const normalizedPersonalOptions = personalOptions
-      .map(option => {
-        if (typeof option === "string") {
-          const text = option.trim();
-          return text ? { text } : null;
-        }
-        if (!option || typeof option !== "object") return null;
-        const name = option.name || option.title || option.label ||
-          option.option || option.description || "";
-        const price = option.price || option.fee || option.cost || "";
-        const note = option.note || option.notes || option.remark || "";
-        const text = [price, name].filter(Boolean).join(": ");
-        return (text || note)
-          ? { text: text || name || "Personal option", note }
-          : null;
-      })
-      .filter(Boolean);
-
-    if (normalizedPersonalOptions.length) {
-      const personalSection = document.createElement("section");
-      personalSection.style.cssText =
-        "margin-top:18px;padding-top:14px;border-top:1px solid #493544;";
-
-      const personalHeading = document.createElement("h3");
-      personalHeading.textContent = "Personal Options";
-      personalHeading.style.margin = "0 0 8px";
-      personalSection.append(personalHeading);
-
-      normalizedPersonalOptions.forEach(option => {
-        const item = document.createElement("div");
-        item.style.cssText =
-          "padding:10px 12px;margin:8px 0;border-radius:9px;" +
-          "background:rgba(216,173,98,0.10);border:1px solid #493544;";
-
-        const label = document.createElement("div");
-        label.textContent = option.text;
-        label.style.fontWeight = "700";
-        item.append(label);
-
-        if (option.note) {
-          const note = document.createElement("p");
-          note.textContent = option.note;
-          note.style.cssText =
-            "margin:6px 0 0;color:#c0aebb;font-size:12px;";
-          item.append(note);
-        }
-
-        personalSection.append(item);
-      });
-
-      const reservationNote = document.createElement("p");
-      reservationNote.textContent =
-        "Please reserve Personal Options in advance.";
-      reservationNote.style.cssText =
-        "margin:8px 0 0;color:#c0aebb;font-size:12px;";
-      personalSection.append(reservationNote);
-      detailsPanel.append(personalSection);
-    }
-
-    if (!detailsPanel.children.length) {
-      detailsPanel.textContent = "No additional details available.";
-    }
-
-    if (!photos.length && p.photo) photos.push(p.photo);
-
-    photos.forEach((photo, i) => {
-      const thumb = document.createElement("img");
-      thumb.className = "gallery-thumb";
-      thumb.src = photo;
-      thumb.alt = p.displayName + " photo " + (i + 1);
-      thumb.loading = "lazy";
-
-      thumb.onclick = () => {
-        mainPhoto.src = photo;
-      };
-
-      gallery.append(thumb);
-    });
-
-    if (photos.length) mainPhoto.src = photos[0];
-
-  } catch (error) {
-    console.error("Could not load profile details:", error);
-    detailsPanel.textContent =
-      "Additional profile details could not be loaded.";
-    toast("Could not load profile details. Try again.");
-  }
+  document.body.classList.add("profile-view-only");
+  $("girlProfileOfficial").onclick = () => { if (p.profileUrl) window.open(p.profileUrl, "_blank", "noopener,noreferrer"); else toast("Official profile link unavailable"); };
+  $("girlProfileBook").onclick = () => { screen.style.display = "none"; document.body.classList.remove("profile-view-only"); if (typeof window.thcOpenReservation === "function") window.thcOpenReservation(p); };
 }
-
 
 $("closeGirlProfile").onclick = () => {
   $("girlProfileScreen").style.display = "none";
+  document.body.classList.remove("profile-view-only");
+  if (routeParams.has("profile")) location.href = "./";
 };
 
 $("girlProfileBook").onclick = () => {
