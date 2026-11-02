@@ -388,59 +388,34 @@ const $ = id => document.getElementById(id);
 async function loadProfiles() {
   try {
     $("status").textContent = "LOADING PROFILES";
+    const response = await fetch("./profiles.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Imported profile list unavailable (" + response.status + ")");
+    const data = await response.json();
+    if (!Array.isArray(data) || !data.length) throw new Error("No imported profiles found");
 
-    // Retry transient network/API failures before showing the unavailable state.
-    let data = null;
-    let lastError = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const response = await fetch(API_URL, { cache: "no-store" });
-        if (!response.ok) throw new Error("Profile service unavailable (" + response.status + ")");
-        const result = await response.json();
-        if (!Array.isArray(result.girls) || !result.girls.length) {
-          throw new Error("No profiles returned");
-        }
-        data = result;
-        break;
-      } catch (error) {
-        lastError = error;
-        if (attempt < 2) {
-          await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
-        }
-      }
-    }
-    if (!data) throw lastError || new Error("Profile service unavailable");
-
-    profiles = data.girls
-      .filter(g => g && typeof g === "object")
-      .map(g => {
-        const rawName = String(g.name || g.displayName || g.title || "Companion").trim();
-        const match = rawName.match(/^(.*?)\s*\((\d+)\)/);
-        const displayName = match ? match[1].trim() : rawName;
-        return {
-          ...g,
-          name: rawName,
-          displayName,
-          age: match ? match[2] : String(g.age || ""),
-          rank: rankForProfile(g, displayName),
-          area: "Tokyo",
-          bio: "View her official profile for details and available options.",
-          tag: g.statusType === "now" ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
-        };
-      })
-      .filter(g => g.name && g.name !== "Companion");
+    profiles = data.filter(g => g && typeof g === "object").map(g => ({
+      ...g,
+      name: g.displayName + (g.age ? " (" + g.age + ")" : ""),
+      displayName: g.displayName,
+      age: String(g.age || ""),
+      rank: normalizeRank(g.rank) || rankForProfile(g, g.displayName),
+      area: g.area || "Tokyo",
+      bio: g.bio || "View her official profile for details and available options.",
+      status: g.status || "Check availability",
+      statusType: /available now|now/i.test(g.status || "") ? "now" : "later",
+      tag: /available now|now/i.test(g.status || "") ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
+    })).filter(g => g.id != null && g.displayName);
 
     $("count").textContent = "01 / " + String(profiles.length).padStart(2, "0");
-    document.querySelector(".pill").innerHTML =
-      '<i class="dot"></i> Live profiles';
+    document.querySelector(".pill").innerHTML = '<i class="dot"></i> Imported profiles';
     render();
     window.profiles = profiles;
-    const bookingId = routeParams.get('id');
-    if (routeParams.get('booking') === '1' && bookingId != null) {
+    const bookingId = routeParams.get("id");
+    if (routeParams.get("booking") === "1" && bookingId != null) {
       const selected = profiles.find(p => String(p.id) === String(bookingId));
       if (selected) {
         const openWhenReady = () => {
-          if (typeof window.thcOpenReservation === 'function') window.thcOpenReservation(selected);
+          if (typeof window.thcOpenReservation === "function") window.thcOpenReservation(selected);
           else setTimeout(openWhenReady, 150);
         };
         openWhenReady();
@@ -451,19 +426,16 @@ async function loadProfiles() {
   } catch (error) {
     $("name").textContent = "Profiles unavailable";
     $("status").textContent = "PLEASE TRY AGAIN";
-    $("bio").textContent =
-      "Live profiles could not load (" + String(error && error.message || "unknown error") + "). Please retry.";
+    $("bio").textContent = "Imported profiles could not load (" + String(error && error.message || "unknown error") + "). Please retry.";
     $("art").innerHTML = "";
     $("count").textContent = "—";
     $("empty").style.display = "flex";
     $("card").style.display = "none";
     $("empty").querySelector("h3").textContent = "Couldn't load profiles";
-    $("empty").querySelector("p").textContent =
-      "Please try loading the profiles again.";
+    $("empty").querySelector("p").textContent = "Please try loading the profiles again.";
     $("restart").textContent = "Retry";
   }
 }
-
 function render() {
   const previousButton = $("previousGirlBtn");
   if (previousButton) {
