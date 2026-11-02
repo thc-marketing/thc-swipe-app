@@ -228,6 +228,17 @@ body.profile-view-only .app{display:none!important}
 
 <script>
 const routeParams = new URLSearchParams(location.search);
+
+// Open individual profile mode immediately for direct profile links.
+if (routeParams.has("profile")) {
+  document.body.classList.add("profile-view-only");
+  const profileScreen = document.getElementById("girlProfileScreen");
+  if (profileScreen) {
+    profileScreen.style.display = "block";
+    const profileName = document.getElementById("girlProfileName");
+    if (profileName) profileName.textContent = "Loading profile…";
+  }
+}
 function setProfileContentTab(tab){
   const posts = document.getElementById("postsPanel");
   const photos = document.getElementById("photosPanel");
