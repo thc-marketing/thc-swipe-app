@@ -38,6 +38,10 @@ button:active{transform:scale(.98)}
 </section>
 <div class="status" id="status">Sign in with the Supabase Auth account granted administrator access.</div>
 <section id="queue"></section>
+<section class="card hidden" id="publishedSection">
+<h2>Published posts</h2><p class="muted">Hide a post to remove it from the public feed without deleting it. Delete permanently removes the post record.</p>
+<div id="publishedQueue"></div>
+</section>
 <button id="refresh" class="hidden" type="button">Refresh queue</button>
 <button id="logout" class="hidden" type="button">Sign out</button>
 </main>
@@ -71,6 +75,27 @@ button:active{transform:scale(.98)}
    actions.append(approve,reject);card.append(actions);$('queue').append(card);
   }
  }
+ async function loadPublished(){
+  const box=$('publishedQueue');box.replaceChildren();
+  const {data,error}=await db.from('creator_posts').select('id,creator_id,caption,media_url,media_type,status,is_paid,price_yen,created_at').in('status',['published','hidden']).order('created_at',{ascending:false}).limit(100);
+  if(error){say('Could not load published posts: '+error.message);return}
+  if(!data?.length){box.textContent='No published or hidden posts found.';return}
+  for(const p of data){
+   const card=document.createElement('article');card.className='card';
+   const title=document.createElement('h3');title.textContent='Post '+p.id;
+   const caption=document.createElement('p');caption.style.whiteSpace='pre-wrap';caption.textContent=p.caption||'';
+   const meta=document.createElement('div');meta.className='muted';meta.textContent=new Date(p.created_at).toLocaleString()+' · '+p.status+' · '+p.media_type;
+   card.append(title,caption,meta);
+   const {data:signed,error:se}=await db.storage.from('creator-media').createSignedUrl(p.media_url,900);
+   if(!se&&signed?.signedUrl){const media=document.createElement(p.media_type==='video'?'video':'img');media.className='media';media.src=signed.signedUrl;if(p.media_type==='video'){media.controls=true;media.playsInline=true}else media.alt='Creator post';card.append(media)}
+   const actions=document.createElement('div');actions.className='actions';
+   const toggle=document.createElement('button');toggle.textContent=p.status==='hidden'?'Restore to feed':'Hide from feed';
+   toggle.onclick=async()=>{toggle.disabled=true;const next=p.status==='hidden'?'published':'hidden';const {error}=await db.from('creator_posts').update({status:next}).eq('id',p.id);if(error){say('Could not update post: '+error.message);toggle.disabled=false;return}say(next==='hidden'?'Post hidden from public feed.':'Post restored to public feed.');await loadPublished()};
+   const del=document.createElement('button');del.className='reject';del.textContent='Delete permanently';
+   del.onclick=async()=>{if(!confirm('Permanently delete this post? This cannot be undone.'))return;del.disabled=true;const {error}=await db.from('creator_posts').delete().eq('id',p.id);if(error){say('Could not delete post: '+error.message);del.disabled=false;return}say('Post deleted.');await loadPublished()};
+   actions.append(toggle,del);card.append(actions);box.append(card);
+  }
+ }
  async function review(id,decision,a,b){
   a.disabled=b.disabled=true;say(decision==='publish'?'Publishing post…':'Rejecting post…');
   const {error}=await db.rpc('review_creator_post',{p_post_id:id,p_decision:decision});
@@ -78,9 +103,9 @@ button:active{transform:scale(.98)}
   say(decision==='publish'?'Post published.':'Post rejected and removed from the review queue.');
   await loadQueue();
  }
- $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');await loadQueue()};
- $('refresh').onclick=loadQueue;
- $('logout').onclick=async()=>{await db.auth.signOut();$('loginCard').classList.remove('hidden');$('refresh').classList.add('hidden');$('logout').classList.add('hidden');$('queue').replaceChildren();say('Signed out.')};
- db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue()}});
+ $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');await loadQueue();await loadPublished()};
+ $('refresh').onclick=async()=>{await loadQueue();await loadPublished()};
+ $('logout').onclick=async()=>{await db.auth.signOut();$('loginCard').classList.remove('hidden');$('publishedSection').classList.add('hidden');$('refresh').classList.add('hidden');$('logout').classList.add('hidden');$('queue').replaceChildren();$('publishedQueue').replaceChildren();say('Signed out.')};
+ db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished()}});
 })();
 </script></body></html>
