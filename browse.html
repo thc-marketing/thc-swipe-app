@@ -189,20 +189,7 @@ body.profile-view-only .app{display:none!important}
     <div class="ig-post-heading">POSTS</div>
     <div class="ig-post-grid"><button class="ig-post-tile" type="button" aria-label="Profile post"><img id="igPostImage" src="" alt="Profile post"></button></div>
     <div id="girlProfileGallery" class="gallery-strip"></div>
-    <div class="detail-section">
-      <p id="girlProfileStatus"></p>
-      <p id="girlProfileArea"></p>
-      <p id="girlProfileBio"></p>
-      <p id="girlProfileTag"></p>
-    </div>
 
-    <button id="girlProfileOfficial" type="button">
-      View all photos &amp; full details ↗
-    </button>
-
-    <button id="girlProfileBook" class="profile-book" type="button">
-      Book Now
-    </button>
   </div>
 </div>
 
@@ -1050,7 +1037,11 @@ async function openGirlProfile(p) {
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
   $("girlProfileBio").textContent = p.bio || "Contact us for more information.";
   $("girlProfileTag").textContent = p.rank || "";
-  mainPhoto.src = p.photo || "";\n  $("igPostImage").src = p.photo || "";\n  $("igPostCount").textContent = "1";
+  mainPhoto.src = p.photo || "";
+  const postImage = $("igPostImage");
+  if (postImage) postImage.src = p.photo || "";
+  const postCount = $("igPostCount");
+  if (postCount) postCount.textContent = "1";
   mainPhoto.alt = p.displayName + " profile photo";
   $("girlProfileGallery").replaceChildren();
   let details = $("girlProfileDetails");
