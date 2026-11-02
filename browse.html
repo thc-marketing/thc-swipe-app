@@ -116,6 +116,11 @@ button:active{transform:scale(.98)}
 #authGate .authsubmit{background:linear-gradient(110deg,#f66bab,#e83f8d)!important;color:#190d16!important;border-radius:11px!important;box-shadow:0 8px 28px #e83f8d35}
 #authGate .authswitch{color:#ff91c2!important}
 
+
+body.booking-only .app>.shell>*:not(.top){display:none!important}
+body.booking-only .app{padding-top:18px}
+body.booking-only .shell{max-width:460px}
+body.booking-only .top .pill{display:none}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -171,6 +176,8 @@ button:active{transform:scale(.98)}
 </div>
 
 <script>
+const routeParams = new URLSearchParams(location.search);
+if(routeParams.get('booking')==='1') document.body.classList.add('booking-only');
 const API_URL = "https://833d8cc1-thc-live-profiles.thc-girls.workers.dev/";
 // Set this to the deployed thc-schedule-api Worker URL. Keep the profile API above unchanged.
 const SCHEDULE_API_URL = "https://thc-schedule-api.thc-girls.workers.dev/";
@@ -427,6 +434,20 @@ async function loadProfiles() {
     document.querySelector(".pill").innerHTML =
       '<i class="dot"></i> Live profiles';
     render();
+    window.profiles = profiles;
+    const bookingId = routeParams.get('id');
+    if (routeParams.get('booking') === '1' && bookingId != null) {
+      const selected = profiles.find(p => String(p.id) === String(bookingId));
+      if (selected) {
+        const openWhenReady = () => {
+          if (typeof window.thcOpenReservation === 'function') window.thcOpenReservation(selected);
+          else setTimeout(openWhenReady, 150);
+        };
+        openWhenReady();
+      } else {
+        $("status").textContent = "Selected profile was not found. Please return to the directory.";
+      }
+    }
   } catch (error) {
     $("name").textContent = "Profiles unavailable";
     $("status").textContent = "PLEASE TRY AGAIN";
@@ -1887,7 +1908,8 @@ logoutBtn.onclick = async () => {
   });
 
   document.getElementById('thc-reserve-close').onclick = () => {
-    modal.style.display = 'none';
+    if (document.body.classList.contains('booking-only')) location.href = './';
+    else modal.style.display = 'none';
   };
   modal.addEventListener('click', e => {
     if (e.target === modal) modal.style.display = 'none';
