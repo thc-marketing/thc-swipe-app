@@ -454,6 +454,12 @@ const $ = id => document.getElementById(id);
 
 
 async function loadProfiles() {
+  const db = window.thcSupabase;
+
+  if (!db) {
+    throw new Error("Supabase connection not initialized");
+  }
+
   try {
     $("status").textContent = "LOADING PROFILES";
 
