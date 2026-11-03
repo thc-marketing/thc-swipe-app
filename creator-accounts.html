@@ -1,6 +1,76 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>THC Creator Accounts</title><style>
 :root{color-scheme:dark;--bg:#0d0b10;--panel:#19151d;--line:#493447;--text:#fff8fc;--muted:#b8aab7;--pink:#f24d98}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px system-ui,sans-serif}.wrap{width:min(100% - 30px,900px);margin:auto;padding:28px 0}h1{font-size:30px}.muted{color:var(--muted)}.row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px;margin:10px 0;border:1px solid #ffffff20;border-radius:13px;background:var(--panel)}button{padding:10px 14px;border:0;border-radius:9px;background:linear-gradient(110deg,#f66bab,#e83f8d);font-weight:800;cursor:pointer}.result{padding:15px;border:1px solid #f24d9855;border-radius:12px;margin:14px 0;background:var(--panel)}code{color:#ffafd0}a{color:#ff91c2}@media(max-width:560px){.row{align-items:flex-start;flex-direction:column}}
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><main class="wrap"><p class="muted">TOKYO HENTAI CLUB · ADMIN</p><h1>Creator account setup</h1><p class="muted">Create individual Creator Hub logins for published, active profiles. Give each creator their ID and temporary password privately.</p><div id="status" class="muted">Checking administrator access…</div><div id="list"></div><div id="result"></div><p><a href="creator-hub.html">Back to Creator Studio</a></p></main>
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style id="thc-unified-theme">
+/* THC unified visual system — elegant plum, rose and champagne */
+:root{
+ color-scheme:dark;
+ --bg:#0b0910;--panel:#17131d;--panel-2:#211a27;--surface:#120f17;
+ --line:rgba(239,218,235,.14);--line-strong:rgba(239,218,235,.24);
+ --text:#fff9fc;--muted:#b9aeba;--pink:#ef78ad;--pink-strong:#df4f91;
+ --gold:#e8c98d;--green:#64cba0;--danger:#e77b91;
+ --shadow:0 18px 50px rgba(0,0,0,.28);--radius:18px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);color-scheme:dark;scroll-behavior:smooth}
+body{
+ color:var(--text)!important;
+ background:radial-gradient(ellipse at 82% 0%,rgba(111,54,91,.17),transparent 38%),
+ radial-gradient(ellipse at 5% 65%,rgba(82,57,112,.12),transparent 42%),var(--bg)!important;
+ font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+ -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+h1,h2,h3,h4{color:var(--text);letter-spacing:-.035em}
+h1{font-weight:800}h2,h3{font-weight:750}
+p{line-height:1.6}
+small,.muted,.hint,.subtitle,.footnote{color:var(--muted)}
+a{color:#f3a4c6;text-decoration:none}
+a:hover{color:#ffd3e5}
+header,.site-header,.topbar,.nav,.tabs{
+ border-color:var(--line)!important;
+}
+header,.site-header,.topbar{
+ background:rgba(13,10,17,.72);
+}
+.card,.panel-card,.profile-card,.post-card,.creator-card,.empty-state,
+section.card,.modal-content,.dialog,.settings-card,.form-card{
+ background:linear-gradient(145deg,rgba(34,27,40,.96),rgba(20,16,25,.98))!important;
+ border:1px solid var(--line)!important;border-radius:var(--radius)!important;
+ box-shadow:0 10px 30px rgba(0,0,0,.16);
+}
+button,.button,.btn,input[type=button],input[type=submit]{
+ border-radius:12px;transition:transform .16s ease,border-color .16s ease,filter .16s ease;
+ font:inherit;font-weight:700;cursor:pointer;
+}
+button:hover,.button:hover,.btn:hover{filter:brightness(1.08);border-color:rgba(239,120,173,.55)}
+button:active,.button:active,.btn:active{transform:translateY(1px)}
+button:not(.primary):not(.active):not(.danger):not(.reject),
+.secondary,.btn-secondary{
+ border:1px solid var(--line-strong);background:rgba(255,255,255,.045);color:var(--text);
+}
+.primary,.btn-primary,.submit-button,.save-button,.active{
+ background:linear-gradient(110deg,#f3a1c4,#e76a9f)!important;
+ color:#24111d!important;border:0!important;
+ box-shadow:0 8px 22px rgba(223,79,145,.16);
+}
+.danger,.reject,.delete-button{border:1px solid rgba(231,123,145,.5)!important;color:#ffc1ce!important;background:rgba(145,39,67,.16)!important}
+input:not([type=checkbox]):not([type=radio]),textarea,select{
+ color:var(--text)!important;background:rgba(10,8,14,.72)!important;
+ border:1px solid var(--line-strong)!important;border-radius:11px!important;
+}
+input::placeholder,textarea::placeholder{color:#817784}
+input:focus,textarea:focus,select:focus,button:focus-visible,a:focus-visible{
+ outline:2px solid rgba(239,120,173,.72);outline-offset:2px;
+}
+hr{border:0;border-top:1px solid var(--line)}
+.badge,.pill,.status-pill,.tag{border-radius:999px}
+img,video{max-width:100%}
+@media(max-width:640px){
+ body{background:radial-gradient(ellipse at 50% 0%,rgba(111,54,91,.13),transparent 42%),var(--bg)!important}
+ .card,.panel-card,.profile-card{border-radius:15px!important}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
+</head><body><main class="wrap"><p class="muted">TOKYO HENTAI CLUB · ADMIN</p><h1>Creator account setup</h1><p class="muted">Create individual Creator Hub logins for published, active profiles. Give each creator their ID and temporary password privately.</p><div id="status" class="muted">Checking administrator access…</div><div id="list"></div><div id="result"></div><p><a href="creator-hub.html">Back to Creator Studio</a></p></main>
 <script>
 (()=>{const db=window.supabase.createClient('https://dvvyqpdaoprzrarotuin.supabase.co','sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24');const $=id=>document.getElementById(id);
 async function init(){const {data:{user},error}=await db.auth.getUser();if(error||!user){$('status').textContent='Sign in with the THC administrator account first.';return}const {data:admin,error:ae}=await db.from('creator_admins').select('user_id').eq('user_id',user.id).maybeSingle();if(ae||!admin){$('status').textContent='Access denied. This account is not a THC administrator.';return}const {data:rows,error:re}=await db.from('companion_profiles').select('id,display_name,creator_user_id').eq('is_active',true).eq('is_published',true).order('display_name');if(re){$('status').textContent=re.message;return}$('status').textContent=rows.length+' active published profiles. Accounts already linked are marked as created.';for(const p of rows){const line=document.createElement('div');line.className='row';const name=document.createElement('div');name.innerHTML='<strong></strong><div class="muted"></div>';name.firstChild.textContent=p.display_name;name.lastChild.textContent=p.creator_user_id?'Account linked':'No creator login yet';const btn=document.createElement('button');btn.textContent=p.creator_user_id?'Already created':'Create login';btn.disabled=!!p.creator_user_id;btn.onclick=()=>create(p,btn);line.append(name,btn);$('list').append(line)}}
