@@ -1099,31 +1099,48 @@ async function loadGirlCreatorPosts(p) {
       postsStatus.textContent = "No creator posts yet.";
       return;
     }
-    const { data: creatorPosts, error: postsError } = await feedDb
-      .from("creator_posts")
-      .select("id,caption,media_url,media_type,created_at,published_at")
-      .eq("creator_id", companion.creator_user_id)
-      .eq("status", "published").eq("is_paid", false)
-      .order("published_at", { ascending: false }).limit(30);
+    const { data: allPosts, error: postsError } = await feedDb.rpc("list_creator_post_previews", { p_limit: 100, p_offset: 0 });
     if (postsError) throw postsError;
-    for (const post of (creatorPosts || [])) {
+    const creatorPosts = (allPosts || []).filter(post => post.creator_id === companion.creator_user_id);
+    for (const post of creatorPosts) {
       const card = document.createElement("article");
       card.style.cssText = "background:#171219;border:1px solid #382b39;border-radius:12px;padding:12px";
       const caption = document.createElement("p");
       caption.textContent = post.caption || "";
       caption.style.cssText = "white-space:pre-wrap;margin:0 0 10px";
       card.append(caption);
-      if (post.media_url) {
+      const mediaPath = post.is_paid ? post.preview_media_url : post.preview_media_url;
+      if (mediaPath) {
         const { data: signed, error: signedError } = await feedDb.storage
-          .from("creator-media").createSignedUrl(post.media_url, 3600);
+          .from("creator-media").createSignedUrl(mediaPath, 3600);
         if (!signedError && signed?.signedUrl) {
-          const mediaEl = document.createElement(post.media_type === "video" ? "video" : "img");
+          const mediaEl = document.createElement("img");
           mediaEl.src = signed.signedUrl;
-          mediaEl.style.cssText = "display:block;width:100%;max-height:620px;object-fit:contain;border-radius:8px";
-          if (post.media_type === "video") { mediaEl.controls = true; mediaEl.playsInline = true; }
-          else { mediaEl.alt = (p.displayName || "Creator") + " post"; mediaEl.loading = "lazy"; }
+          mediaEl.alt = post.is_paid ? "Premium content preview" : (p.displayName || "Creator") + " post";
+          mediaEl.loading = "lazy";
+          mediaEl.style.cssText = "display:block;width:100%;max-height:620px;object-fit:cover;border-radius:8px" + (post.is_paid ? ";filter:blur(8px)" : "");
           card.append(mediaEl);
         }
+      } else if (!post.is_paid) {
+        const { data: freePost, error: freePostError } = await feedDb.from("creator_posts")
+          .select("media_url,media_type").eq("id", post.post_id).maybeSingle();
+        if (!freePostError && freePost?.media_url) {
+          const { data: signed, error: signedError } = await feedDb.storage.from("creator-media").createSignedUrl(freePost.media_url, 3600);
+          if (!signedError && signed?.signedUrl) {
+            const mediaEl = document.createElement(freePost.media_type === "video" ? "video" : "img");
+            mediaEl.src = signed.signedUrl;
+            mediaEl.style.cssText = "display:block;width:100%;max-height:620px;object-fit:contain;border-radius:8px";
+            if (freePost.media_type === "video") { mediaEl.controls = true; mediaEl.playsInline = true; }
+            else { mediaEl.alt = (p.displayName || "Creator") + " post"; mediaEl.loading = "lazy"; }
+            card.append(mediaEl);
+          }
+        }
+      }
+      if (post.is_paid) {
+        const premium = document.createElement("div");
+        premium.textContent = "🔒 PREMIUM CONTENT · ¥" + Number(post.price_yen || 0).toLocaleString("ja-JP");
+        premium.style.cssText = "margin-top:10px;color:#e8c17b;font-weight:700;font-size:13px";
+        card.append(premium);
       }
       const date = document.createElement("small");
       date.style.color = "#aaa";
@@ -1131,7 +1148,7 @@ async function loadGirlCreatorPosts(p) {
       card.append(date);
       postsList.append(card);
     }
-    postsStatus.textContent = creatorPosts?.length ? "" : "No creator posts yet.";
+    postsStatus.textContent = creatorPosts.length ? "" : "No creator posts yet.";
   } catch (feedError) {
     console.error("Creator profile feed failed:", feedError);
     postsStatus.textContent = "Posts are temporarily unavailable: " + (feedError.message || "Please refresh.");
