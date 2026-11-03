@@ -1277,9 +1277,6 @@ async function openGirlProfile(p) {
   const followNote = document.createElement("small");
   followNote.style.color = "#b8aab7";
   followWrap.append(followBtn, followNote);
-  const onlineLabel=document.createElement("small");onlineLabel.style.cssText="display:block;color:#65df9a;margin-left:6px";
-  const messageBtn=document.createElement("button");messageBtn.type="button";messageBtn.textContent="Message";messageBtn.style.cssText="padding:9px 18px;border:1px solid #ed4c9b;border-radius:999px;background:#211722;color:white;font-weight:800";
-  followWrap.append(messageBtn,onlineLabel);
 
   (async()=>{
     try {
@@ -1288,12 +1285,6 @@ async function openGirlProfile(p) {
       if(compErr)throw compErr;
       const creatorId=comp?.creator_user_id;
       if(!creatorId){followBtn.disabled=true;followNote.textContent="Follow is not available for this profile yet.";return}
-      const {data:presence}=await fdb.from("creator_presence").select("is_online,location_area,last_seen_at").eq("creator_id",creatorId).maybeSingle();
-      const online=!!presence?.is_online&&new Date(presence.last_seen_at).getTime()>Date.now()-15*60*1000;
-      onlineLabel.textContent=online?"● Online"+(presence.location_area?" · "+presence.location_area:""):"○ Offline";
-      onlineLabel.style.color=online?"#65df9a":"#aaa";
-      messageBtn.onclick=async()=>{messageBtn.disabled=true;try{const {data:auth,error:authError}=await fdb.auth.getUser();if(authError)throw authError;if(!auth?.user){location.href="login.html?next="+encodeURIComponent(location.pathname+location.search);return}location.href="/index.html?messageCreator="+encodeURIComponent(creatorId)}catch(err){onlineLabel.textContent="Could not open messages: "+err.message}finally{messageBtn.disabled=false}};
-
       if(!user){followBtn.textContent="Log in to follow";followBtn.onclick=()=>location.href="login.html";return}
       const {data:existing,error:readErr}=await fdb.from("creator_follows").select("creator_id").eq("creator_id",creatorId).eq("follower_id",user.id).maybeSingle();
       if(readErr)throw readErr;
