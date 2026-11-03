@@ -1126,20 +1126,35 @@ async function openGirlProfile(p) {
     if (!response.ok) throw new Error("Profile request failed");
 
     const data = await response.json();
-    const photos = [...new Set(data.photos || [])];
-    const details = data.details || {};
-
-    const fields = [
-      ["Age", details.age],
-      ["Height", details.height],
-      ["Measurements", details.measurement],
-      ["Body Type", details.bodyType],
-      ["English Level", details.english],
-      ["Smoking", details.smoke],
-      ["Tattoos", details.tattoos],
-      ["Pubic Hair", details.pubicHair],
-      ["Last Checkup", details.lastCheckup]
+    const photoSources = [
+      data.photos,
+      data.images,
+      data.gallery,
+      data.profilePhotos,
+      data.profile_photos,
+      data.photoList,
+      data.photo_list,
+      data.details?.photos,
+      data.details?.images,
+      data.details?.gallery
     ];
+    const photos = [...new Set(photoSources.flatMap(source => {
+      if (!Array.isArray(source)) return [];
+      return source.map(item => {
+        if (typeof item === "string") return item.trim();
+        if (!item || typeof item !== "object") return "";
+        return item.url || item.src || item.image || item.photo || item.original || item.large || "";
+      }).filter(value => typeof value === "string" && /^https?:\\/\\//i.test(value));
+    }))];
+    const details = data.details && typeof data.details === "object"
+      ? data.details
+      : {};
+
+    const fields = Object.entries(details).filter(([key, value]) =>
+      !/photo|image|gallery/i.test(key) &&
+      value !== null && value !== undefined && value !== "" &&
+      !(Array.isArray(value) && !value.length)
+    );
 
     detailsPanel.replaceChildren();
 
@@ -1148,14 +1163,28 @@ async function openGirlProfile(p) {
     heading.style.margin = "0 0 10px";
     detailsPanel.append(heading);
 
-    fields.forEach(([label, value]) => {
-      if (!value || !String(value).trim()) return;
+    const formatDetailLabel = key =>
+      String(key).replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .replace(/^\\w/, character => character.toUpperCase());
 
+    const formatDetailValue = value => {
+      if (Array.isArray(value)) return value.map(formatDetailValue).filter(Boolean).join(", ");
+      if (value && typeof value === "object") {
+        return Object.entries(value)
+          .map(([key, item]) => formatDetailLabel(key) + ": " + formatDetailValue(item))
+          .filter(Boolean).join(" · ");
+      }
+      return value === null || value === undefined ? "" : String(value).trim();
+    };
+
+    fields.forEach(([label, value]) => {
+      const formatted = formatDetailValue(value);
+      if (!formatted) return;
       const row = document.createElement("div");
       const strong = document.createElement("strong");
-      strong.textContent = label + ": ";
-
-      row.append(strong, document.createTextNode(value));
+      strong.textContent = formatDetailLabel(label) + ": ";
+      row.append(strong, document.createTextNode(formatted));
       detailsPanel.append(row);
     });
 
