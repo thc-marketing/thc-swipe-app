@@ -26,32 +26,41 @@ button:active{transform:scale(.98)}
 .engagement{border-color:#ffffff20}.comment-item{background:#100d14!important;border:1px solid #ffffff12}
 .status,.eyebrow{color:#ff91c2}
 
+
+.dashboard-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:26px 0 18px}.dashboard-head h1{margin:0 0 5px;font-size:clamp(27px,5vw,38px)}.eyebrow{font-size:11px;letter-spacing:.16em;font-weight:800;color:var(--pink);text-transform:uppercase}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 8px;padding:7px;background:#100d14;border:1px solid #ffffff16;border-radius:14px}.nav button{flex:1;min-width:140px;padding:12px 14px;background:transparent;border:1px solid transparent;color:var(--muted)}.nav button.active{background:linear-gradient(110deg,#f66bab,#e83f8d)!important;color:#190d16!important}.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 0 12px}.panel-heading h2{margin:0}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.creator-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin:9px 0;border:1px solid #ffffff16;border-radius:13px;background:#100d14}.creator-row .muted{margin:4px 0 0}.section-note{margin:5px 0 16px}.pill-status{display:inline-flex;align-items:center;border:1px solid #ffffff20;border-radius:99px;padding:5px 10px;font-size:11px;color:var(--muted)}.panel{min-height:140px}@media(max-width:520px){.creator-row{align-items:flex-start;flex-direction:column}.creator-row button{width:100%}.nav button{min-width:calc(50% - 8px)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body><main class="wrap">
 <header><strong>THC · ADMIN REVIEW</strong> · <a href="./creator-hub" style="color:var(--gold)">Open Creator Hub</a></header>
-<h1>Creator post review</h1><p class="muted">Approve posts to publish them, or reject them. Premium posts display their individual price in yen. Only accounts explicitly added to creator_admins can review posts.</p>
+<div class="dashboard-head"><div><div class="eyebrow">Tokyo Hentai Club · Management</div><h1>Creator Admin</h1><p class="muted">Manage creator submissions, published posts, and individual Creator Hub accounts in one place.</p></div><div class="toolbar"><button id="refresh" class="hidden" type="button">↻ Refresh</button><button id="logout" class="hidden" type="button">Sign out</button></div></div>
 <section id="loginCard" class="card">
 <h2>Administrator sign in</h2>
 <form id="loginForm"><label>Email</label><input id="email" class="field" type="email" autocomplete="username" required><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password" required><button class="primary" type="submit">Sign in</button></form>
 </section>
 <div class="status" id="status">Sign in with the Supabase Auth account granted administrator access.</div>
-<section id="queue"></section>
+<nav id="adminNav" class="nav hidden" aria-label="Admin sections">
+<button type="button" class="active" data-panel="pendingPanel">Pending Review</button>
+<button type="button" data-panel="publishedSection">Published Posts</button>
+<button type="button" data-panel="creatorAccountsSection">Creator Accounts</button>
+</nav>
+<section id="pendingPanel" class="panel">
+<div class="panel-heading"><div><h2>Pending Review</h2><p class="muted section-note">Review new creator submissions before they appear publicly.</p></div><span class="pill-status">Moderation</span></div>
+<div id="queue"></div>
+</section>
 
-<section class="card hidden" id="creatorAccountsSection">
-<h2>Creator account setup</h2>
-<p class="muted">Create individual Creator Hub logins for active, published profiles. Each creator receives a one-time ID and temporary password, and must change the password at first login. Share credentials privately.</p>
+<section class="panel hidden" id="creatorAccountsSection">
+<div class="panel-heading"><div><h2>Creator Accounts</h2><p class="muted section-note">Create and manage individual Creator Hub logins for active, published profiles.</p></div><span class="pill-status">Access Setup</span></div>
+<p class="muted">Each creator receives a one-time ID and temporary password, and must change the password at first login. Share credentials privately.</p>
 <div id="creatorAccountsStatus" class="status">Checking administrator access…</div>
 <div id="creatorAccountsList"></div>
 <div id="creatorAccountsResult"></div>
 </section>
-<section class="card hidden" id="publishedSection">
-<h2>Published posts</h2><p class="muted">Hide a post to remove it from the public feed without deleting it. Delete permanently removes the post record.</p>
+<section class="panel hidden" id="publishedSection">
+<div class="panel-heading"><div><h2>Published Posts</h2><p class="muted section-note">Hide a post to remove it from the public feed, or delete it permanently.</p></div><span class="pill-status">Live Content</span></div>
 <div id="publishedQueue"></div>
 </section>
-<button id="refresh" class="hidden" type="button">Refresh queue</button>
-<button id="logout" class="hidden" type="button">Sign out</button>
+
 </main>
 <script>
 (() => {
@@ -60,6 +69,12 @@ button:active{transform:scale(.98)}
  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  const $=id=>document.getElementById(id);
  const say=s=>$('status').textContent=s;
+ function setAdminPanel(id){
+  ['pendingPanel','publishedSection','creatorAccountsSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
+  document.querySelectorAll('#adminNav button').forEach(btn=>btn.classList.toggle('active',btn.dataset.panel===id));
+ }
+ document.querySelectorAll('#adminNav button').forEach(btn=>btn.addEventListener('click',()=>setAdminPanel(btn.dataset.panel)));
+
  async function loadQueue(){
   $('queue').replaceChildren();say('Loading review queue…');
   const {data,error}=await db.rpc('list_pending_creator_posts');
@@ -132,12 +147,12 @@ button:active{transform:scale(.98)}
   if(error){$('creatorAccountsStatus').textContent='Could not load creator profiles: '+error.message;return}
   $('creatorAccountsStatus').textContent=rows.length+' active published profiles. Accounts already linked are marked as created.';
   for(const p of rows){
-   const line=document.createElement('div');line.className='card';
+   const line=document.createElement('div');line.className='creator-row';
    const name=document.createElement('strong');name.textContent=p.display_name||'Creator';
    const state=document.createElement('p');state.className='muted';state.textContent=p.creator_user_id?'Account linked':'No creator login yet';
    const btn=document.createElement('button');btn.textContent=p.creator_user_id?'Already created':'Create login';btn.disabled=!!p.creator_user_id;
    btn.onclick=()=>createCreatorAccount(p,btn);
-   line.append(name,state,btn);box.append(line);
+   const info=document.createElement('div');info.append(name,state);line.append(info,btn);box.append(line);
   }
  }
  async function createCreatorAccount(p,btn){
@@ -165,9 +180,9 @@ button:active{transform:scale(.98)}
   say(decision==='publish'?'Post published.':'Post rejected and removed from the review queue.');
   await loadQueue();
  }
- $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');await loadQueue();await loadPublished();$('creatorAccountsSection').classList.remove('hidden');await loadCreatorAccounts()};
- $('refresh').onclick=async()=>{await loadQueue();await loadPublished()};
+ $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');setAdminPanel('pendingPanel');await loadQueue();await loadPublished();$('creatorAccountsSection').classList.remove('hidden');await loadCreatorAccounts()};
+ $('refresh').onclick=async()=>{await loadQueue();await loadPublished();await loadCreatorAccounts()};
  $('logout').onclick=async()=>{await db.auth.signOut();$('loginCard').classList.remove('hidden');$('publishedSection').classList.add('hidden');$('creatorAccountsSection').classList.add('hidden');$('refresh').classList.add('hidden');$('logout').classList.add('hidden');$('queue').replaceChildren();$('publishedQueue').replaceChildren();say('Signed out.')};
- db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished();$('creatorAccountsSection').classList.remove('hidden');loadCreatorAccounts()}});
+ db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished();$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');setAdminPanel('pendingPanel');loadCreatorAccounts()}});
 })();
 </script></body></html>
