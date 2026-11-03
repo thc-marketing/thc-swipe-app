@@ -141,7 +141,7 @@ button:active{transform:scale(.98)}
  function mediaNode(path,type,alt){const el=document.createElement(type==='video'?'video':'img');el.alt=alt||'Creator media';if(type==='video'){el.muted=true;el.playsInline=true}storyUrl(path).then(url=>{el.src=url}).catch(err=>{el.alt='Media unavailable: '+err.message});return el}
  async function loadCreatorInstagram(user,profile){
   activeCreatorUser=user;activeCreatorProfile=profile;
-  const {data:girl,error:girlError}=await db.from('companion_profiles').select('id,display_name,photo_url,bio,is_published,is_active').eq('creator_user_id',user.id).maybeSingle();
+  const {data:girl,error:girlError}=await db.from('companion_profiles').select('id,display_name,photo_url,bio,is_published,is_active').eq('creator_user_id',user.id).limit(1).maybeSingle();
   if(girlError)throw girlError;
   const displayName=girl?.display_name||profile.display_name||'Creator';
   $('igCreatorName').textContent=displayName;
@@ -151,8 +151,7 @@ button:active{transform:scale(.98)}
   $('creatorAvatar').style.display='none';$('creatorAvatarFallback').style.display='grid';
   if(girl?.photo_url||profile.avatar_url){$('creatorAvatar').src=girl?.photo_url||profile.avatar_url;$('creatorAvatar').style.display='block';$('creatorAvatarFallback').style.display='none'}
   const publicLink=$('viewPublicProfile');
-  if(girl?.id){publicLink.href='browse.html?profile='+encodeURIComponent(girl.id);publicLink.textContent='View my girl profile ↗';publicLink.style.display='inline-block'}
-  else{publicLink.href='browse.html';publicLink.textContent='View profiles ↗';publicLink.style.display='inline-block'}
+  if(girl?.id){publicLink.href='/browse.html?profile='+encodeURIComponent(girl.id);publicLink.textContent='View my girl profile ↗';publicLink.style.display='inline-block';publicLink.target='_blank';publicLink.rel='noopener'}else{publicLink.href='/browse.html';publicLink.textContent='View profiles ↗';publicLink.style.display='inline-block';publicLink.target='_blank';publicLink.rel='noopener'}
   $('editDisplayName').value=displayName;$('editUsername').value=profile.creator_username||'';$('editBio').value=girl?.bio||profile.bio||'';
   const {data:posts,error}=await db.from('creator_posts').select('id,caption,media_url,media_type,status,is_paid,price_yen,created_at').eq('creator_id',user.id).order('created_at',{ascending:false}).limit(60);
   if(error)throw error;const published=(posts||[]).filter(p=>p.status==='published');
