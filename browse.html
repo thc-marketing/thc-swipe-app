@@ -1130,28 +1130,42 @@ async function openGirlProfile(p) {
 
     const data = await response.json();
     const photoSources = [
-      data.photos,
-      data.images,
-      data.gallery,
-      data.profilePhotos,
-      data.profile_photos,
-      data.photoList,
-      data.photo_list,
-      data.details?.photos,
-      data.details?.images,
-      data.details?.gallery
+      data.photos, data.images, data.gallery, data.profilePhotos,
+      data.profile_photos, data.photoList, data.photo_list,
+      data.details?.photos, data.details?.images, data.details?.gallery
     ];
-    const photos = [...new Set(photoSources.flatMap(source => {
-      if (!Array.isArray(source)) return [];
-      return source.map(item => {
-        if (typeof item === "string") return item.trim();
-        if (!item || typeof item !== "object") return "";
-        return item.url || item.src || item.image || item.photo || item.original || item.large || "";
-      }).filter(value => typeof value === "string" && (value.startsWith("http://") || value.startsWith("https://")));
-    }))];
+    const photos = [...new Set([
+      p.photo,
+      ...photoSources.flatMap(source => {
+        const items = Array.isArray(source) ? source : source ? [source] : [];
+        return items.map(item => {
+          if (typeof item === "string") return item.trim();
+          if (!item || typeof item !== "object") return "";
+          return item.url || item.src || item.image || item.photo ||
+            item.original || item.large || item.full || item.href || "";
+        });
+      })
+    ].filter(value => typeof value === "string" &&
+      (value.startsWith("http://") || value.startsWith("https://"))))];
     const details = data.details && typeof data.details === "object"
-      ? data.details
+      ? { ...data.details }
       : {};
+
+    // Include all profile information already present in the directory record
+    // when the detail API omits it.
+    const listingFields = {
+      age: p.age,
+      rank: p.rank,
+      area: p.area,
+      bio: p.bio,
+      status: p.status
+    };
+    Object.entries(listingFields).forEach(([key, value]) => {
+      if ((details[key] === undefined || details[key] === null || details[key] === "") &&
+          value !== undefined && value !== null && value !== "") {
+        details[key] = value;
+      }
+    });
 
     const fields = Object.entries(details).filter(([key, value]) =>
       !/photo|image|gallery/i.test(key) &&
@@ -1165,6 +1179,17 @@ async function openGirlProfile(p) {
     heading.textContent = "Profile Details";
     heading.style.margin = "0 0 10px";
     detailsPanel.append(heading);
+
+    if (p.profileUrl) {
+      const officialLink = document.createElement("a");
+      officialLink.href = p.profileUrl;
+      officialLink.target = "_blank";
+      officialLink.rel = "noopener noreferrer";
+      officialLink.textContent = "View complete official profile ↗";
+      officialLink.style.cssText =
+        "display:inline-block;margin:0 0 12px;color:#e8c17b;font-weight:700;";
+      detailsPanel.append(officialLink);
+    }
 
     const formatDetailLabel = key =>
       String(key).replace(/([a-z])([A-Z])/g, "$1 $2")
