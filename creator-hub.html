@@ -88,7 +88,7 @@ button:active{transform:scale(.98)}
  document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.go)));
  $('editCreatorProfile').addEventListener('click',()=>showTab('account'));
 
- $('signOut').addEventListener('click',async()=>{await db.auth.signOut({scope:'global'});location.href='creator-login.html'});
+ $('signOut').addEventListener('click',async()=>{const button=$('signOut');button.disabled=true;try{const {error}=await db.auth.signOut({scope:'local'});if(error)throw error;activeCreatorUser=null;activeCreatorProfile=null;activeCreatorConversation=null;location.replace('creator-login.html?loggedout=1')}catch(error){$('creatorChatStatus').textContent='Sign out failed: '+(error?.message||String(error));button.disabled=false}});
  async function loadCreatorNotifications(){
  const box=$('creatorNotifications');if(!box)return;box.replaceChildren();
  const {data:a}=await db.auth.getUser();if(!a?.user){box.textContent='Please sign in to view activity.';return}
