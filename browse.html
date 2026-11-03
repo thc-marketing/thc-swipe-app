@@ -144,46 +144,29 @@ body.booking-only .top .pill{display:none}
 body.profile-view-only .app{display:none!important}
 
  
-/* Instagram-like profile layout */
-#girlProfileScreen{position:fixed;inset:0;z-index:5000;display:none;overflow-y:auto;background:#000!important;color:#f5f5f5!important;padding:0!important;font-family:Arial,Helvetica,sans-serif}
-#girlProfileScreen .instagram-page{width:100%;max-width:680px;min-height:100vh;margin:0 auto;padding:0 0 36px!important;background:#000}
-#girlProfileScreen .ig-topbar{height:54px;display:flex;align-items:center;gap:18px;padding:0 16px;border-bottom:1px solid #262626}
-#girlProfileScreen #closeGirlProfile{margin:0;padding:0;background:none;border:0;color:#fff;font-size:36px;line-height:1}
-#girlProfileScreen .ig-topbar strong{font-size:16px;letter-spacing:.2px}
-#girlProfileScreen .ig-top-spacer{flex:1}
-#girlProfileScreen .ig-profile-head{display:flex;align-items:center;gap:28px;padding:26px 24px 18px}
-#girlProfileScreen .ig-avatar{width:clamp(86px,22vw,150px);height:clamp(86px,22vw,150px);flex:0 0 auto;border-radius:50%;object-fit:cover;border:2px solid #c13584;padding:3px;background:#000}
-#girlProfileScreen .ig-profile-summary{flex:1;min-width:0}
-#girlProfileScreen .ig-profile-summary h2{font-size:20px;font-weight:400;margin:0 0 22px;overflow-wrap:anywhere}
-#girlProfileScreen .ig-stats{display:flex;justify-content:space-between;gap:12px;text-align:center}
-#girlProfileScreen .ig-stats div{display:flex;flex-direction:column;gap:4px}
-#girlProfileScreen .ig-stats strong{font-size:16px;font-weight:700}
-#girlProfileScreen .ig-stats span{font-size:12px;color:#ddd}
-#girlProfileScreen .ig-bio{padding:0 24px 14px;font-size:14px;line-height:1.5}
-#girlProfileScreen .ig-bio p{margin:3px 0}
+/* Clean profile details and photo feed */
+#girlProfileScreen{position:fixed;inset:0;z-index:5000;display:none;overflow-y:auto;background:#080808!important;color:#f5f5f5!important;padding:0!important;font-family:Arial,Helvetica,sans-serif}
+#girlProfileScreen .instagram-page{width:100%;max-width:680px;min-height:100vh;margin:0 auto;padding:0 0 36px!important;background:#080808}
+#girlProfileScreen .ig-topbar{height:56px;display:flex;align-items:center;gap:16px;padding:0 18px;border-bottom:1px solid #292929}
+#girlProfileScreen #closeGirlProfile{margin:0;padding:0;background:none;border:0;color:#fff;font-size:34px;line-height:1}
+#girlProfileScreen .ig-topbar strong{font-size:18px;font-weight:700}
+#girlProfileScreen .ig-cover{display:block;width:100%;max-height:620px;aspect-ratio:4/5;object-fit:cover;background:#191919}
+#girlProfileScreen .ig-bio{padding:18px 20px 12px;font-size:14px;line-height:1.6}
+#girlProfileScreen .ig-bio p{margin:4px 0}
 #girlProfileScreen .ig-status{font-weight:700;color:#e8c17b}
 #girlProfileScreen .ig-location{color:#aaa;font-size:12px}
 #girlProfileScreen .ig-tag{color:#e8c17b;font-size:12px}
-#girlProfileScreen .ig-actions{display:flex;gap:8px;padding:0 24px 18px}
-#girlProfileScreen .ig-actions button{flex:1;min-height:36px;border:0;border-radius:7px;background:#363636;color:white;font-weight:700;font-size:13px;padding:8px}
-#girlProfileScreen .ig-actions #girlProfileBook{background:#8b315e}
-#girlProfileScreen .ig-tabs{height:48px;border-top:1px solid #262626;display:flex;justify-content:center;align-items:center;gap:70px;color:#aaa;font-size:22px}
-#girlProfileScreen .ig-tabs .active{height:48px;display:flex;align-items:center;border-top:1px solid #fff;color:#fff}
+#girlProfileScreen .ig-details{padding:8px 20px 20px;color:#eee;font-size:13px;line-height:1.7;border-bottom:1px solid #292929}
+#girlProfileScreen .ig-details h3{font-size:15px;margin:14px 0 8px}
+#girlProfileScreen .ig-feed-heading{padding:16px 18px 12px;font-size:12px;font-weight:700;letter-spacing:1.5px}
 #girlProfileScreen .ig-photo-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:0!important;margin:0!important}
 #girlProfileScreen .ig-photo-grid .gallery-thumb{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border:0;border-radius:0;cursor:pointer}
-#girlProfileScreen .ig-details{padding:18px 24px;color:#eee;font-size:13px;line-height:1.65}
-#girlProfileScreen .ig-details h3{font-size:15px;margin:14px 0 8px}
-#girlProfileScreen .ig-details section{margin-top:16px}
-#girlProfileScreen .ig-details button{max-width:100%}
 body.profile-view-only .app{display:none!important}
 @media(max-width:480px){
- #girlProfileScreen .ig-profile-head{gap:18px;padding:22px 16px 16px}
- #girlProfileScreen .ig-profile-summary h2{font-size:17px;margin-bottom:16px}
- #girlProfileScreen .ig-bio{padding:0 16px 12px}
- #girlProfileScreen .ig-actions{padding:0 16px 16px}
- #girlProfileScreen .ig-details{padding:16px}
-}
-</style>
+ #girlProfileScreen .ig-cover{max-height:70vh}
+ #girlProfileScreen .ig-bio{padding:16px}
+ #girlProfileScreen .ig-details{padding:8px 16px 18px}
+}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -211,21 +194,10 @@ body.profile-view-only .app{display:none!important}
   <div class="profile-inner instagram-page">
     <div class="ig-topbar">
       <button id="closeGirlProfile" type="button" aria-label="Back">‹</button>
-      <strong id="igHandle">THC PROFILE</strong>
-      <span class="ig-top-spacer"></span>
+      <strong id="girlProfileName">Girl's Name</strong>
     </div>
 
-    <section class="ig-profile-head">
-      <img id="girlProfileMainPhoto" class="ig-avatar" src="" alt="Profile photo">
-      <div class="ig-profile-summary">
-        <h2 id="girlProfileName">Girl's Name</h2>
-        <div class="ig-stats" id="igStats">
-          <div><strong id="igPostCount">—</strong><span>photos</span></div>
-          <div><strong id="igRank">—</strong><span>rank</span></div>
-          <div><strong id="igArea">Tokyo</strong><span>area</span></div>
-        </div>
-      </div>
-    </section>
+    <img id="girlProfileMainPhoto" class="ig-cover" src="" alt="Profile photo">
 
     <section class="ig-bio">
       <p id="girlProfileStatus" class="ig-status"></p>
@@ -234,14 +206,10 @@ body.profile-view-only .app{display:none!important}
       <p id="girlProfileTag" class="ig-tag"></p>
     </section>
 
-    <div class="ig-actions">
-      <button id="girlProfileBook" class="profile-book" type="button">Book Now</button>
-      <button id="girlProfileOfficial" type="button">Official Profile ↗</button>
-    </div>
-
-    <div class="ig-tabs"><span class="active">▦</span><span>♡</span></div>
-    <div id="girlProfileGallery" class="gallery-strip ig-photo-grid"></div>
     <div id="girlProfileDetails" class="ig-details"></div>
+
+    <div class="ig-feed-heading">PHOTOS &amp; FEED</div>
+    <div id="girlProfileGallery" class="gallery-strip ig-photo-grid"></div>
   </div>
 </div>
 
@@ -1096,9 +1064,6 @@ async function openGirlProfile(p) {
 
   $("girlProfileName").textContent =
     p.displayName + (p.age ? " · " + p.age : "");
-  $("igHandle").textContent = (p.displayName || "THC PROFILE").toUpperCase();
-  $("igRank").textContent = p.rank || "—";
-  $("igArea").textContent = p.area || "Tokyo";
   $("girlProfileStatus").textContent =
     "Status: " + (p.status || "Contact to confirm");
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
@@ -1127,14 +1092,6 @@ async function openGirlProfile(p) {
   detailsPanel.textContent = "Loading profile details…";
   screen.style.display = "block";
   document.body.classList.add("profile-view-only");
-
-  $("girlProfileOfficial").onclick = () => {
-    if (p.profileUrl) {
-      window.open(p.profileUrl, "_blank", "noopener,noreferrer");
-    } else {
-      toast("Official profile link unavailable");
-    }
-  };
 
   try {
     const response = await fetch(
@@ -1301,7 +1258,6 @@ async function openGirlProfile(p) {
     });
 
     if (photos.length) mainPhoto.src = photos[0];
-    $("igPostCount").textContent = String(photos.length);
 
 
   } catch (error) {
@@ -1317,14 +1273,6 @@ $("closeGirlProfile").onclick = () => {
   $("girlProfileScreen").style.display = "none";
   document.body.classList.remove("profile-view-only");
   if (routeParams.has("profile")) location.href = "./";
-};
-
-$("girlProfileBook").onclick = () => {
-  $("girlProfileScreen").style.display = "none";
-  document.body.classList.remove("profile-view-only");
-  if (typeof window.thcOpenReservation === "function") {
-    window.thcOpenReservation(window.thcActiveProfile || profiles[index]);
-  }
 };
 
 const deck = $("deck");
