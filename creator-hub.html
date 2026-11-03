@@ -84,6 +84,8 @@ button:active{transform:scale(.98)}
  const showTab=id=>{document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('main .panel[id]').forEach(p=>p.classList.toggle('active',p.id===id));const editor=$('creatorProfileEditor');if(editor)editor.hidden=id!=='account';const composer=$('creatorStoryComposer');if(composer&&id!=='dashboard')composer.hidden=true;if(id==='posts'&&activeCreatorUser)loadCreatorHome(activeCreatorUser,activeCreatorProfile);if(id==='account'&&activeCreatorUser){$('accountName').textContent=activeCreatorProfile?.display_name||'Creator account';$('accountEmail').textContent=activeCreatorUser.email||''}window.scrollTo({top:0,behavior:'smooth'});};
  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
  document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.go)));
+ $('editCreatorProfile').addEventListener('click',()=>showTab('account'));
+
  $('signOut').addEventListener('click',async()=>{await db.auth.signOut({scope:'global'});location.href='creator-login.html'});
  async function loadCreatorNotifications(){
  const box=$('creatorNotifications');if(!box)return;box.replaceChildren();
@@ -96,15 +98,22 @@ button:active{transform:scale(.98)}
  }
  $('refreshActivity').addEventListener('click',loadCreatorNotifications);
  async function loadCreatorHome(user,profile){
-  $('creatorGreeting').textContent='Welcome back, '+(profile?.display_name||'creator')+'.';
-  $('accountName').textContent=profile?.display_name||'Creator account';$('accountEmail').textContent=user.email||'';
-  $('dashboardStatus').textContent='Your creator access is approved. Here is your latest activity.';
+  if($('accountName'))$('accountName').textContent=profile?.display_name||'Creator account';
+  if($('accountEmail'))$('accountEmail').textContent=user.email||'';
+  const list=$('myPosts');
+  if(list)list.innerHTML='<p class="muted">Loading your posts…</p>';
   const {data:rows,error}=await db.from('creator_posts').select('id,caption,status,created_at,media_type,is_paid,price_yen').eq('creator_id',user.id).order('created_at',{ascending:false}).limit(50);
-  if(error){$('myPosts').innerHTML='<p class="muted">Could not load your posts: '+error.message.replace(/[<>]/g,'')+'</p>';return}
-  const posts=rows||[];$('totalPosts').textContent=posts.length;$('pendingPosts').textContent=posts.filter(x=>['draft','pending','submitted','in_review'].includes((x.status||'').toLowerCase())).length;$('publishedPosts').textContent=posts.filter(x=>(x.status||'').toLowerCase()==='published').length;
-  $('myPosts').replaceChildren();
-  if(!posts.length){$('myPosts').innerHTML='<div class="card"><p class="muted">You have not submitted any posts yet. Your first post can start here.</p><button class="primary" data-go="studio">Create your first post</button></div>';$('myPosts').querySelector('[data-go]').onclick=()=>showTab('studio');return}
-  posts.forEach(post=>{const el=document.createElement('article');el.className='post-item';const left=document.createElement('div');const title=document.createElement('strong');title.textContent=(post.caption||'Untitled post').slice(0,85);const meta=document.createElement('small');meta.textContent=[post.media_type||'content',post.is_paid?'Premium · ¥'+Number(post.price_yen||0).toLocaleString('ja-JP'):'Free',post.created_at?new Date(post.created_at).toLocaleDateString():''].filter(Boolean).join(' · ');left.append(title,meta);const status=document.createElement('span');status.className='post-status';status.textContent=post.status||'Draft';el.append(left,status);$('myPosts').append(el)})
+  if(error){if(list)list.textContent='Could not load your posts: '+error.message;console.error('My Posts query failed',error);return}
+  const posts=rows||[];
+  if(list)list.replaceChildren();
+  if(!posts.length&&list){const empty=document.createElement('div');empty.className='card';empty.textContent='You have not submitted any posts yet. Create your first post to get started.';list.append(empty)}
+  for(const post of posts){
+   if(!list)break;
+   const el=document.createElement('article');el.className='post-item';
+   const left=document.createElement('div');const title=document.createElement('strong');title.textContent=(post.caption||'Untitled post').slice(0,85);
+   const meta=document.createElement('small');meta.textContent=[post.media_type||'content',post.is_paid?'Premium · ¥'+Number(post.price_yen||0).toLocaleString('ja-JP'):'Free',post.created_at?new Date(post.created_at).toLocaleDateString():''].filter(Boolean).join(' · ');
+   left.append(title,meta);const status=document.createElement('span');status.className='post-status';status.textContent=post.status||'Draft';el.append(left,status);list.append(el);
+  }
  }
 
  window.thcSupabase=window.thcSupabase||db;
