@@ -344,7 +344,7 @@ $('more').onclick=()=>load(false);
  load(true);
  const {data:initialAuth}=await db.auth.getSession();
  if(initialAuth?.session){currentCustomer=initialAuth.session.user;loadConversations().catch(e=>$('chatStatus').textContent='Could not load conversations: '+e.message)}
- db.auth.onAuthStateChange((_event,session)=>{currentCustomer=session?.user||null;if(session){loadConversations().catch(e=>$('chatStatus').textContent='Could not load conversations: '+e.message)}else{$('conversationList').textContent='Sign in to view conversations.';$('chatMessages').replaceChildren();activeChatId=null;$('chatMessageInput').disabled=true;$('chatSendForm').querySelector('button').disabled=true}});
+ db.auth.onAuthStateChange((_event,session)=>{currentCustomer=session?.user||null;if(session){/* Supabase auth callbacks run while the auth lock is held. Defer all Supabase queries until after the callback returns to avoid deadlocking getUser()/PostgREST. */window.setTimeout(()=>{loadConversations().catch(e=>{$('chatStatus').textContent='Could not load conversations: '+(e?.message||String(e))})},0)}else{activeChatId=null;activeChatCreator=null;$('conversationList').textContent='Sign in to view conversations.';$('chatMessages').replaceChildren();$('chatHeader').textContent='Choose a conversation';$('chatMessageInput').disabled=true;$('chatSendForm').querySelector('button').disabled=true}});
 
  if(location.hash==='#purchases'&&!initialAuth?.session){location.href='login.html';return}
  if(location.hash==='#purchases'){document.querySelector('[data-tab="purchases"]').click()}
