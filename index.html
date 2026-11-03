@@ -78,8 +78,6 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
 @media(max-width:390px){.girl-grid{grid-template-columns:1fr 1fr}.girl-actions{flex-direction:column}}
 
 #homepageStories[hidden],#homepageStoryViewer[hidden]{display:none!important}#homepageStoryStrip .home-story{flex:0 0 76px;width:76px;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;color:inherit;padding:0;cursor:pointer}#homepageStoryStrip .home-story img{width:68px;height:68px;object-fit:cover;border-radius:50%;padding:3px;border:2px solid #ef69a8;background:#171219}#homepageStoryStrip .home-story small{max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}#homepageStoryContent img,#homepageStoryContent video{max-width:100%;max-height:72vh;object-fit:contain;border-radius:12px}
-.online-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}.online-card{border:1px solid var(--line);border-radius:13px;padding:12px;background:#1a141d}.online-card img{width:68px;height:68px;border-radius:50%;object-fit:cover}.online-card .online-dot{color:#63df9a;font-size:12px;font-weight:800}.online-card button{margin-top:10px;width:100%}.chat-layout{display:grid;grid-template-columns:minmax(180px,30%) 1fr;gap:12px;min-height:420px}.conversation-list{border:1px solid var(--line);border-radius:10px;padding:8px;overflow:auto}.conversation-item{display:flex;gap:9px;align-items:center;width:100%;text-align:left;padding:10px;border:0;border-bottom:1px solid var(--line);background:transparent;color:inherit;cursor:pointer}.conversation-item img{width:38px;height:38px;object-fit:cover;border-radius:50%}.chat-window{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;min-width:0}.chat-header{padding:12px;border-bottom:1px solid var(--line);font-weight:800}.chat-messages{padding:12px;display:flex;flex-direction:column;gap:9px;overflow:auto;flex:1;min-height:280px;max-height:55vh}.chat-bubble{max-width:82%;padding:9px 12px;border-radius:12px;background:#302532;overflow-wrap:anywhere}.chat-bubble.mine{align-self:flex-end;background:#9f356d}.chat-bubble small{display:block;opacity:.75;font-size:10px;margin-top:4px}.chat-send{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}.chat-send input{flex:1;min-width:0;padding:11px;border-radius:9px;border:1px solid var(--line);background:#100d12;color:white}@media(max-width:650px){.chat-layout{grid-template-columns:1fr}.conversation-list{max-height:180px}.chat-messages{max-height:45vh}}
-.translation-toggle{display:block;margin-top:7px;padding:5px 9px;border-radius:99px;background:#ffffff12;border:1px solid #ffffff25;color:#ffd3e6;font-size:10px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -87,13 +85,11 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
 <header class="site-header"><a class="brand" href="./"><img src="thc-logo.png" alt="THC"><span><strong>TOKYO HENTAI CLUB</strong><small>YOUR TOKYO AFTER-DARK CLUB</small></span></a><nav><a class="navlink" href="./profiles.html">All Profiles</a><a class="navlink" href="./available.html">Available Today</a><a class="navlink" href="#feed">✦ Feed</a><button class="navlink" id="headerPurchasesButton" type="button">▣ My Purchases</button><button class="navlink" id="settingsButton" type="button">⚙ Settings</button></nav></header>
 
 
-<div class="tabs"><button class="active" data-tab="feed">✦ Feed</button><button data-tab="online">● Who’s Online</button><button data-tab="messages">✉ Messages</button><button data-tab="purchases">My Purchases</button></div>
+<div class="tabs"><button class="active" data-tab="feed">✦ Feed</button><button data-tab="purchases">My Purchases</button></div>
 <section id="homepageStories" aria-label="Creator stories" style="margin:14px 0 18px;padding:12px 10px;background:#171219;border:1px solid #382b39;border-radius:14px">
 <div style="font-weight:800;color:#f18abb;margin-bottom:10px">STORIES</div><div id="homepageStoryStrip" style="display:flex;gap:16px;overflow-x:auto;padding:2px 0 8px"></div></section>
 <div id="homepageStoryViewer" hidden style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.96);display:flex;align-items:center;justify-content:center;padding:18px">
 <button id="homepageStoryClose" type="button" aria-label="Close story" style="position:absolute;right:18px;top:18px;border:1px solid #ffffff55;background:#241d27;color:white;border-radius:50%;width:42px;height:42px;font-size:24px">×</button><div id="homepageStoryContent" style="width:min(92vw,430px);height:min(82vh,760px);display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;text-align:center"></div></div>
-<section id="online" class="panel"><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><h2 style="margin:0">Who’s Online</h2><p class="muted">Creators who recently checked in. Locations are general areas only.</p></div><button type="button" id="refreshOnline">Refresh</button></div><p id="onlineStatus" class="muted">Loading online creators…</p><div id="onlineCreators" class="online-grid"></div></div></section>
-<section id="messages" class="panel"><div class="card"><h2 style="margin-top:0">Messages</h2><p class="muted">Your conversations with creators.</p><div class="chat-layout"><div id="conversationList" class="conversation-list">Checking your sign-in…</div><div class="chat-window"><div id="chatHeader" class="chat-header">Choose a conversation</div><div id="chatMessages" class="chat-messages"></div><form id="chatSendForm" class="chat-send"><input id="chatMessageInput" maxlength="4000" placeholder="Write a message…" autocomplete="off" disabled><button type="submit" disabled>Send</button></form></div></div><p id="chatStatus" class="muted" role="status"></p></div></section>
 <section id="feed" class="panel active"><div id="feedStatus" class="status">Connecting to feed…</div><div id="posts"></div><button id="more" style="display:none;width:100%">Load more</button></section>
 <div style="display:flex;justify-content:flex-end;margin:0 0 12px"><a id="purchasesHomeLink" href="/index.html" style="color:var(--gold);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-weight:700">⌂ Back to Homepage</a></div><section id="purchases" class="panel"><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><strong>Purchase history</strong><button id="refreshPurchases" type="button">Refresh</button></div><p id="purchaseHistoryStatus" class="muted">Sign in to view your purchase requests.</p><div id="purchaseHistory"></div></div></section>
 <div id="checkoutBackdrop" class="checkout-backdrop" role="presentation"><section class="checkout-dialog" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle"><h2 id="checkoutTitle">Your premium post</h2><p id="checkoutCaption" class="muted"></p><p id="checkoutAccount" class="muted">Checking your account…</p><div id="purchaseReview" class="card" hidden><strong>Purchase summary</strong><p id="reviewPost" class="muted"></p><p id="reviewCustomer" class="muted"></p><p id="reviewTotal" class="checkout-price"></p><p class="muted">Review only. No payment will be taken.</p><button id="confirmPurchase" class="primary" type="button" hidden style="width:100%">Confirm purchase</button><p id="purchaseConfirmation" class="muted" hidden role="status"></p></div><div id="checkoutPrice" class="checkout-price"></div><p class="muted">Checkout is being prepared. No payment will be taken and this post will not unlock yet.</p><div class="checkout-actions"><button id="closeCheckout" type="button">Close</button><button id="reviewPurchase" class="primary" type="button" disabled>Review purchase</button></div></section></div>
@@ -114,66 +110,7 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
   if(target){target.scrollIntoView({behavior:'smooth',block:'start'});}
  }
  $('headerPurchasesButton')?.addEventListener('click',()=>showPanel('purchases'));
- let activeChatId=null,activeChatCreator=null,currentCustomer=null;
- async function loadCustomer(){const {data,error}=await db.auth.getSession();if(error)throw error;currentCustomer=data.session?.user||null;return currentCustomer}
- async function loadOnlineCreators(){
-  const status=$('onlineStatus'),grid=$('onlineCreators');status.textContent='Loading online creators…';grid.replaceChildren();
-  try{
-   const {data:presence,error}=await db.from('creator_presence').select('creator_id,location_area,last_seen_at').eq('is_online',true).gt('last_seen_at',new Date(Date.now()-15*60*1000).toISOString()).order('last_seen_at',{ascending:false});
-   if(error)throw error;
-   if(!presence?.length){status.textContent='No creators are online right now.';return}
-   const ids=presence.map(x=>x.creator_id);
-   const [{data:creators,error:ce},{data:girls,error:ge}]=await Promise.all([
-    db.from('creator_profiles').select('user_id,display_name,creator_username,avatar_url').in('user_id',ids).eq('is_creator',true).eq('is_approved',true),
-    db.from('companion_profiles').select('creator_user_id,id,display_name,photo_url').in('creator_user_id',ids).eq('is_published',true).eq('is_active',true)
-   ]);if(ce)throw ce;if(ge)throw ge;
-   const cm=new Map((creators||[]).map(x=>[x.user_id,x])),gm=new Map((girls||[]).map(x=>[x.creator_user_id,x]));
-   for(const p of [...new Map(presence.map(row=>[row.creator_id,row])).values()]){const cr=cm.get(p.creator_id);if(!cr)continue;const girl=gm.get(p.creator_id);const card=document.createElement('article');card.className='online-card';const img=document.createElement('img');img.src=girl?.photo_url||cr.avatar_url||'thc-logo.png';img.alt='';const name=document.createElement('strong');name.textContent=girl?.display_name||cr.display_name||cr.creator_username||'Creator';const user=document.createElement('div');user.className='muted';user.textContent='@'+(cr.creator_username||'creator');const area=document.createElement('div');area.textContent=p.location_area?'📍 '+p.location_area:'📍 Location not shared';const online=document.createElement('div');online.className='online-dot';online.textContent='● Online';const profile=document.createElement('a');profile.href=girl?.id?'browse.html?profile='+encodeURIComponent(girl.id):'#';profile.textContent='View profile';profile.style.cssText='display:block;margin-top:8px';const chat=document.createElement('button');chat.type='button';chat.className='primary';chat.textContent='Message';chat.onclick=()=>startChat(p.creator_id,name.textContent,img.src);card.append(img,name,user,online,area,profile,chat);grid.append(card)}
-   status.textContent=grid.children.length+' creator(s) online';
-  }catch(e){status.textContent='Could not load online creators: '+e.message}
- }
- async function startChat(creatorId,name,avatar){
-  showPanel('messages');$('chatStatus').textContent='Opening conversation…';
-  try{const user=await loadCustomer();if(!user){$('chatStatus').textContent='Please sign in to message creators.';location.href='login.html';return}
-   if(!creatorId)throw new Error('This creator is not linked to a messaging account yet.');
-   const found=await db.from('chat_conversations').select('id').eq('customer_id',user.id).eq('creator_id',creatorId).maybeSingle();
-   if(found.error)throw found.error;
-   let conv=found.data;
-   if(!conv){const created=await db.from('chat_conversations').insert({customer_id:user.id,creator_id:creatorId}).select('id').single();if(created.error)throw created.error;conv=created.data}
-   if(!conv?.id)throw new Error('Conversation could not be created. Please refresh and try again.');
-   activeChatId=conv.id;activeChatCreator={id:creatorId,name,avatar};showPanel('messages');$('chatHeader').textContent=name;$('chatMessageInput').disabled=false;$('chatSendForm').querySelector('button').disabled=false;await loadConversations();await loadChatMessages()
-  }catch(e){showPanel('messages');$('chatStatus').textContent='Could not start chat: '+(e?.message||String(e))}
- }
- async function loadConversations(){
-  const box=$('conversationList');try{const user=await loadCustomer();if(!user){box.textContent='Sign in to view conversations.';return}
-   const {data:rows,error}=await db.from('chat_conversations').select('id,creator_id,updated_at').eq('customer_id',user.id).order('updated_at',{ascending:false});if(error)throw error;
-   box.replaceChildren();if(!rows?.length){box.textContent='No conversations yet. Start one from Who’s Online.';return}
-   const ids=rows.map(x=>x.creator_id);const [{data:creators},{data:girls}]=await Promise.all([db.from('creator_profiles').select('user_id,display_name,creator_username,avatar_url').in('user_id',ids),db.from('companion_profiles').select('creator_user_id,display_name,photo_url').in('creator_user_id',ids)]);
-   const cm=new Map((creators||[]).map(x=>[x.user_id,x])),gm=new Map((girls||[]).map(x=>[x.creator_user_id,x]));
-   rows.forEach(row=>{const cr=cm.get(row.creator_id)||{},girl=gm.get(row.creator_id)||{};const btn=document.createElement('button');btn.className='conversation-item';btn.type='button';const im=document.createElement('img');im.src=girl.photo_url||cr.avatar_url||'thc-logo.png';const label=document.createElement('span');label.textContent=girl.display_name||cr.display_name||cr.creator_username||'Creator';btn.append(im,label);btn.onclick=()=>{activeChatId=row.id;activeChatCreator={id:row.creator_id,name:label.textContent,avatar:im.src};$('chatHeader').textContent=label.textContent; $('chatMessageInput').disabled=false;$('chatSendForm').querySelector('button').disabled=false;loadChatMessages()};box.append(btn)})
-  }catch(e){box.textContent='Could not load conversations: '+e.message}
- }
- async function translateChatText(text,targetLang){const {data,error}=await db.functions.invoke('translate-chat-message',{body:{text,targetLang}});if(error)throw error;if(data?.error)throw new Error(data.error);return data}
- async function appendTranslatedBubble(box,row,isMine,targetLang){const bubble=document.createElement('div');bubble.className='chat-bubble'+(isMine?' mine':'');const body=document.createElement('div');body.textContent=row.body;bubble.append(body);if(!isMine){try{const result=await translateChatText(row.body,targetLang);const translated=result.translatedText;if(translated&&translated!==row.body){body.textContent=translated;const toggle=document.createElement('button');toggle.type='button';toggle.className='translation-toggle';toggle.textContent='Show original';let showing=false;toggle.onclick=()=>{showing=!showing;body.textContent=showing?row.body:translated;toggle.textContent=showing?'Show translation':'Show original'};bubble.append(toggle);const note=document.createElement('small');note.textContent='Auto-translated';bubble.append(note)}}catch(err){const note=document.createElement('small');note.textContent='Translation unavailable · showing original';bubble.append(note)}}const time=document.createElement('small');time.textContent=new Date(row.created_at).toLocaleString();bubble.append(time);box.append(bubble)}
- async function loadChatMessages(){
-  if(!activeChatId)return;const box=$('chatMessages');box.replaceChildren();try{const user=await loadCustomer();const {data:rows,error}=await db.from('chat_messages').select('id,sender_id,body,created_at').eq('conversation_id',activeChatId).order('created_at',{ascending:true}).limit(200);if(error)throw error;
-   for(const row of rows||[])await appendTranslatedBubble(box,row,row.sender_id===user.id,'EN');box.scrollTop=box.scrollHeight
-  }catch(e){$('chatStatus').textContent='Could not load messages: '+e.message}
- }
- $('chatSendForm').onsubmit=async e=>{e.preventDefault();const input=$('chatMessageInput'),body=input.value.trim();if(!body||!activeChatId)return;const btn=e.submitter;btn.disabled=true;try{const user=await loadCustomer();const {error}=await db.from('chat_messages').insert({conversation_id:activeChatId,sender_id:user.id,body});if(error)throw error;input.value='';await db.from('chat_conversations').update({updated_at:new Date().toISOString()}).eq('id',activeChatId);$('chatStatus').textContent='Message sent.';await loadChatMessages();await loadConversations()}catch(err){$('chatStatus').textContent='Could not send message: '+err.message}finally{btn.disabled=false}};
- const requestedChat=new URLSearchParams(location.search).get('chat');
- const requestedCreator=new URLSearchParams(location.search).get('messageCreator');
- if(requestedCreator){(async()=>{try{const {data:cr,error}=await db.from('creator_profiles').select('user_id,display_name,creator_username,avatar_url').eq('user_id',requestedCreator).eq('is_creator',true).eq('is_approved',true).single();if(error)throw error;await startChat(cr.user_id,cr.display_name||cr.creator_username||'Creator',cr.avatar_url||'thc-logo.png')}catch(e){$('chatStatus').textContent='Could not open conversation: '+e.message;showPanel('messages')}})()}
-
- if(requestedChat){(async()=>{try{const user=await loadCustomer();if(!user)return;const {data:conv,error}=await db.from('chat_conversations').select('id,creator_id').eq('id',requestedChat).single();if(error)throw error;const [{data:cr},{data:girl}]=await Promise.all([db.from('creator_profiles').select('user_id,display_name,creator_username,avatar_url').eq('user_id',conv.creator_id).maybeSingle(),db.from('companion_profiles').select('display_name,photo_url').eq('creator_user_id',conv.creator_id).maybeSingle()]);await startChat(conv.creator_id,girl?.display_name||cr?.display_name||cr?.creator_username||'Creator',girl?.photo_url||cr?.avatar_url||'thc-logo.png')}catch(e){$('chatStatus').textContent='Could not open conversation: '+e.message}})()}
- setInterval(()=>{if($('messages').classList.contains('active')&&activeChatId)loadChatMessages()},10000);
- $('refreshOnline').onclick=loadOnlineCreators;
- document.querySelector('[data-tab="online"]').onclick=()=>{showPanel('online');loadOnlineCreators()};
- document.querySelector('[data-tab="messages"]').addEventListener('click',async()=>{showPanel('messages');$('conversationList').textContent='Loading conversations…';await loadConversations()});
-
-
- 
-async function loadGirlDirectory(){
+ async function loadGirlDirectory(){
   const status = $('girlStatus');
   const grid = $('girlDirectory');
   const count = $('girlCount');
@@ -348,10 +285,6 @@ $('more').onclick=()=>load(false);
  loadGirlDirectory();
  loadHomepageStories();
  load(true);
- const {data:initialAuth}=await db.auth.getSession();
- if(initialAuth?.session){currentCustomer=initialAuth.session.user;loadConversations().catch(e=>$('chatStatus').textContent='Could not load conversations: '+e.message)}
- db.auth.onAuthStateChange((_event,session)=>{currentCustomer=session?.user||null;if(session){/* Supabase auth callbacks run while the auth lock is held. Defer all Supabase queries until after the callback returns to avoid deadlocking getUser()/PostgREST. */window.setTimeout(()=>{loadConversations().catch(e=>{$('chatStatus').textContent='Could not load conversations: '+(e?.message||String(e))})},0)}else{activeChatId=null;activeChatCreator=null;$('conversationList').textContent='Sign in to view conversations.';$('chatMessages').replaceChildren();$('chatHeader').textContent='Choose a conversation';$('chatMessageInput').disabled=true;$('chatSendForm').querySelector('button').disabled=true}});
-
  if(location.hash==='#purchases'&&!initialAuth?.session){location.href='login.html';return}
  if(location.hash==='#purchases'){document.querySelector('[data-tab="purchases"]').click()}
 })();
