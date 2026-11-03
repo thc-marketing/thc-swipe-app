@@ -163,7 +163,7 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
  setInterval(()=>{if($('messages').classList.contains('active')&&activeChatId)loadChatMessages()},10000);
  $('refreshOnline').onclick=loadOnlineCreators;
  document.querySelector('[data-tab="online"]').onclick=()=>{showPanel('online');loadOnlineCreators()};
- document.querySelector('[data-tab="messages"]').onclick=()=>{showPanel('messages');loadConversations()};
+ document.querySelector('[data-tab="messages"]').addEventListener('click',async()=>{showPanel('messages');$('conversationList').textContent='Loading conversations…';await loadConversations()});
 
 
  
@@ -343,7 +343,8 @@ $('more').onclick=()=>load(false);
  loadHomepageStories();
  load(true);
  const {data:initialAuth}=await db.auth.getSession();
- db.auth.onAuthStateChange((_event,session)=>{ if(!session) { /* Settings remains available for signed-out visitors. */ } });
+ if(initialAuth?.session){currentCustomer=initialAuth.session.user;loadConversations().catch(e=>$('chatStatus').textContent='Could not load conversations: '+e.message)}
+ db.auth.onAuthStateChange((_event,session)=>{currentCustomer=session?.user||null;if(session){loadConversations().catch(e=>$('chatStatus').textContent='Could not load conversations: '+e.message)}else{$('conversationList').textContent='Sign in to view conversations.';$('chatMessages').replaceChildren();activeChatId=null;$('chatMessageInput').disabled=true;$('chatSendForm').querySelector('button').disabled=true}});
 
  if(location.hash==='#purchases'&&!initialAuth?.session){location.href='login.html';return}
  if(location.hash==='#purchases'){document.querySelector('[data-tab="purchases"]').click()}
