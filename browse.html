@@ -1501,9 +1501,11 @@ async function openGirlProfile(p) {
 }
 
 
-$("closeGirlProfile").onclick = () => {
-  $("girlProfileScreen").style.display = "none";
-  document.body.classList.remove("profile-view-only");
+$("closeGirlProfile").onclick = (event) => {
+  event?.preventDefault();
+  event?.stopPropagation();
+  // The profile-page back arrow returns to the customer homepage.
+  window.location.assign("/index.html");
 };
 
 const deck = $("deck");
