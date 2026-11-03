@@ -58,14 +58,6 @@
   flex-shrink: 0;
 }
 
-#girlProfileScreen .profile-details-panel { margin: 8px 0 12px; }
-#girlProfileScreen .profile-details-panel .detail-section { margin:0; padding:10px 12px; }
-#girlProfileScreen .profile-details-panel .detail-section h3 { margin:0 0 7px; font-size:13px; }
-#girlProfileScreen .profile-detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px 10px; }
-#girlProfileScreen .profile-detail-item { display:flex; flex-direction:column; gap:1px; min-width:0; padding:3px 0; background:transparent; border:0; }
-#girlProfileScreen .profile-detail-item strong { color:#d8ad62; font-size:9px; text-transform:uppercase; letter-spacing:.03em; }
-#girlProfileScreen .profile-detail-item span { color:#fff7fb; font-size:11px; line-height:1.3; overflow-wrap:anywhere; }
-@media(max-width:420px){#girlProfileScreen .profile-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 #girlProfileScreen .detail-section {
   background: #211722;
   border: 1px solid #493544;
@@ -129,7 +121,6 @@ body.booking-only .app>.shell>*:not(.top){display:none!important}
 body.booking-only .app{padding-top:18px}
 body.booking-only .shell{max-width:460px}
 body.booking-only .top .pill{display:none}
-
 /* Instagram-style individual profile view */
 #girlProfileScreen{padding:0;background:#0d0b10}
 #girlProfileScreen .profile-inner{max-width:560px;min-height:100vh;margin:0 auto;padding:14px 16px 32px}
@@ -152,31 +143,6 @@ body.booking-only .top .pill{display:none}
 #girlProfileScreen .profile-book{font-size:15px;padding:15px}
 body.profile-view-only .app{display:none!important}
 
-/* Instagram-inspired profile layout */
-#girlProfileScreen{background:#0d0b10!important;padding:18px!important}
-#girlProfileScreen .profile-inner{max-width:760px!important}
-.ig-profile-head{display:flex;align-items:center;gap:28px;padding:24px 0 18px;border-bottom:1px solid #ffffff20}
-.ig-avatar{width:118px;height:118px;flex:0 0 118px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#f66bab,#e8c17b)}
-.ig-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;border:3px solid #0d0b10}
-.ig-identity{min-width:0;flex:1}.ig-identity h2{font-size:24px;margin:0 0 18px}.ig-stats{display:flex;gap:24px;font-size:13px;color:#eee}.ig-stats b{font-weight:850}
-.ig-bio{padding:15px 0;color:#eee;font-size:13px;line-height:1.6}.ig-bio p{margin:5px 0}.ig-profile-actions{display:flex;gap:10px;margin:8px 0 22px}.ig-profile-actions button{flex:1}.ig-post-heading{text-align:center;border-top:1px solid #ffffff20;padding:15px;font-size:11px;font-weight:900;letter-spacing:.18em;color:#ddd}.ig-post-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}.ig-post-tile{padding:0;border:0;border-radius:0;background:#211925;aspect-ratio:1;overflow:hidden}.ig-post-tile img{width:100%;height:100%;object-fit:cover;display:block}.ig-profile-actions #girlProfileOfficial{background:#29202d;color:#fff}.ig-profile-actions #girlProfileBook{background:linear-gradient(110deg,#f66bab,#e83f8d);color:#190d16}
-@media(max-width:520px){.ig-profile-head{gap:16px}.ig-avatar{width:88px;height:88px;flex-basis:88px}.ig-identity h2{font-size:19px;margin-bottom:12px}.ig-stats{gap:12px;font-size:11px}}
-
-/* Separate published posts from profile photo gallery */
-.ig-empty{padding:28px 12px;text-align:center;color:#b8aab7;font-size:13px;border-bottom:1px solid #ffffff20}
-.ig-photos-heading{margin-top:8px}
-.ig-photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding-top:8px}
-.ig-photo-grid img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#211925}
-#girlProfileBioFacts p{margin:5px 0;color:#eee}
-#girlProfileBioFacts strong{color:#e8c17b}
-
-.ig-content-tabs{display:flex;justify-content:center;gap:70px;border-top:1px solid #ffffff25;border-bottom:1px solid #ffffff18}
-.ig-content-tab{border:0;border-radius:0;background:transparent;color:#a99ba8;padding:15px 8px;font-size:11px;font-weight:900;letter-spacing:.14em;border-top:2px solid transparent;cursor:pointer}
-.ig-content-tab.active{color:#fff;border-top-color:#e8c17b}
-.ig-content-panel[hidden]{display:none!important}
-.ig-empty{min-height:130px;display:grid;place-items:center;text-align:center;padding:24px;color:#b8aab7;font-size:13px}
-.ig-photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding-top:3px}
-.ig-photo-grid img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#211925}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -204,46 +170,35 @@ body.profile-view-only .app{display:none!important}
 <div id="girlProfileScreen">
   <div class="profile-inner">
     <button id="closeGirlProfile" type="button">← Back to profiles</button>
-    <div class="ig-profile-head">
-      <div class="ig-avatar"><img id="girlProfileMainPhoto" src="" alt="Profile photo"></div>
-      <div class="ig-identity"><h2 id="girlProfileName">Girl's Name</h2><div class="ig-stats"><span><b id="igPostCount">1</b> posts</span><span><b>—</b> followers</span><span><b>—</b> following</span></div></div>
-    </div>
-    <div class="ig-bio"><strong id="girlProfileTag"></strong><p id="girlProfileBio"></p><div id="girlProfileBioFacts"></div></div>
-    <div id="girlProfileDetailsPanel" class="profile-details-panel" hidden></div>
-    <div class="ig-profile-actions"><button id="girlProfileBook" class="profile-book" type="button">Book Now</button><button id="girlProfileOfficial" type="button">Official profile ↗</button></div>
-    <div class="ig-content-tabs" role="tablist" aria-label="Profile content">
-      <button class="ig-content-tab active" id="postsTab" type="button" role="tab" aria-selected="true">▦ POSTS</button>
-      <button class="ig-content-tab" id="photosTab" type="button" role="tab" aria-selected="false">▧ PHOTOS</button>
-    </div>
-    <section id="postsPanel" class="ig-content-panel" role="tabpanel">
-      <div id="igPostsEmpty" class="ig-empty">No posts have been published yet.</div>
-      <div id="girlPublishedPosts" class="ig-post-grid"></div>
-    </section>
-    <section id="photosPanel" class="ig-content-panel" role="tabpanel" hidden>
-      <div id="girlProfileGallery" class="ig-photo-grid"></div>
-    </section>
 
+    <h2 id="girlProfileName">Girl's Name</h2>
+
+    <img id="girlProfileMainPhoto"
+         class="gallery-main"
+         src=""
+         alt="Profile photo">
+
+    <div id="girlProfileGallery" class="gallery-strip"></div>
+
+    <div class="detail-section">
+      <p id="girlProfileStatus"></p>
+      <p id="girlProfileArea"></p>
+      <p id="girlProfileBio"></p>
+      <p id="girlProfileTag"></p>
+    </div>
+
+    <button id="girlProfileOfficial" type="button">
+      View all photos &amp; full details ↗
+    </button>
+
+    <button id="girlProfileBook" class="profile-book" type="button">
+      Book Now
+    </button>
   </div>
 </div>
 
 <script>
 const routeParams = new URLSearchParams(location.search);
-function setProfileContentTab(tab){
-  const posts = document.getElementById("postsPanel");
-  const photos = document.getElementById("photosPanel");
-  const postsTab = document.getElementById("postsTab");
-  const photosTab = document.getElementById("photosTab");
-  if(!posts || !photos || !postsTab || !photosTab) return;
-  const showPosts = tab === "posts";
-  posts.hidden = !showPosts;
-  photos.hidden = showPosts;
-  postsTab.classList.toggle("active", showPosts);
-  photosTab.classList.toggle("active", !showPosts);
-  postsTab.setAttribute("aria-selected", String(showPosts));
-  photosTab.setAttribute("aria-selected", String(!showPosts));
-}
-document.getElementById("postsTab")?.addEventListener("click",()=>setProfileContentTab("posts"));
-document.getElementById("photosTab")?.addEventListener("click",()=>setProfileContentTab("photos"));
 if(routeParams.get('booking')==='1') document.body.classList.add('booking-only');
 const API_URL = "https://833d8cc1-thc-live-profiles.thc-girls.workers.dev/";
 // Set this to the deployed thc-schedule-api Worker URL. Keep the profile API above unchanged.
@@ -452,92 +407,34 @@ function yen(value) { return "¥" + Number(value).toLocaleString("ja-JP"); }
   
 const $ = id => document.getElementById(id);
 
-
 async function loadProfiles() {
   try {
-    const db = window.thcSupabase || window.supabase.createClient(
-      "https://dvvyqpdaoprzrarotuin.supabase.co",
-      "sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24"
-    );
-
-    window.thcSupabase = db;
     $("status").textContent = "LOADING PROFILES";
+    const response = await fetch("./profiles.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Imported profile list unavailable (" + response.status + ")");
+    const data = await response.json();
+    if (!Array.isArray(data) || !data.length) throw new Error("No imported profiles found");
 
-    const { data, error } = await db
-      .from("companion_profiles")
-      .select(`
-        id,
-        display_name,
-        age,
-        photo_url,
-        photos,
-        rank,
-        area,
-        bio,
-        availability_label,
-        profile_url,
-        booking_url,
-        details,
-        additional_services,
-        personal_options,
-        is_published,
-        is_active
-      `)
-      .eq("is_published", true)
-      .eq("is_active", true)
-      .order("id", { ascending: true });
+    profiles = data.filter(g => g && typeof g === "object").map(g => ({
+      ...g,
+      name: g.displayName + (g.age ? " (" + g.age + ")" : ""),
+      displayName: g.displayName,
+      age: String(g.age || ""),
+      rank: normalizeRank(g.rank) || rankForProfile(g, g.displayName),
+      area: g.area || "Tokyo",
+      bio: g.bio || "View her official profile for details and available options.",
+      status: g.status || "Check availability",
+      statusType: /available now|now/i.test(g.status || "") ? "now" : "later",
+      tag: /available now|now/i.test(g.status || "") ? "✦ AVAILABLE NOW" : "✦ CHECK AVAILABILITY"
+    })).filter(g => g.id != null && g.displayName);
 
-    if (error) throw error;
-    if (!data || !data.length) {
-      throw new Error("No published profiles found in Supabase");
-    }
-
-    profiles = data.map(g => {
-      const gallery = Array.isArray(g.photos) ? g.photos : [];
-
-      return {
-        ...g,
-        name: g.display_name + (g.age ? " (" + g.age + ")" : ""),
-        displayName: g.display_name,
-        age: String(g.age || ""),
-        photo: g.photo_url || "",
-        photos: gallery.map(item =>
-          typeof item === "string"
-            ? item
-            : item?.url || item?.photo_url || item?.src || ""
-        ).filter(Boolean),
-        rank: normalizeRank(g.rank) || rankForProfile(g, g.display_name),
-        area: g.area || "Tokyo",
-        bio: g.bio || "View her profile for details and available options.",
-        details: g.details || {},
-        services: g.additional_services || [],
-        additionalServices: g.additional_services || [],
-        personalOptions: g.personal_options || [],
-        personal_options: g.personal_options || [],
-        status: "Contact to confirm",
-        statusType: "later",
-        tag: "✦ CHECK AVAILABILITY",
-        profileUrl: g.profile_url || "",
-        bookingUrl: g.booking_url || ""
-      };
-    }).filter(g => g.id != null && g.displayName);
-
-    $("count").textContent =
-      "01 / " + String(profiles.length).padStart(2, "0");
-
-    document.querySelector(".pill").innerHTML =
-      '<i class="dot"></i> Live Supabase profiles';
-
+    $("count").textContent = "01 / " + String(profiles.length).padStart(2, "0");
+    document.querySelector(".pill").innerHTML = '<i class="dot"></i> Imported profiles';
     render();
     window.profiles = profiles;
-
     const profileId = routeParams.get("profile");
-
     if (profileId != null) {
-      const selectedProfile = profiles.find(
-        p => String(p.id) === String(profileId)
-      );
-
+      const selectedProfile = profiles.find(p => String(p.id) === String(profileId));
       if (selectedProfile) {
         document.querySelector(".app").style.display = "none";
         openGirlProfile(selectedProfile);
@@ -545,52 +442,47 @@ async function loadProfiles() {
         $("status").textContent = "Selected profile was not found.";
       }
     }
-
     const bookingId = routeParams.get("id");
-
     if (routeParams.get("booking") === "1" && bookingId != null) {
-      const selected = profiles.find(
-        p => String(p.id) === String(bookingId)
-      );
-
+      const selected = profiles.find(p => String(p.id) === String(bookingId));
       if (selected) {
         const openWhenReady = () => {
-          if (typeof window.thcOpenReservation === "function") {
-            window.thcOpenReservation(selected);
-          } else {
-            setTimeout(openWhenReady, 150);
-          }
+          if (typeof window.thcOpenReservation === "function") window.thcOpenReservation(selected);
+          else setTimeout(openWhenReady, 150);
         };
-
         openWhenReady();
       } else {
-        $("status").textContent =
-          "Selected profile was not found. Please return to the directory.";
+        $("status").textContent = "Selected profile was not found. Please return to the directory.";
       }
     }
-
   } catch (error) {
-    console.error("Supabase profile loading error:", error);
-
     $("name").textContent = "Profiles unavailable";
     $("status").textContent = "PLEASE TRY AGAIN";
-    $("bio").textContent =
-      "Profiles could not load (" +
-      String(error && error.message || "unknown error") +
-      "). Please retry.";
-
+    $("bio").textContent = "Imported profiles could not load (" + String(error && error.message || "unknown error") + "). Please retry.";
     $("art").innerHTML = "";
     $("count").textContent = "—";
     $("empty").style.display = "flex";
     $("card").style.display = "none";
-    $("empty").querySelector("h3").textContent =
-      "Couldn't load profiles";
-    $("empty").querySelector("p").textContent =
-      "Please try loading the profiles again.";
+    $("empty").querySelector("h3").textContent = "Couldn't load profiles";
+    $("empty").querySelector("p").textContent = "Please try loading the profiles again.";
     $("restart").textContent = "Retry";
   }
 }
-
+function render() {
+  const previousButton = $("previousGirlBtn");
+  if (previousButton) {
+    previousButton.disabled = previousIndexes.length === 0;
+    previousButton.style.opacity = previousIndexes.length ? "1" : ".45";
+  }
+  if (index >= profiles.length) {
+    $("card").style.display = "none";
+    $("empty").style.display = "flex";
+    $("empty").querySelector("h3").textContent = "You've seen everyone";
+    $("empty").querySelector("p").textContent =
+      "Restart to browse the profiles again.";
+    $("restart").textContent = "Start over";
+    return;
+  }
 
   const p = profiles[index];
   $("card").style.display = "block";
@@ -1039,7 +931,10 @@ $("previousGirlBtn").onclick = () => {
   });
 };
 
-$("profileBtn").onclick = () => { const p = profiles[index]; if (p) openGirlProfile(p); };
+$("profileBtn").onclick = () => {
+  const p = profiles[index];
+  if (p) openGirlProfile(p);
+};
 
 
 $("bookBtn").onclick = () => {
@@ -1146,95 +1041,234 @@ $("bookBtn").onclick = () => {
 async function openGirlProfile(p) {
   if (!p) return;
   window.thcActiveProfile = p;
+
   const screen = $("girlProfileScreen");
   const mainPhoto = $("girlProfileMainPhoto");
-  $("girlProfileName").textContent = p.displayName + (p.age ? ", " + p.age : "");
-  $("girlProfileBio").textContent = p.bio || "No biography provided.";
-  $("girlProfileTag").textContent = p.rank || "Rank not listed";
-  $("igPostCount").textContent = "0";
-  mainPhoto.src = p.photo || "";
-  mainPhoto.alt = p.displayName + " profile photo";
-  const facts = $("girlProfileBioFacts");
-  facts.replaceChildren();
-  [
-    ["Age", p.age ? p.age + " years old" : "Not listed"],
-    ["Area", p.area || "Not listed"],
-    ["Rank", p.rank || "Not listed"],
-    ["Profile ID", p.id != null ? String(p.id) : "Not listed"],
-    ["Availability", p.status || "Contact to confirm"]
-  ].forEach(([label,value]) => {
-    const line = document.createElement("p");
-    const strong = document.createElement("strong");
-    strong.textContent = label + ": ";
-    line.append(strong, document.createTextNode(value));
-    facts.append(line);
-  });
-  const detailPanel = $("girlProfileDetailsPanel");
-  if (detailPanel) {
-    detailPanel.replaceChildren();
-    const addSection = (heading, entries) => {
-      if (!entries || !entries.length) return;
-      const section = document.createElement("section");
-      section.className = "detail-section";
-      const title = document.createElement("h3");
-      title.textContent = heading;
-      section.append(title);
-      const grid = document.createElement("div");
-      grid.className = "profile-detail-grid";
-      entries.forEach(([label, value]) => {
-        const item = document.createElement("div");
-        item.className = "profile-detail-item";
-        const name = document.createElement("strong");
-        name.textContent = label;
-        const val = document.createElement("span");
-        val.textContent = value;
-        item.append(name, val);
-        grid.append(item);
-      });
-      section.append(grid);
-      detailPanel.append(section);
-    };
-    addSection("Profile Details", Object.entries(p.details || {}));
-    detailPanel.hidden = detailPanel.childElementCount === 0;
-  }
   const gallery = $("girlProfileGallery");
+
+  $("girlProfileName").textContent =
+    p.displayName + (p.age ? " · " + p.age : "");
+  $("girlProfileStatus").textContent =
+    "Status: " + (p.status || "Contact to confirm");
+  $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
+  $("girlProfileBio").textContent =
+    p.bio || "Contact us for more information.";
+  $("girlProfileTag").textContent = p.tag || "";
+
+  mainPhoto.src = p.photo || "";
+  mainPhoto.alt = p.displayName || "Profile photo";
   gallery.replaceChildren();
-  const photos = Array.isArray(p.photos) && p.photos.length ? p.photos : (p.photo ? [p.photo] : []);
-  photos.forEach((src, index) => {
-    const photo = document.createElement("img");
-    photo.src = src;
-    photo.alt = p.displayName + " photo " + (index + 1);
-    photo.loading = "lazy";
-    gallery.append(photo);
-  });
-  const publishedPosts = $("girlPublishedPosts");
-  if (publishedPosts) publishedPosts.replaceChildren();
-  const postsEmpty = $("igPostsEmpty");
-  if (postsEmpty) postsEmpty.hidden = Array.isArray(p.posts) && p.posts.length > 0;
-  let details = $("girlProfileDetails");
-  if (!details) { details = document.createElement("div"); details.id = "girlProfileDetails"; $("girlProfileBio").after(details); }
-  details.className = "instagram-profile-meta";
-  details.innerHTML = "";
-  const stats = document.createElement("div"); stats.className = "instagram-stats";
-  [["RANK",p.rank||"—"],["AREA",p.area||"Tokyo"],["ID",String(p.id)]].forEach(([label,value]) => {
-    const item = document.createElement("div"); const strong = document.createElement("strong"); const small = document.createElement("span");
-    strong.textContent = value; small.textContent = label; item.append(strong,small); stats.append(item);
-  });
-  details.append(stats);
+
+  let detailsPanel = $("girlProfileDetails");
+
+  if (!detailsPanel) {
+    detailsPanel = document.createElement("div");
+    detailsPanel.id = "girlProfileDetails";
+    detailsPanel.style.cssText =
+      "margin:16px 0;padding:16px;border-radius:12px;" +
+      "background:rgba(128,128,128,0.10);color:inherit;" +
+      "font-size:14px;line-height:1.7;";
+
+    $("girlProfileBio").after(detailsPanel);
+  }
+
+  detailsPanel.replaceChildren();
+  detailsPanel.textContent = "Loading profile details…";
   screen.style.display = "block";
   document.body.classList.add("profile-view-only");
-  $("girlProfileOfficial").onclick = () => { if (p.profileUrl) window.open(p.profileUrl, "_blank", "noopener,noreferrer"); else toast("Official profile link unavailable"); };
-  $("girlProfileBook").onclick = () => { screen.style.display = "none"; document.body.classList.remove("profile-view-only"); if (typeof window.thcOpenReservation === "function") window.thcOpenReservation(p); };
+
+  $("girlProfileOfficial").onclick = () => {
+    if (p.profileUrl) {
+      window.open(p.profileUrl, "_blank", "noopener,noreferrer");
+    } else {
+      toast("Official profile link unavailable");
+    }
+  };
+
+  try {
+    const response = await fetch(
+      API_URL + '?cc=' +
+      encodeURIComponent(p.id)
+    );
+
+    if (!response.ok) throw new Error("Profile request failed");
+
+    const data = await response.json();
+    const photos = [...new Set(data.photos || [])];
+    const details = data.details || {};
+
+    const fields = [
+      ["Age", details.age],
+      ["Height", details.height],
+      ["Measurements", details.measurement],
+      ["Body Type", details.bodyType],
+      ["English Level", details.english],
+      ["Smoking", details.smoke],
+      ["Tattoos", details.tattoos],
+      ["Pubic Hair", details.pubicHair],
+      ["Last Checkup", details.lastCheckup]
+    ];
+
+    detailsPanel.replaceChildren();
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Profile Details";
+    heading.style.margin = "0 0 10px";
+    detailsPanel.append(heading);
+
+    fields.forEach(([label, value]) => {
+      if (!value || !String(value).trim()) return;
+
+      const row = document.createElement("div");
+      const strong = document.createElement("strong");
+      strong.textContent = label + ": ";
+
+      row.append(strong, document.createTextNode(value));
+      detailsPanel.append(row);
+    });
+
+    const services = Array.isArray(data.services)
+      ? data.services.filter(Boolean)
+      : [];
+
+    if (services.length) {
+      const serviceHeading = document.createElement("h3");
+      serviceHeading.textContent = "Available Services";
+      serviceHeading.style.margin = "16px 0 8px";
+      detailsPanel.append(serviceHeading);
+
+      const list = document.createElement("div");
+      list.style.cssText =
+        "display:flex;flex-wrap:wrap;gap:6px;";
+
+      services.forEach(service => {
+        const tag = document.createElement("span");
+        tag.textContent = service;
+        tag.style.cssText =
+          "padding:5px 9px;border-radius:8px;" +
+          "background:rgba(128,128,128,0.15);font-size:12px;";
+        list.append(tag);
+      });
+
+      detailsPanel.append(list);
+    }
+
+    // Personal Options are separate from Additional Services and are optional
+    // per companion. Accept common API field names without changing booking.
+    const rawPersonalOptions =
+      data.personalOptions ??
+      data.personal_options ??
+      data.personal_options_list ??
+      details.personalOptions ??
+      details.personal_options ??
+      data.personalOption ??
+      data.personal_option;
+
+    const personalOptions = Array.isArray(rawPersonalOptions)
+      ? rawPersonalOptions
+      : rawPersonalOptions
+        ? [rawPersonalOptions]
+        : [];
+
+    const normalizedPersonalOptions = personalOptions
+      .map(option => {
+        if (typeof option === "string") {
+          const text = option.trim();
+          return text ? { text } : null;
+        }
+        if (!option || typeof option !== "object") return null;
+        const name = option.name || option.title || option.label ||
+          option.option || option.description || "";
+        const price = option.price || option.fee || option.cost || "";
+        const note = option.note || option.notes || option.remark || "";
+        const text = [price, name].filter(Boolean).join(": ");
+        return (text || note)
+          ? { text: text || name || "Personal option", note }
+          : null;
+      })
+      .filter(Boolean);
+
+    if (normalizedPersonalOptions.length) {
+      const personalSection = document.createElement("section");
+      personalSection.style.cssText =
+        "margin-top:18px;padding-top:14px;border-top:1px solid #493544;";
+
+      const personalHeading = document.createElement("h3");
+      personalHeading.textContent = "Personal Options";
+      personalHeading.style.margin = "0 0 8px";
+      personalSection.append(personalHeading);
+
+      normalizedPersonalOptions.forEach(option => {
+        const item = document.createElement("div");
+        item.style.cssText =
+          "padding:10px 12px;margin:8px 0;border-radius:9px;" +
+          "background:rgba(216,173,98,0.10);border:1px solid #493544;";
+
+        const label = document.createElement("div");
+        label.textContent = option.text;
+        label.style.fontWeight = "700";
+        item.append(label);
+
+        if (option.note) {
+          const note = document.createElement("p");
+          note.textContent = option.note;
+          note.style.cssText =
+            "margin:6px 0 0;color:#c0aebb;font-size:12px;";
+          item.append(note);
+        }
+
+        personalSection.append(item);
+      });
+
+      const reservationNote = document.createElement("p");
+      reservationNote.textContent =
+        "Please reserve Personal Options in advance.";
+      reservationNote.style.cssText =
+        "margin:8px 0 0;color:#c0aebb;font-size:12px;";
+      personalSection.append(reservationNote);
+      detailsPanel.append(personalSection);
+    }
+
+    if (!detailsPanel.children.length) {
+      detailsPanel.textContent = "No additional details available.";
+    }
+
+    if (!photos.length && p.photo) photos.push(p.photo);
+
+    photos.forEach((photo, i) => {
+      const thumb = document.createElement("img");
+      thumb.className = "gallery-thumb";
+      thumb.src = photo;
+      thumb.alt = p.displayName + " photo " + (i + 1);
+      thumb.loading = "lazy";
+
+      thumb.onclick = () => {
+        mainPhoto.src = photo;
+      };
+
+      gallery.append(thumb);
+    });
+
+    if (photos.length) mainPhoto.src = photos[0];
+
+  } catch (error) {
+    console.error("Could not load profile details:", error);
+    detailsPanel.textContent =
+      "Additional profile details could not be loaded.";
+    toast("Could not load profile details. Try again.");
+  }
 }
+
 
 $("closeGirlProfile").onclick = () => {
   $("girlProfileScreen").style.display = "none";
   document.body.classList.remove("profile-view-only");
-  if (routeParams.has("profile")) location.href = "./profiles.html";
+  if (routeParams.has("profile")) location.href = "./";
 };
 
 $("girlProfileBook").onclick = () => {
   $("girlProfileScreen").style.display = "none";
+  document.body.classList.remove("profile-view-only");
   if (typeof window.thcOpenReservation === "function") {
     window.thcOpenReservation(window.thcActiveProfile || profiles[index]);
   }
@@ -1704,24 +1738,13 @@ logoutBtn.onclick = async () => {
       );
       if (!response.ok) throw new Error('Could not load options');
       const data = await response.json();
-      const apiOptions = normalizeOptions(data);
-      const localOptions = normalizeOptions(profile);
-      renderOptions({
-        services: apiOptions.services.length ? apiOptions.services : localOptions.services,
-        personal: apiOptions.personal.length ? apiOptions.personal : localOptions.personal
-      });
+      renderOptions(normalizeOptions(data));
     } catch (error) {
       console.error('Could not load reservation options:', error);
-      const localOptions = normalizeOptions(profile);
-      if (localOptions.services.length || localOptions.personal.length) {
-        renderOptions(localOptions);
-        optionHint.textContent = 'Showing saved options for this girl.';
-      } else {
-        currentPersonalOptions = [];
-        optionList.replaceChildren();
-        optionWrap.hidden = false;
-        optionHint.textContent = 'No additional options are listed for this girl yet.';
-      }
+      currentPersonalOptions = [];
+      optionList.replaceChildren();
+      optionWrap.hidden = false;
+      optionHint.textContent = 'Could not load this girl’s options. You can still send a reservation without selecting options.';
     }
   }
 
@@ -1749,10 +1772,11 @@ logoutBtn.onclick = async () => {
   document.getElementById('thc-outcall-fields').hidden = !outcall;
 });
 
-  // Offer standard booking request times without relying on the blocked schedule site.
+  // Fetch published shift times from the separate schedule Worker.
+  // The existing profile API endpoint is intentionally unchanged.
   let scheduleRequestId = 0;
   async function refreshStartTimes() {
-    scheduleRequestId++;
+    const requestId = ++scheduleRequestId;
     const timeSelect = document.getElementById('thc-time');
     const dateValue = document.getElementById('thc-date').value;
     const girlId = document.getElementById('thc-girl').value;
@@ -1760,24 +1784,54 @@ logoutBtn.onclick = async () => {
     const previousValue = timeSelect.value;
     const hint = document.getElementById('thc-time-hint');
     timeSelect.replaceChildren(new Option('Choose a start time', ''));
-    // Populate the standard request window immediately, even before a date or girl is selected.
-    const duration = durationValue === 'extension' ? 30 : Number(durationValue);
-    if (![30, 60, 90, 120].includes(duration)) {
-      hint.textContent = 'Please choose a valid duration.';
+    if (!dateValue || !girlId) {
+      hint.textContent = 'Choose a girl and date to see scheduled start times. Staff must confirm availability.';
       return;
     }
-    const times = [];
-    // Requested booking window: 12:00 PM through 4:00 AM (crosses midnight).
-    const windowStart = 12 * 60;
-    const windowEnd = 28 * 60;
-    for (let minute = windowStart; minute + duration <= windowEnd; minute += 30) {
-      const clockMinute = minute % 1440;
-      times.push(String(Math.floor(clockMinute / 60)).padStart(2, '0') + ':' + String(clockMinute % 60).padStart(2, '0'));
+    if (!SCHEDULE_API_URL) {
+      hint.textContent = 'Schedule API URL is not configured yet. Please confirm times with staff.';
+      return;
     }
-    times.forEach(value => timeSelect.add(new Option(value, value)));
-    if (times.includes(previousValue)) timeSelect.value = previousValue;
-    timeSelect.disabled = false;
-    hint.textContent = (girlId && dateValue ? 'Requested booking window: ' : 'Choose a girl and date. Requested booking window: ') + '12:00 PM–4:00 AM. These are request times, not confirmed individual shifts; staff must confirm availability.';
+    if (durationValue === 'extension') {
+      hint.textContent = 'For a 30-minute extension, please confirm the start time with staff.';
+      return;
+    }
+    const date = dateValue.replace(/-/g, '');
+    const profile = profileById.get(String(girlId));
+    hint.textContent = 'Loading the published schedule…';
+    timeSelect.disabled = true;
+    try {
+      const url = new URL(SCHEDULE_API_URL);
+      url.searchParams.set('date', date);
+      url.searchParams.set('girlId', String(girlId));
+      url.searchParams.set('duration', durationValue);
+      const response = await fetch(url.toString(), { cache: 'no-store' });
+      if (!response.ok) throw new Error('Schedule service returned ' + response.status);
+      const data = await response.json();
+      if (requestId !== scheduleRequestId) return;
+      if (!data || data.ok !== true) throw new Error(data && data.error ? data.error : 'Invalid schedule response');
+      if (!data.scheduled) {
+        hint.textContent = (data.companion || (profile && profile.displayName) || 'This girl') +
+          ' is not listed as scheduled for this date. Please choose another date or confirm with staff.';
+        return;
+      }
+      const times = Array.isArray(data.bookingTimes) ? data.bookingTimes : [];
+      if (!times.length) {
+        hint.textContent = 'A shift was found (' + (data.shift && data.shift.start || '?') + '–' +
+          (data.shift && data.shift.end || '?') + '), but no start times fit this duration. Please choose another duration or confirm with staff.';
+        return;
+      }
+      times.forEach(value => timeSelect.add(new Option(value, value)));
+      if (times.includes(previousValue)) timeSelect.value = previousValue;
+      hint.textContent = 'Published shift: ' + data.shift.start + '–' + data.shift.end +
+        '. Times fit the scheduled shift only; staff must confirm actual availability.';
+    } catch (error) {
+      if (requestId !== scheduleRequestId) return;
+      console.error('Could not load published schedule:', error);
+      hint.textContent = 'Could not load this girl’s schedule. Please retry or confirm times with staff.';
+    } finally {
+      if (requestId === scheduleRequestId) timeSelect.disabled = false;
+    }
   }
 
   function setSelectedGirl(profile) {
