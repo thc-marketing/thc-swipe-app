@@ -1144,7 +1144,7 @@ async function openGirlProfile(p) {
         if (typeof item === "string") return item.trim();
         if (!item || typeof item !== "object") return "";
         return item.url || item.src || item.image || item.photo || item.original || item.large || "";
-      }).filter(value => typeof value === "string" && /^https?:\\/\\//i.test(value));
+      }).filter(value => typeof value === "string" && (value.startsWith("http://") || value.startsWith("https://")));
     }))];
     const details = data.details && typeof data.details === "object"
       ? data.details
