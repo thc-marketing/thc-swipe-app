@@ -144,28 +144,40 @@ body.booking-only .top .pill{display:none}
 body.profile-view-only .app{display:none!important}
 
  
-/* Clean profile details and photo feed */
+/* Instagram profile: avatar/details header + feed/photo tabs */
 #girlProfileScreen{position:fixed;inset:0;z-index:5000;display:none;overflow-y:auto;background:#080808!important;color:#f5f5f5!important;padding:0!important;font-family:Arial,Helvetica,sans-serif}
-#girlProfileScreen .instagram-page{width:100%;max-width:680px;min-height:100vh;margin:0 auto;padding:0 0 36px!important;background:#080808}
-#girlProfileScreen .ig-topbar{height:56px;display:flex;align-items:center;gap:16px;padding:0 18px;border-bottom:1px solid #292929}
+#girlProfileScreen .instagram-page{width:100%;max-width:900px;min-height:100vh;margin:0 auto;padding:0 0 40px!important;background:#080808}
+#girlProfileScreen .ig-topbar{height:58px;display:flex;align-items:center;gap:18px;padding:0 22px;border-bottom:1px solid #292929}
 #girlProfileScreen #closeGirlProfile{margin:0;padding:0;background:none;border:0;color:#fff;font-size:34px;line-height:1}
-#girlProfileScreen .ig-topbar strong{font-size:18px;font-weight:700}
-#girlProfileScreen .ig-cover{display:block;width:100%;max-height:620px;aspect-ratio:4/5;object-fit:cover;background:#191919}
-#girlProfileScreen .ig-bio{padding:18px 20px 12px;font-size:14px;line-height:1.6}
-#girlProfileScreen .ig-bio p{margin:4px 0}
+#girlProfileScreen .ig-topbar strong{font-size:17px;font-weight:700}
+#girlProfileScreen .ig-profile-header{display:grid;grid-template-columns: minmax(130px, 1fr) 2fr;gap:48px;padding:42px 8% 30px;align-items:start}
+#girlProfileScreen .ig-avatar-wrap{display:flex;justify-content:center}
+#girlProfileScreen .ig-avatar{display:block;width:clamp(110px,16vw,170px);height:clamp(110px,16vw,170px);border-radius:50%;object-fit:cover;border:3px solid #c13584;padding:3px;background:#080808}
+#girlProfileScreen .ig-profile-content{min-width:0}
+#girlProfileScreen .ig-name-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:4px 0 18px}
+#girlProfileScreen .ig-name-row h2{font-size:22px;font-weight:400;margin:0}
+#girlProfileScreen .ig-tag{font-size:11px;color:#e8c17b;border:1px solid #6b5432;border-radius:20px;padding:4px 9px}
+#girlProfileScreen .ig-bio{font-size:14px;line-height:1.65}
+#girlProfileScreen .ig-bio p{margin:5px 0}
 #girlProfileScreen .ig-status{font-weight:700;color:#e8c17b}
 #girlProfileScreen .ig-location{color:#aaa;font-size:12px}
-#girlProfileScreen .ig-tag{color:#e8c17b;font-size:12px}
-#girlProfileScreen .ig-details{padding:8px 20px 20px;color:#eee;font-size:13px;line-height:1.7;border-bottom:1px solid #292929}
-#girlProfileScreen .ig-details h3{font-size:15px;margin:14px 0 8px}
-#girlProfileScreen .ig-feed-heading{padding:16px 18px 12px;font-size:12px;font-weight:700;letter-spacing:1.5px}
-#girlProfileScreen .ig-photo-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:0!important;margin:0!important}
+#girlProfileScreen .ig-details{margin:0 8% 24px;padding:16px 0 20px;color:#eee;font-size:13px;line-height:1.7;border-top:1px solid #292929;border-bottom:1px solid #292929}
+#girlProfileScreen .ig-details h3{font-size:14px;margin:8px 0}
+#girlProfileScreen .ig-feed-tabs{height:52px;display:flex;justify-content:center;gap:80px;border-bottom:1px solid #292929;color:#999;font-size:11px;letter-spacing:1.2px}
+#girlProfileScreen .ig-feed-tabs>div{height:52px;display:flex;align-items:center;gap:8px}
+#girlProfileScreen .ig-feed-tabs>div span{font-size:19px}
+#girlProfileScreen .ig-feed-tabs>.active{color:#fff;border-top:1px solid #fff}
+#girlProfileScreen .ig-photo-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding:18px 8% 0!important;margin:0!important}
 #girlProfileScreen .ig-photo-grid .gallery-thumb{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border:0;border-radius:0;cursor:pointer}
 body.profile-view-only .app{display:none!important}
-@media(max-width:480px){
- #girlProfileScreen .ig-cover{max-height:70vh}
- #girlProfileScreen .ig-bio{padding:16px}
- #girlProfileScreen .ig-details{padding:8px 16px 18px}
+@media(max-width:600px){
+ #girlProfileScreen .ig-profile-header{grid-template-columns:105px 1fr;gap:18px;padding:26px 16px 22px}
+ #girlProfileScreen .ig-avatar{width:96px;height:96px}
+ #girlProfileScreen .ig-name-row h2{font-size:18px}
+ #girlProfileScreen .ig-bio{font-size:13px}
+ #girlProfileScreen .ig-details{margin:0 16px 18px}
+ #girlProfileScreen .ig-photo-grid{padding:14px 0 0!important;gap:2px}
+ #girlProfileScreen .ig-feed-tabs{gap:60px}
 }</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -194,21 +206,32 @@ body.profile-view-only .app{display:none!important}
   <div class="profile-inner instagram-page">
     <div class="ig-topbar">
       <button id="closeGirlProfile" type="button" aria-label="Back">‹</button>
-      <strong id="girlProfileName">Girl's Name</strong>
+      <strong id="igUsername">Profile</strong>
     </div>
 
-    <img id="girlProfileMainPhoto" class="ig-cover" src="" alt="Profile photo">
-
-    <section class="ig-bio">
-      <p id="girlProfileStatus" class="ig-status"></p>
-      <p id="girlProfileBio"></p>
-      <p id="girlProfileArea" class="ig-location"></p>
-      <p id="girlProfileTag" class="ig-tag"></p>
+    <section class="ig-profile-header">
+      <div class="ig-avatar-wrap">
+        <img id="girlProfileMainPhoto" class="ig-avatar" src="" alt="Profile photo">
+      </div>
+      <div class="ig-profile-content">
+        <div class="ig-name-row">
+          <h2 id="girlProfileName">Girl's Name</h2>
+          <span id="girlProfileTag" class="ig-tag"></span>
+        </div>
+        <div class="ig-bio">
+          <p id="girlProfileStatus" class="ig-status"></p>
+          <p id="girlProfileBio"></p>
+          <p id="girlProfileArea" class="ig-location"></p>
+        </div>
+      </div>
     </section>
 
     <div id="girlProfileDetails" class="ig-details"></div>
 
-    <div class="ig-feed-heading">PHOTOS &amp; FEED</div>
+    <div class="ig-feed-tabs">
+      <div class="active"><span>▦</span> FEED</div>
+      <div><span>▧</span> PHOTOS</div>
+    </div>
     <div id="girlProfileGallery" class="gallery-strip ig-photo-grid"></div>
   </div>
 </div>
@@ -1064,6 +1087,7 @@ async function openGirlProfile(p) {
 
   $("girlProfileName").textContent =
     p.displayName + (p.age ? " · " + p.age : "");
+  $("igUsername").textContent = p.displayName || "Profile";
   $("girlProfileStatus").textContent =
     "Status: " + (p.status || "Contact to confirm");
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
