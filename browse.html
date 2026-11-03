@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en">
-<head></script>
+<head>document.getElementById("profilePurchaseClose")?.addEventListener("click",()=>{document.getElementById("profilePurchaseModal").style.display="none"});
+document.getElementById("profilePurchaseModal")?.addEventListener("click",e=>{if(e.target.id==="profilePurchaseModal")e.currentTarget.style.display="none"});
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Browse Girls — Tokyo Hentai Club</title>
@@ -263,6 +265,7 @@ body.profile-view-only .app{display:none!important}
   </div>
 </div>
 
+<div id="profilePurchaseModal" style="display:none;position:fixed;inset:0;z-index:99999;background:#09060bdd;align-items:center;justify-content:center;padding:18px"><section style="width:min(100%,430px);background:#211722;border:1px solid #493544;border-radius:16px;padding:20px;color:#fff7fb"><h3>Premium creator post</h3><p id="profilePurchaseCaption"></p><p id="profilePurchaseAccount"></p><strong id="profilePurchasePrice" style="display:block;font-size:25px;color:#e8c17b;margin:12px 0"></strong><p style="font-size:12px;color:#c0aebb">This submits a purchase request only. No payment is taken and the post remains locked until payment is completed.</p><p id="profilePurchaseMessage" role="status"></p><div style="display:flex;gap:8px;margin-top:16px"><button id="profilePurchaseClose" type="button" style="flex:1;padding:12px">Close</button><button id="profilePurchaseConfirm" type="button" style="flex:1;padding:12px;background:#d8ad62;color:#171019;font-weight:800">Confirm request</button></div></section></div>
 <script>
 const routeParams = new URLSearchParams(location.search);
 if(routeParams.get('booking')==='1') document.body.classList.add('booking-only');
@@ -1081,6 +1084,34 @@ $("bookBtn").onclick = () => {
 
 
 
+
+async function profileEngagement(db,post,card){
+ const box=document.createElement("div");box.style.cssText="border-top:1px solid #493544;margin-top:12px;padding-top:12px";
+ const row=document.createElement("div");row.style.cssText="display:flex;gap:10px;align-items:center;flex-wrap:wrap";
+ const like=document.createElement("button");like.type="button";like.textContent="♡ Like";like.style.cssText="padding:8px 12px;border-radius:9px";
+ const counts=document.createElement("small");counts.textContent="Loading reactions…";row.append(like,counts);box.append(row);
+ const list=document.createElement("div");list.style.marginTop="8px";box.append(list);
+ const form=document.createElement("form");form.style.cssText="display:flex;gap:8px;margin-top:10px";
+ const input=document.createElement("input");input.maxLength=1000;input.placeholder="Write a comment…";input.style.cssText="min-width:0;flex:1;padding:10px;border-radius:8px";
+ const send=document.createElement("button");send.type="submit";send.textContent="Post";send.style.cssText="padding:8px 12px;border-radius:8px";
+ form.append(input,send);box.append(form);const hint=document.createElement("small");hint.style.cssText="display:block;color:#c0aebb;margin-top:7px";box.append(hint);card.append(box);
+ async function refresh(){const {data,error}=await db.rpc("get_free_post_engagement",{p_post_id:post.post_id});if(error){counts.textContent="Engagement unavailable";return}const r=Array.isArray(data)?data[0]:data;if(!r)return;like.textContent=r.liked_by_me?"♥ Liked":"♡ Like";counts.textContent=Number(r.like_count||0)+" likes · "+Number(r.comment_count||0)+" comments";const {data:cs,error:ce}=await db.rpc("list_free_post_comments",{p_post_id:post.post_id,p_limit:10});list.replaceChildren();if(!ce)for(const x of cs||[]){const p=document.createElement("p");p.textContent=x.body;p.style.cssText="font-size:12px;white-space:pre-wrap;margin:6px 0";list.append(p)}}
+ async function customer(){const {data,error}=await db.auth.getUser();if(error)throw error;if(data.user)return data.user;hint.textContent="Sign in to like and comment.";return null}
+ like.onclick=async()=>{like.disabled=true;try{const u=await customer();if(!u)return;const {data}=await db.rpc("get_free_post_engagement",{p_post_id:post.post_id});const r=Array.isArray(data)?data[0]:data;const out=r?.liked_by_me?await db.from("creator_post_likes").delete().eq("post_id",post.post_id).eq("user_id",u.id):await db.from("creator_post_likes").insert({post_id:post.post_id,user_id:u.id});if(out.error)throw out.error;hint.textContent="";await refresh()}catch(e){hint.textContent=e.message||"Like failed"}finally{like.disabled=false}};
+ form.onsubmit=async e=>{e.preventDefault();const body=input.value.trim();if(!body)return;send.disabled=true;try{const u=await customer();if(!u)return;const {error}=await db.from("creator_post_comments").insert({post_id:post.post_id,user_id:u.id,body});if(error)throw error;input.value="";hint.textContent="Comment posted.";await refresh()}catch(e){hint.textContent=e.message||"Comment failed"}finally{send.disabled=false}};
+ await refresh();
+}
+async function profileBuyNow(db,post){
+ const back=document.getElementById("profilePurchaseModal"),message=document.getElementById("profilePurchaseMessage"),confirm=document.getElementById("profilePurchaseConfirm");
+ document.getElementById("profilePurchaseCaption").textContent=post.caption||"Premium creator post";
+ document.getElementById("profilePurchasePrice").textContent="¥"+Number(post.price_yen||0).toLocaleString("ja-JP");
+ message.textContent="";back.style.display="flex";
+ const {data,error}=await db.auth.getUser();if(error)message.textContent=error.message;
+ document.getElementById("profilePurchaseAccount").textContent=data?.user?"Signed in as "+(data.user.email||"customer"):"Sign in to your customer account before requesting this post.";
+ confirm.disabled=!data?.user;confirm.textContent="Confirm request";
+ confirm.onclick=async()=>{confirm.disabled=true;confirm.textContent="Submitting…";try{const {data,error}=await db.rpc("create_creator_purchase_intent",{p_post_id:post.post_id});if(error)throw error;const r=Array.isArray(data)?data[0]:data;if(!r?.intent_id)throw new Error("No request reference returned.");message.textContent="Request recorded · "+r.intent_id+". No payment has been taken.";confirm.textContent="Request recorded"}catch(e){message.textContent=e.message||"Could not submit request";confirm.disabled=false;confirm.textContent="Confirm request"}};
+}
+
 async function loadGirlCreatorPosts(p) {
   const postsStatus = $("girlCreatorPostsStatus");
   const postsList = $("girlCreatorPostsList");
@@ -1141,7 +1172,11 @@ async function loadGirlCreatorPosts(p) {
         premium.textContent = "🔒 PREMIUM CONTENT · ¥" + Number(post.price_yen || 0).toLocaleString("ja-JP");
         premium.style.cssText = "margin-top:10px;color:#e8c17b;font-weight:700;font-size:13px";
         card.append(premium);
+        const buy=document.createElement("button");buy.type="button";buy.textContent="Buy Now · ¥"+Number(post.price_yen||0).toLocaleString("ja-JP");
+        buy.style.cssText="width:100%;margin-top:10px;padding:13px;border:0;border-radius:10px;background:linear-gradient(100deg,#e5c477,#a98237);color:#171019;font-weight:900;cursor:pointer";
+        buy.onclick=()=>profileBuyNow(feedDb,post);card.append(buy);
       }
+      await profileEngagement(feedDb,post,card);
       const date = document.createElement("small");
       date.style.color = "#aaa";
       date.textContent = post.published_at ? new Date(post.published_at).toLocaleDateString() : "";
