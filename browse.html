@@ -1293,7 +1293,7 @@ async function openGirlProfile(p) {
       onlineLabel.textContent=online?"● Online"+(presence.location_area?" · "+presence.location_area:""):"○ Offline";
       onlineLabel.style.color=online?"#65df9a":"#aaa";
       const {data:auth}=await fdb.auth.getUser();
-      const user=auth?.user;      messageBtn.onclick=async()=>{if(!user){location.href="login.html";return}try{const {data:conv,error}=await fdb.from("chat_conversations").upsert({customer_id:user.id,creator_id:creatorId},{onConflict:"customer_id,creator_id"}).select("id").single();if(error)throw error;location.href="/index.html?chat="+encodeURIComponent(conv.id)}catch(e){followNote.textContent="Could not start chat: "+e.message}};
+      const user=auth?.user;      messageBtn.onclick=()=>{if(!user){location.href="login.html";return}location.href="/index.html?messageCreator="+encodeURIComponent(creatorId)};
 
       if(!user){followBtn.textContent="Log in to follow";followBtn.onclick=()=>location.href="login.html";return}
       const {data:existing,error:readErr}=await fdb.from("creator_follows").select("creator_id").eq("creator_id",creatorId).eq("follower_id",user.id).maybeSingle();
