@@ -38,6 +38,14 @@ button:active{transform:scale(.98)}
 </section>
 <div class="status" id="status">Sign in with the Supabase Auth account granted administrator access.</div>
 <section id="queue"></section>
+
+<section class="card hidden" id="creatorAccountsSection">
+<h2>Creator account setup</h2>
+<p class="muted">Create individual Creator Hub logins for active, published profiles. Each creator receives a one-time ID and temporary password, and must change the password at first login. Share credentials privately.</p>
+<div id="creatorAccountsStatus" class="status">Checking administrator access…</div>
+<div id="creatorAccountsList"></div>
+<div id="creatorAccountsResult"></div>
+</section>
 <section class="card hidden" id="publishedSection">
 <h2>Published posts</h2><p class="muted">Hide a post to remove it from the public feed without deleting it. Delete permanently removes the post record.</p>
 <div id="publishedQueue"></div>
@@ -112,6 +120,44 @@ button:active{transform:scale(.98)}
    actions.append(toggle,del);card.append(actions);box.append(card);
   }
  }
+
+ async function loadCreatorAccounts(){
+  const box=$('creatorAccountsList');box.replaceChildren();$('creatorAccountsResult').replaceChildren();
+  $('creatorAccountsStatus').textContent='Checking administrator access…';
+  const {data:{user},error:ue}=await db.auth.getUser();
+  if(ue||!user){$('creatorAccountsStatus').textContent='Sign in with the THC administrator account.';return}
+  const {data:admin,error:ae}=await db.from('creator_admins').select('user_id').eq('user_id',user.id).maybeSingle();
+  if(ae||!admin){$('creatorAccountsStatus').textContent='Access denied. This account is not a THC administrator.';return}
+  const {data:rows,error}=await db.from('companion_profiles').select('id,display_name,creator_user_id').eq('is_active',true).eq('is_published',true).order('display_name');
+  if(error){$('creatorAccountsStatus').textContent='Could not load creator profiles: '+error.message;return}
+  $('creatorAccountsStatus').textContent=rows.length+' active published profiles. Accounts already linked are marked as created.';
+  for(const p of rows){
+   const line=document.createElement('div');line.className='card';
+   const name=document.createElement('strong');name.textContent=p.display_name||'Creator';
+   const state=document.createElement('p');state.className='muted';state.textContent=p.creator_user_id?'Account linked':'No creator login yet';
+   const btn=document.createElement('button');btn.textContent=p.creator_user_id?'Already created':'Create login';btn.disabled=!!p.creator_user_id;
+   btn.onclick=()=>createCreatorAccount(p,btn);
+   line.append(name,state,btn);box.append(line);
+  }
+ }
+ async function createCreatorAccount(p,btn){
+  if(!window.confirm('Create a Creator Hub login for '+p.display_name+'?'))return;
+  btn.disabled=true;btn.textContent='Creating…';$('creatorAccountsResult').replaceChildren();
+  try{
+   const {data,error}=await db.functions.invoke('creator-account-admin',{body:{companion_profile_id:p.id}});
+   if(error)throw error;
+   if(!data?.creator_id)throw new Error(data?.error||'The function did not return account credentials.');
+   const card=document.createElement('div');card.className='card';
+   const title=document.createElement('strong');title.textContent='Account created for '+p.display_name;
+   const id=document.createElement('p');id.textContent='Creator ID: '+data.creator_id;
+   const pw=document.createElement('p');pw.textContent='Temporary password: '+data.temporary_password;
+   const note=document.createElement('p');note.className='muted';note.textContent='Share these credentials privately. The creator must change the password at first login.';
+   const copy=document.createElement('button');copy.textContent='Copy credentials';
+   copy.onclick=()=>navigator.clipboard.writeText('Creator ID: '+data.creator_id+'\nTemporary password: '+data.temporary_password);
+   card.append(title,id,pw,note,copy);$('creatorAccountsResult').append(card);
+   btn.textContent='Created';await loadCreatorAccounts();
+  }catch(err){$('creatorAccountsStatus').textContent='Could not create account: '+(err.message||String(err));btn.disabled=false;btn.textContent='Retry'}
+ }
  async function review(id,decision,a,b){
   a.disabled=b.disabled=true;say(decision==='publish'?'Publishing post…':'Rejecting post…');
   const {error}=await db.rpc('review_creator_post',{p_post_id:id,p_decision:decision});
@@ -119,9 +165,9 @@ button:active{transform:scale(.98)}
   say(decision==='publish'?'Post published.':'Post rejected and removed from the review queue.');
   await loadQueue();
  }
- $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');await loadQueue();await loadPublished()};
+ $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');await loadQueue();await loadPublished();$('creatorAccountsSection').classList.remove('hidden');await loadCreatorAccounts()};
  $('refresh').onclick=async()=>{await loadQueue();await loadPublished()};
- $('logout').onclick=async()=>{await db.auth.signOut();$('loginCard').classList.remove('hidden');$('publishedSection').classList.add('hidden');$('refresh').classList.add('hidden');$('logout').classList.add('hidden');$('queue').replaceChildren();$('publishedQueue').replaceChildren();say('Signed out.')};
- db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished()}});
+ $('logout').onclick=async()=>{await db.auth.signOut();$('loginCard').classList.remove('hidden');$('publishedSection').classList.add('hidden');$('creatorAccountsSection').classList.add('hidden');$('refresh').classList.add('hidden');$('logout').classList.add('hidden');$('queue').replaceChildren();$('publishedQueue').replaceChildren();say('Signed out.')};
+ db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished();$('creatorAccountsSection').classList.remove('hidden');loadCreatorAccounts()}});
 })();
 </script></body></html>
