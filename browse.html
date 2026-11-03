@@ -1120,6 +1120,80 @@ async function openGirlProfile(p) {
   screen.style.display = "block";
   document.body.classList.add("profile-view-only");
 
+  // Saved official-page extracts are used as a fallback when the profile API
+  // does not return full details. Their schedule is explicitly a dated snapshot.
+  let hasSavedDetails = false;
+  try {
+    const savedResponse = await fetch("./profile-details.json", { cache: "no-store" });
+    if (savedResponse.ok) {
+      const savedProfiles = await savedResponse.json();
+      const saved = savedProfiles[String(p.id)];
+      if (saved) {
+        hasSavedDetails = true;
+        detailsPanel.replaceChildren();
+        const savedHeading = document.createElement("h3");
+        savedHeading.textContent = "Profile Details";
+        detailsPanel.append(savedHeading);
+
+        Object.entries(saved.details || {}).forEach(([label, value]) => {
+          const row = document.createElement("div");
+          const strong = document.createElement("strong");
+          strong.textContent = label + ": ";
+          row.append(strong, document.createTextNode(String(value)));
+          detailsPanel.append(row);
+        });
+
+        if (saved.bio) {
+          const bio = document.createElement("p");
+          bio.textContent = saved.bio;
+          bio.style.marginTop = "12px";
+          detailsPanel.append(bio);
+        }
+
+        if (saved.scheduleSnapshot && saved.scheduleSnapshot.length) {
+          const scheduleTitle = document.createElement("h3");
+          scheduleTitle.textContent = "Saved Schedule Snapshot · " + (saved.capturedAt || "");
+          scheduleTitle.style.margin = "16px 0 8px";
+          detailsPanel.append(scheduleTitle);
+          const note = document.createElement("p");
+          note.textContent = "Historical page capture only — confirm current availability before booking.";
+          note.style.cssText = "font-size:12px;color:#c0aebb;margin:0 0 8px;";
+          detailsPanel.append(note);
+          saved.scheduleSnapshot.forEach(slot => {
+            const row = document.createElement("div");
+            row.textContent = slot.day + ": " + slot.hours;
+            detailsPanel.append(row);
+          });
+        }
+
+        if (saved.selfies && saved.selfies.length) {
+          const selfieTitle = document.createElement("h3");
+          selfieTitle.textContent = "Selfies captions";
+          selfieTitle.style.margin = "16px 0 8px";
+          detailsPanel.append(selfieTitle);
+          saved.selfies.forEach(item => {
+            const row = document.createElement("p");
+            row.textContent = item.caption + " · " + item.date;
+            row.style.margin = "5px 0";
+            detailsPanel.append(row);
+          });
+        }
+
+        if (saved.review && saved.review.summary) {
+          const reviewTitle = document.createElement("h3");
+          reviewTitle.textContent = "Review · " + saved.review.date;
+          reviewTitle.style.margin = "16px 0 8px";
+          detailsPanel.append(reviewTitle);
+          const review = document.createElement("p");
+          review.textContent = saved.review.summary;
+          detailsPanel.append(review);
+        }
+      }
+    }
+  } catch (savedError) {
+    console.warn("Saved profile details could not be loaded:", savedError);
+  }
+
   try {
     const response = await fetch(
       API_URL + '?cc=' +
@@ -1343,9 +1417,11 @@ async function openGirlProfile(p) {
 
   } catch (error) {
     console.error("Could not load profile details:", error);
-    detailsPanel.textContent =
-      "Additional profile details could not be loaded.";
-    toast("Could not load profile details. Try again.");
+    if (!hasSavedDetails) {
+      detailsPanel.textContent =
+        "Additional profile details could not be loaded.";
+      toast("Could not load profile details. Try again.");
+    }
   }
 }
 
