@@ -1262,6 +1262,39 @@ async function openGirlProfile(p) {
   $("girlProfileName").textContent =
     p.displayName + (p.age ? " · " + p.age : "");
   $("igUsername").textContent = p.displayName || "Profile";
+  let followWrap = $("girlFollowWrap");
+  if (!followWrap) {
+    followWrap = document.createElement("div");
+    followWrap.id = "girlFollowWrap";
+    followWrap.style.cssText = "display:flex;gap:10px;align-items:center;margin:10px 0 16px";
+    $("igUsername").after(followWrap);
+  }
+  followWrap.replaceChildren();
+  const followBtn = document.createElement("button");
+  followBtn.type = "button";
+  followBtn.textContent = "＋ Follow";
+  followBtn.style.cssText = "padding:9px 20px;border:0;border-radius:999px;background:#ed4c9b;color:white;font-weight:800";
+  const followNote = document.createElement("small");
+  followNote.style.color = "#b8aab7";
+  followWrap.append(followBtn, followNote);
+  (async()=>{
+    try {
+      const fdb=window.thcSupabase||window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
+      const {data:comp,error:compErr}=await fdb.from("companion_profiles").select("creator_user_id").eq("id",p.id).maybeSingle();
+      if(compErr)throw compErr;
+      const creatorId=comp?.creator_user_id;
+      if(!creatorId){followBtn.disabled=true;followNote.textContent="Follow is not available for this profile yet.";return}
+      const {data:auth}=await fdb.auth.getUser();
+      const user=auth?.user;
+      if(!user){followBtn.textContent="Log in to follow";followBtn.onclick=()=>location.href="login.html";return}
+      const {data:existing,error:readErr}=await fdb.from("creator_follows").select("creator_id").eq("creator_id",creatorId).eq("follower_id",user.id).maybeSingle();
+      if(readErr)throw readErr;
+      let following=!!existing;
+      const paint=()=>{followBtn.textContent=following?"✓ Following":"＋ Follow";followBtn.style.background=following?"#39303c":"#ed4c9b"};
+      paint();
+      followBtn.onclick=async()=>{followBtn.disabled=true;try{if(following){const {error}=await fdb.from("creator_follows").delete().eq("creator_id",creatorId).eq("follower_id",user.id);if(error)throw error;following=false}else{const {error}=await fdb.from("creator_follows").insert({creator_id:creatorId,follower_id:user.id});if(error)throw error;following=true}paint()}catch(err){followNote.textContent=err.message||"Could not update follow";}finally{followBtn.disabled=false}};
+    } catch(err){followBtn.disabled=true;followNote.textContent=err.message||"Follow unavailable";}
+  })();
   $("girlProfileStatus").textContent =
     "Status: " + (p.status || "Contact to confirm");
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
