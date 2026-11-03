@@ -2,7 +2,77 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>THC Creator Login</title>
 <style>
 :root{color-scheme:dark;--bg:#0d0b10;--panel:#19151d;--line:#493447;--text:#fff8fc;--muted:#b8aab7;--pink:#f24d98}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at 80% 10%,#70234e55,transparent 40%),#0d0b10;color:var(--text);font:15px system-ui,sans-serif}.box{width:min(100%,440px);padding:30px;border:1px solid #f24d9855;border-radius:22px;background:linear-gradient(145deg,#211925,#151119)}h1{margin:8px 0}.muted{color:var(--muted);font-size:13px;line-height:1.6}.eyebrow{color:#ff91c2;font-size:10px;letter-spacing:.2em;font-weight:800}label{display:block;margin:16px 0 7px;font-size:12px}input{width:100%;padding:14px;border-radius:10px;border:1px solid var(--line);background:#100d14;color:white;font:inherit}button{width:100%;margin-top:20px;padding:14px;border:0;border-radius:10px;background:linear-gradient(110deg,#f66bab,#e83f8d);color:#190d16;font-weight:900;cursor:pointer}button:disabled{opacity:.6}#message{min-height:22px;font-size:13px;color:#ff9eae;margin-top:12px}a{color:#ff91c2;font-size:12px}
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style id="thc-unified-theme">
+/* THC unified visual system — elegant plum, rose and champagne */
+:root{
+ color-scheme:dark;
+ --bg:#0b0910;--panel:#17131d;--panel-2:#211a27;--surface:#120f17;
+ --line:rgba(239,218,235,.14);--line-strong:rgba(239,218,235,.24);
+ --text:#fff9fc;--muted:#b9aeba;--pink:#ef78ad;--pink-strong:#df4f91;
+ --gold:#e8c98d;--green:#64cba0;--danger:#e77b91;
+ --shadow:0 18px 50px rgba(0,0,0,.28);--radius:18px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);color-scheme:dark;scroll-behavior:smooth}
+body{
+ color:var(--text)!important;
+ background:radial-gradient(ellipse at 82% 0%,rgba(111,54,91,.17),transparent 38%),
+ radial-gradient(ellipse at 5% 65%,rgba(82,57,112,.12),transparent 42%),var(--bg)!important;
+ font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+ -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+h1,h2,h3,h4{color:var(--text);letter-spacing:-.035em}
+h1{font-weight:800}h2,h3{font-weight:750}
+p{line-height:1.6}
+small,.muted,.hint,.subtitle,.footnote{color:var(--muted)}
+a{color:#f3a4c6;text-decoration:none}
+a:hover{color:#ffd3e5}
+header,.site-header,.topbar,.nav,.tabs{
+ border-color:var(--line)!important;
+}
+header,.site-header,.topbar{
+ background:rgba(13,10,17,.72);
+}
+.card,.panel-card,.profile-card,.post-card,.creator-card,.empty-state,
+section.card,.modal-content,.dialog,.settings-card,.form-card{
+ background:linear-gradient(145deg,rgba(34,27,40,.96),rgba(20,16,25,.98))!important;
+ border:1px solid var(--line)!important;border-radius:var(--radius)!important;
+ box-shadow:0 10px 30px rgba(0,0,0,.16);
+}
+button,.button,.btn,input[type=button],input[type=submit]{
+ border-radius:12px;transition:transform .16s ease,border-color .16s ease,filter .16s ease;
+ font:inherit;font-weight:700;cursor:pointer;
+}
+button:hover,.button:hover,.btn:hover{filter:brightness(1.08);border-color:rgba(239,120,173,.55)}
+button:active,.button:active,.btn:active{transform:translateY(1px)}
+button:not(.primary):not(.active):not(.danger):not(.reject),
+.secondary,.btn-secondary{
+ border:1px solid var(--line-strong);background:rgba(255,255,255,.045);color:var(--text);
+}
+.primary,.btn-primary,.submit-button,.save-button,.active{
+ background:linear-gradient(110deg,#f3a1c4,#e76a9f)!important;
+ color:#24111d!important;border:0!important;
+ box-shadow:0 8px 22px rgba(223,79,145,.16);
+}
+.danger,.reject,.delete-button{border:1px solid rgba(231,123,145,.5)!important;color:#ffc1ce!important;background:rgba(145,39,67,.16)!important}
+input:not([type=checkbox]):not([type=radio]),textarea,select{
+ color:var(--text)!important;background:rgba(10,8,14,.72)!important;
+ border:1px solid var(--line-strong)!important;border-radius:11px!important;
+}
+input::placeholder,textarea::placeholder{color:#817784}
+input:focus,textarea:focus,select:focus,button:focus-visible,a:focus-visible{
+ outline:2px solid rgba(239,120,173,.72);outline-offset:2px;
+}
+hr{border:0;border-top:1px solid var(--line)}
+.badge,.pill,.status-pill,.tag{border-radius:999px}
+img,video{max-width:100%}
+@media(max-width:640px){
+ body{background:radial-gradient(ellipse at 50% 0%,rgba(111,54,91,.13),transparent 42%),var(--bg)!important}
+ .card,.panel-card,.profile-card{border-radius:15px!important}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
+</head>
 <body><main class="box"><div class="eyebrow">TOKYO HENTAI CLUB · CREATOR STUDIO</div><h1 id="heading">Creator Login</h1><p class="muted" id="intro">Sign in with the Creator ID and temporary password provided by the THC team.</p>
 <form id="form"><div id="loginFields"><label for="creatorId">Creator ID</label><input id="creatorId" autocomplete="username" required placeholder="thc-yourname"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required></div>
 <div id="changeFields" hidden><label for="newPassword">New password</label><input id="newPassword" type="password" minlength="8" autocomplete="new-password"><label for="confirmPassword">Confirm new password</label><input id="confirmPassword" type="password" minlength="8" autocomplete="new-password"></div>
