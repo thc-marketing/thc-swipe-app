@@ -149,6 +149,9 @@ button:active{transform:scale(.98)}
  async function loadCreatorInstagram(user,profile){
   activeCreatorUser=user;activeCreatorProfile=profile;
   await loadPresence();
+  if(window.creatorPresenceHeartbeat)clearInterval(window.creatorPresenceHeartbeat);
+  window.creatorPresenceHeartbeat=setInterval(async()=>{if(!activeCreatorUser)return;const {data:p}=await db.from('creator_presence').select('is_online').eq('creator_id',activeCreatorUser.id).maybeSingle();if(p?.is_online){await db.from('creator_presence').update({last_seen_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('creator_id',activeCreatorUser.id)}},60000);
+
   const {data:girl,error:girlError}=await db.from('companion_profiles').select('id,display_name,photo_url,bio,is_published,is_active').eq('creator_user_id',user.id).maybeSingle();
   if(girlError)throw girlError;
   const displayName=girl?.display_name||profile.display_name||'Creator';
