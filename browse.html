@@ -1277,6 +1277,10 @@ async function openGirlProfile(p) {
   const followNote = document.createElement("small");
   followNote.style.color = "#b8aab7";
   followWrap.append(followBtn, followNote);
+  const onlineLabel=document.createElement("small");onlineLabel.style.cssText="display:block;color:#65df9a;margin-left:6px";
+  const messageBtn=document.createElement("button");messageBtn.type="button";messageBtn.textContent="Message";messageBtn.style.cssText="padding:9px 18px;border:1px solid #ed4c9b;border-radius:999px;background:#211722;color:white;font-weight:800";
+  followWrap.append(messageBtn,onlineLabel);
+
   (async()=>{
     try {
       const fdb=window.thcSupabase||window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
@@ -1284,8 +1288,13 @@ async function openGirlProfile(p) {
       if(compErr)throw compErr;
       const creatorId=comp?.creator_user_id;
       if(!creatorId){followBtn.disabled=true;followNote.textContent="Follow is not available for this profile yet.";return}
+      const {data:presence}=await fdb.from("creator_presence").select("is_online,location_area,last_seen_at").eq("creator_id",creatorId).maybeSingle();
+      const online=!!presence?.is_online&&new Date(presence.last_seen_at).getTime()>Date.now()-15*60*1000;
+      onlineLabel.textContent=online?"● Online"+(presence.location_area?" · "+presence.location_area:""):"○ Offline";
+      onlineLabel.style.color=online?"#65df9a":"#aaa";
       const {data:auth}=await fdb.auth.getUser();
-      const user=auth?.user;
+      const user=auth?.user;      messageBtn.onclick=async()=>{if(!user){location.href="login.html";return}try{const {data:conv,error}=await fdb.from("chat_conversations").upsert({customer_id:user.id,creator_id:creatorId},{onConflict:"customer_id,creator_id"}).select("id").single();if(error)throw error;location.href="/index.html?chat="+encodeURIComponent(conv.id)}catch(e){followNote.textContent="Could not start chat: "+e.message}};
+
       if(!user){followBtn.textContent="Log in to follow";followBtn.onclick=()=>location.href="login.html";return}
       const {data:existing,error:readErr}=await fdb.from("creator_follows").select("creator_id").eq("creator_id",creatorId).eq("follower_id",user.id).maybeSingle();
       if(readErr)throw readErr;
