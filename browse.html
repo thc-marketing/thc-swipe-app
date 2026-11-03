@@ -1123,6 +1123,7 @@ async function openGirlProfile(p) {
   // Saved official-page extracts are used as a fallback when the profile API
   // does not return full details. Their schedule is explicitly a dated snapshot.
   let hasSavedDetails = false;
+  let savedProfileDetails = {};
   try {
     const savedResponse = await fetch("./profile-details.json", { cache: "no-store" });
     if (savedResponse.ok) {
@@ -1130,6 +1131,7 @@ async function openGirlProfile(p) {
       const saved = savedProfiles[String(p.id)];
       if (saved) {
         hasSavedDetails = true;
+        savedProfileDetails = saved.details && typeof saved.details === "object" ? saved.details : {};
         detailsPanel.replaceChildren();
         const savedHeading = document.createElement("h3");
         savedHeading.textContent = "Profile Details";
@@ -1183,9 +1185,10 @@ async function openGirlProfile(p) {
       })
     ].filter(value => typeof value === "string" &&
       (value.startsWith("http://") || value.startsWith("https://"))))];
-    const details = data.details && typeof data.details === "object"
-      ? { ...data.details }
-      : {};
+    const details = {
+      ...savedProfileDetails,
+      ...(data.details && typeof data.details === "object" ? data.details : {})
+    };
 
     // Include all profile information already present in the directory record
     // when the detail API omits it.
