@@ -42,6 +42,7 @@ button:active{transform:scale(.98)}
 <nav id="adminNav" class="nav hidden" aria-label="Admin sections">
 <button type="button" class="active" data-panel="pendingPanel">Pending Review</button>
 <button type="button" data-panel="publishedSection">Published Posts</button>
+<button type="button" data-panel="storyReviewSection">Story Approval</button>
 <button type="button" data-panel="creatorAccountsSection">Creator Accounts</button>
 </nav>
 <section id="pendingPanel" class="panel">
@@ -49,6 +50,7 @@ button:active{transform:scale(.98)}
 <div id="queue"></div>
 </section>
 
+<section class="panel hidden" id="storyReviewSection"><div class="panel-heading"><div><h2>Story Approval</h2><p class="muted section-note">Stories stay private until an administrator approves them. Approved stories remain visible until they expire.</p></div><span class="pill-status">Story Moderation</span></div><div id="storyReviewQueue"></div></section>
 <section class="panel hidden" id="creatorAccountsSection">
 <div class="panel-heading"><div><h2>Creator Accounts</h2><p class="muted section-note">Create and manage individual Creator Hub logins for active, published profiles.</p></div><span class="pill-status">Access Setup</span></div>
 <p class="muted">Each creator receives a one-time ID and temporary password, and must change the password at first login. Share credentials privately.</p>
@@ -70,7 +72,7 @@ button:active{transform:scale(.98)}
  const $=id=>document.getElementById(id);
  const say=s=>$('status').textContent=s;
  function setAdminPanel(id){
-  ['pendingPanel','publishedSection','creatorAccountsSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
+  ['pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
   document.querySelectorAll('#adminNav button').forEach(btn=>btn.classList.toggle('active',btn.dataset.panel===id));
  }
  document.querySelectorAll('#adminNav button').forEach(btn=>btn.addEventListener('click',()=>setAdminPanel(btn.dataset.panel)));
@@ -96,6 +98,27 @@ button:active{transform:scale(.98)}
    approve.onclick=()=>review(p.post_id,'publish',approve,reject);
    reject.onclick=()=>review(p.post_id,'reject',approve,reject);
    actions.append(approve,reject);card.append(actions);$('queue').append(card);
+  }
+ }
+ async function loadStoryQueue(){
+  const box=$('storyReviewQueue');box.replaceChildren();say('Loading story review queue…');
+  const {data,error}=await db.from('creator_stories').select('id,creator_id,caption,media_path,media_type,created_at,expires_at,status').eq('status','pending').order('created_at',{ascending:true}).limit(100);
+  if(error){say('Could not load story queue: '+error.message);return}
+  if(!data?.length){box.textContent='No stories waiting for approval.';say('Story review queue is clear.');return}
+  say(data.length+' story/stories awaiting approval.');
+  for(const story of data){
+   const card=document.createElement('article');card.className='card';
+   const title=document.createElement('h3');title.textContent='Creator story';
+   const caption=document.createElement('p');caption.style.whiteSpace='pre-wrap';caption.textContent=story.caption||'No caption';
+   const meta=document.createElement('div');meta.className='muted';meta.textContent=new Date(story.created_at).toLocaleString()+' · '+story.media_type+' · expires '+new Date(story.expires_at).toLocaleString();
+   card.append(title,caption,meta);
+   const {data:signed,error:se}=await db.storage.from('creator-media').createSignedUrl(story.media_path,900);
+   if(!se&&signed?.signedUrl){const media=document.createElement(story.media_type==='video'?'video':'img');media.className='media';media.src=signed.signedUrl;if(story.media_type==='video'){media.controls=true;media.playsInline=true}else media.alt='Story submitted for approval';card.append(media)}
+   const actions=document.createElement('div');actions.className='actions';
+   const approve=document.createElement('button');approve.className='primary';approve.textContent='Approve story';
+   const reject=document.createElement('button');reject.className='reject';reject.textContent='Reject story';
+   const decide=async(status)=>{approve.disabled=reject.disabled=true;say(status==='approved'?'Approving story…':'Rejecting story…');const {error}=await db.from('creator_stories').update({status}).eq('id',story.id);if(error){say('Story review failed: '+error.message);approve.disabled=reject.disabled=false;return}say(status==='approved'?'Story approved.':'Story rejected.');await loadStoryQueue()};
+   approve.onclick=()=>decide('approved');reject.onclick=()=>decide('rejected');actions.append(approve,reject);card.append(actions);box.append(card);
   }
  }
  async function loadPublished(){
@@ -180,9 +203,9 @@ button:active{transform:scale(.98)}
   say(decision==='publish'?'Post published.':'Post rejected and removed from the review queue.');
   await loadQueue();
  }
- $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');setAdminPanel('pendingPanel');await loadQueue();await loadPublished();$('creatorAccountsSection').classList.remove('hidden');await loadCreatorAccounts()};
- $('refresh').onclick=async()=>{await loadQueue();await loadPublished();await loadCreatorAccounts()};
+ $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');setAdminPanel('pendingPanel');await loadQueue();await loadPublished();await loadStoryQueue();$('creatorAccountsSection').classList.remove('hidden');await loadCreatorAccounts()};
+ $('refresh').onclick=async()=>{await loadQueue();await loadPublished();await loadStoryQueue();await loadCreatorAccounts()};
  $('logout').onclick=async()=>{await db.auth.signOut();$('loginCard').classList.remove('hidden');$('publishedSection').classList.add('hidden');$('creatorAccountsSection').classList.add('hidden');$('refresh').classList.add('hidden');$('logout').classList.add('hidden');$('queue').replaceChildren();$('publishedQueue').replaceChildren();say('Signed out.')};
- db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished();$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');setAdminPanel('pendingPanel');loadCreatorAccounts()}});
+ db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished();loadStoryQueue();$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');setAdminPanel('pendingPanel');loadCreatorAccounts()}});
 })();
 </script></body></html>
