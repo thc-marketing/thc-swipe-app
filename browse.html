@@ -1376,6 +1376,7 @@ async function openGirlProfile(p) {
   loadGirlCreatorPosts(p);
 
   // Load the structured profile fields maintained in Creator Admin.
+  let hasStructuredDetails = false;
   try {
     const detailDb=window.thcSupabase||window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
     const {data:structured,error:structuredError}=await detailDb.from("companion_profiles").select("rank,area,age,height,measurements,body_type,english,smoke,tattoos").eq("id",p.id).maybeSingle();
@@ -1383,7 +1384,7 @@ async function openGirlProfile(p) {
     if(structured){
       const fields=[["Rank",structured.rank],["Area",structured.area],["Height",structured.height],["Age",structured.age],["Measurements",structured.measurements],["Body Type",structured.body_type],["English",structured.english],["Smoke",structured.smoke],["Tattoos",structured.tattoos]];
       const rows=fields.filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
-      if(rows.length){detailsPanel.replaceChildren();const heading=document.createElement("h3");heading.textContent="Profile Details";detailsPanel.append(heading);rows.forEach(([label,value])=>{const row=document.createElement("div");const strong=document.createElement("strong");strong.textContent=label+": ";row.append(strong,document.createTextNode(String(value)));detailsPanel.append(row)});}
+      if(rows.length){hasStructuredDetails=true;detailsPanel.replaceChildren();const heading=document.createElement("h3");heading.textContent="Profile Details";detailsPanel.append(heading);rows.forEach(([label,value])=>{const row=document.createElement("div");const strong=document.createElement("strong");strong.textContent=label+": ";row.append(strong,document.createTextNode(String(value)));detailsPanel.append(row)});}
     }
   } catch(detailError) { console.warn("Structured profile details could not load:",detailError); }
 
@@ -1396,7 +1397,7 @@ async function openGirlProfile(p) {
     if (savedResponse.ok) {
       const savedProfiles = await savedResponse.json();
       const saved = savedProfiles[String(p.id)];
-      if (saved) {
+      if (saved && !hasStructuredDetails) {
         hasSavedDetails = true;
         savedProfileDetails = saved.details && typeof saved.details === "object" ? saved.details : {};
         detailsPanel.replaceChildren();
