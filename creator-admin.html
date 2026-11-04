@@ -273,9 +273,55 @@ button:active{transform:scale(.98)}
   say(decision==='publish'?'Post published.':'Post rejected and removed from the review queue.');
   await loadQueue();
  }
- $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');setAdminPanel('pendingPanel');await loadQueue();await loadPublished();await loadStoryQueue();$('creatorAccountsSection').classList.remove('hidden');await loadCreatorAccounts();await loadOfficialAnnouncementAdmin()};
- $('refresh').onclick=async()=>{await loadQueue();await loadPublished();await loadStoryQueue();await loadCreatorAccounts();await loadOfficialAnnouncementAdmin()};
- $('logout').onclick=async()=>{await db.auth.signOut();$('loginCard').classList.remove('hidden');$('publishedSection').classList.add('hidden');$('creatorAccountsSection').classList.add('hidden');$('refresh').classList.add('hidden');$('logout').classList.add('hidden');$('queue').replaceChildren();$('publishedQueue').replaceChildren();say('Signed out.')};
- db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished();loadStoryQueue();loadOfficialAnnouncementAdmin();$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');setAdminPanel('pendingPanel');loadCreatorAccounts()}});
+ let adminReady=false,adminBusy=false;
+ function showAdminLogin(message){
+  adminReady=false;
+  $('loginCard').classList.remove('hidden');
+  ['adminNav','pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection'].forEach(id=>$(id)?.classList.add('hidden'));
+  $('refresh').classList.add('hidden');$('logout').classList.add('hidden');
+  ['queue','publishedQueue','officialAnnouncementList'].forEach(id=>$(id)?.replaceChildren());
+  if(message)say(message);
+ }
+ async function activateAdmin(){
+  if(adminBusy)return;adminBusy=true;
+  try{
+   const {data:{user},error:ue}=await db.auth.getUser();
+   if(ue||!user){showAdminLogin('Please sign in with your administrator account.');return}
+   const {data:allowed,error:ae}=await db.from('creator_admins').select('user_id').eq('user_id',user.id).maybeSingle();
+   if(ae)throw ae;
+   if(!allowed){
+    await db.auth.signOut({scope:'local'});
+    showAdminLogin('Access denied. This account is not authorized for Creator Admin.');
+    return;
+   }
+   adminReady=true;
+   $('loginCard').classList.add('hidden');$('adminNav').classList.remove('hidden');
+   $('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');
+   $('publishedSection').classList.remove('hidden');$('creatorAccountsSection').classList.remove('hidden');
+   $('pendingPanel').classList.remove('hidden');setAdminPanel('pendingPanel');
+   await loadQueue();await loadPublished();await loadStoryQueue();await loadCreatorAccounts();await loadOfficialAnnouncementAdmin();
+  }catch(err){showAdminLogin('Administrator verification failed: '+(err?.message||String(err)))}
+  finally{adminBusy=false}
+ }
+ $('loginForm').onsubmit=async e=>{
+  e.preventDefault();const button=$('loginForm').querySelector('button[type="submit"]');if(button)button.disabled=true;
+  say('Verifying administrator credentials…');
+  try{const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;await activateAdmin()}
+  catch(err){showAdminLogin('Sign-in failed: '+(err?.message||String(err)))}
+  finally{if(button)button.disabled=false}
+ };
+ $('refresh').onclick=async()=>{if(!adminReady)return;await activateAdmin()};
+ $('logout').onclick=async()=>{
+  const button=$('logout');button.disabled=true;button.textContent='Signing out…';
+  try{const {error}=await db.auth.signOut({scope:'local'});if(error)throw error;showAdminLogin('You have been signed out.')}
+  catch(err){say('Sign out failed: '+(err?.message||String(err)));button.disabled=false;button.textContent='Sign out'}
+ };
+ db.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_OUT'||!session){showAdminLogin('Please sign in to continue.')}
+ });
+ db.auth.getUser().then(({data,error})=>{
+  if(error){showAdminLogin('Could not verify the saved session. Please sign in again.');return}
+  if(data?.user)activateAdmin();else showAdminLogin();
+ });
 })();
 </script></body></html>
