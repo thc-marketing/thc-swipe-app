@@ -252,7 +252,7 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
  $('homepageStoryViewer').onclick=e=>{if(e.target===$('homepageStoryViewer'))closeHomepageStory()};document.addEventListener('keydown',e=>{if($('homepageStoryViewer').hidden)return;if(e.key==='Escape')closeHomepageStory();if(e.key==='ArrowRight')showHomepageStoryAt(homepageStoryIndex+1).catch(console.error);if(e.key==='ArrowLeft')showHomepageStoryAt(homepageStoryIndex-1).catch(console.error)});
  
  async function loadOfficialAnnouncements(){
-  const {data:items,error}=await db.from('official_thc_announcements').select('id,title,body,media_url,created_at').eq('is_published',true).order('created_at',{ascending:false}).limit(20);
+  const {data:items,error}=await db.from('official_thc_announcements').select('id,title,body,media_url,media_type,created_at').eq('is_published',true).order('created_at',{ascending:false}).limit(20);
   if(error)throw error;
   for(const item of (items||[])){
    const card=document.createElement('article');card.className='card official-thc-announcement';
@@ -265,7 +265,7 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
    identity.append(brand,label);head.append(logo,identity);card.append(head);
    const title=document.createElement('h3');title.textContent=item.title;title.style.margin='4px 0 8px';card.append(title);
    if(item.body){const body=document.createElement('p');body.textContent=item.body;body.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6';card.append(body)}
-   if(item.media_url){const img=document.createElement('img');img.src=item.media_url;img.alt='Tokyo Hentai Club promotion';img.loading='lazy';img.style.cssText='display:block;width:100%;max-height:560px;object-fit:contain;border-radius:12px;margin-top:12px';card.append(img)}
+   if(item.media_url){if(item.media_type==='video'){const match=item.media_url.match(/(?:youtu\\.be\\/|youtube\\.com\\/(?:watch\\?(?:.*&)?v=|embed\\/|shorts\\/|live\\/))([A-Za-z0-9_-]{11})/i);if(match){const link=document.createElement('a');link.href='https://www.youtube.com/watch?v='+match[1];link.target='_blank';link.rel='noopener noreferrer';link.style.cssText='display:block;position:relative;margin-top:12px';const img=document.createElement('img');img.src='https://img.youtube.com/vi/'+match[1]+'/hqdefault.jpg';img.alt='Play Tokyo Hentai Club video on YouTube';img.loading='lazy';img.style.cssText='display:block;width:100%;max-height:560px;object-fit:contain;border-radius:12px';const play=document.createElement('span');play.textContent='▶';play.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#e62117;color:white;border-radius:14px;padding:10px 22px;font-size:24px';link.append(img,play);card.append(link)}else{const link=document.createElement('a');link.href=item.media_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Watch video';card.append(link)}}else{const img=document.createElement('img');img.src=item.media_url;img.alt='Tokyo Hentai Club promotion';img.loading='lazy';img.style.cssText='display:block;width:100%;max-height:560px;object-fit:contain;border-radius:12px;margin-top:12px';card.append(img)}}
    const date=document.createElement('div');date.className='meta';date.textContent=new Date(item.created_at).toLocaleString();card.append(date);
    $('posts').append(card);
   }
