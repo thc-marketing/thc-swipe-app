@@ -100,6 +100,9 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
  const SUPABASE_KEY='sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24';
  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  const $=id=>document.getElementById(id);let offset=0,file=null,loading=false,selectedPurchase=null;
+ const {data:{user:verifiedUser},error:verifiedAuthError}=await db.auth.getUser();
+ const initialAuth={session:verifiedUser?{user:verifiedUser}:null};
+ if(verifiedAuthError)console.warn('Could not verify the current customer session:',verifiedAuthError.message);
  window.thcSupabase=window.thcSupabase||db;
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));});
  function showPanel(panelId){
