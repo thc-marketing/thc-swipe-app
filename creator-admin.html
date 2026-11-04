@@ -6,7 +6,7 @@
 <title>THC Creator Admin</title>
 <style>
 :root{color-scheme:dark;--bg:#100b12;--panel:#211722;--line:#493544;--text:#fff7fb;--muted:#c0aebb;--gold:#d8ad62;--red:#a83c55}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,sans-serif}.wrap{width:min(100% - 28px,760px);margin:auto;padding:24px 0 44px}h1{margin:22px 0 6px}.muted{color:var(--muted);font-size:13px;line-height:1.5}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:16px;margin:14px 0}.field{display:block;width:100%;margin:7px 0 14px;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--text);font:inherit}button{border:1px solid var(--line);border-radius:10px;padding:11px 14px;background:var(--panel);color:var(--text);font-weight:750;cursor:pointer}.primary{background:linear-gradient(100deg,#e5c477,#a98237);color:#171019;border:0}.reject{border-color:var(--red);color:#ffb6c4}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.media{width:100%;max-height:480px;object-fit:contain;background:var(--bg);border-radius:10px;margin-top:12px}.status{padding:12px 0;color:var(--muted);font-size:13px;white-space:pre-wrap}.hidden{display:none}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,sans-serif}.wrap{width:min(100% - 28px,760px);margin:auto;padding:24px 0 44px}h1{margin:22px 0 6px}.muted{color:var(--muted);font-size:13px;line-height:1.5}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:16px;margin:14px 0}.field{display:block;width:100%;margin:7px 0 14px;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--text);font:inherit}button{border:1px solid var(--line);border-radius:10px;padding:11px 14px;background:var(--panel);color:var(--text);font-weight:750;cursor:pointer}.primary{background:linear-gradient(100deg,#e5c477,#a98237);color:#171019;border:0}.reject{border-color:var(--red);color:#ffb6c4}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.media{width:100%;max-height:480px;object-fit:contain;background:var(--bg);border-radius:10px;margin-top:12px}.status{padding:12px 0;color:var(--muted);font-size:13px;white-space:pre-wrap}.hidden{display:none!important}
 
 /* THC shared premium-playful theme */
 :root{color-scheme:dark;--bg:#0d0b10;--panel:#19151d;--surface:#19151d;--line:#382b39;--text:#fff8fc;--muted:#b8aab7;--pink:#f24d98;--violet:#8b62d9;--gold:#e8c17b}
@@ -109,19 +109,7 @@ button:active{transform:scale(.98)}
    const body=document.createElement('p');body.className='muted';body.textContent=item.body||'';
    const state=document.createElement('p');state.className='muted';state.textContent=(item.is_published?'Published to feed':'Hidden from feed')+' · '+new Date(item.created_at).toLocaleString();
    card.append(title,body,state);
-   if(item.media_url){if(item.media_type==='video'){const id=(function getYoutubeId(value){
- try{
-  const u=new URL(value),host0=u.hostname.toLowerCase(),host=host0.startsWith('www.')?host0.slice(4):host0;
-  const parts=u.pathname.split('/').filter(Boolean);
-  let id='';
-  if(host==='youtu.be')id=parts[0]||'';
-  else if(host==='youtube.com'||host==='m.youtube.com'){
-   if(u.pathname==='/watch')id=u.searchParams.get('v')||'';
-   else if(['embed','shorts','live'].includes(parts[0]))id=parts[1]||'';
-  }
-  return /^[A-Za-z0-9_-]{11}$/.test(id)?id:null;
- }catch{return null}
-})(item.media_url);if(id){const link=document.createElement('a');link.href='https://www.youtube.com/watch?v='+id;link.target='_blank';link.rel='noopener noreferrer';link.style.display='block';const img=document.createElement('img');img.src='https://img.youtube.com/vi/'+id+'/hqdefault.jpg';img.alt='YouTube video thumbnail';img.className='media';link.append(img);card.append(link)}else{const note=document.createElement('p');note.className='muted';note.textContent='Video URL: '+item.media_url;card.append(note)}}else{const img=document.createElement('img');img.src=item.media_url;img.alt='Announcement image';img.className='media';card.append(img)}}
+   if(item.media_url){if(item.media_type==='video'){const id=getYoutubeId(item.media_url);if(id){const link=document.createElement('a');link.href='https://www.youtube.com/watch?v='+id;link.target='_blank';link.rel='noopener noreferrer';link.style.display='block';const img=document.createElement('img');img.src='https://img.youtube.com/vi/'+id+'/hqdefault.jpg';img.alt='YouTube video thumbnail';img.className='media';link.append(img);card.append(link)}else{const note=document.createElement('p');note.className='muted';note.textContent='Video URL: '+item.media_url;card.append(note)}}else{const img=document.createElement('img');img.src=item.media_url;img.alt='Announcement image';img.className='media';card.append(img)}}
    const actions=document.createElement('div');actions.className='actions';
    const toggle=document.createElement('button');toggle.textContent=item.is_published?'Hide from feed':'Publish to feed';
    toggle.onclick=async()=>{toggle.disabled=true;const {error}=await db.from('official_thc_announcements').update({is_published:!item.is_published,updated_at:new Date().toISOString()}).eq('id',item.id);if(error){$('officialAnnouncementStatus').textContent='Update failed: '+error.message;toggle.disabled=false;return}await loadOfficialAnnouncementAdmin()};
