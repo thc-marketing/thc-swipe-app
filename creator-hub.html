@@ -150,7 +150,15 @@ button:active{transform:scale(.98)}
     const ff=new FFmpeg();
     ff.on('progress',({progress})=>onProgress('Converting video… '+Math.round((progress||0)*100)+'%'));
     const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
-    await ff.load({coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')});
+    const workerSource='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
+    const workerResponse=await fetch(workerSource);
+    if(!workerResponse.ok)throw new Error('Could not load the video conversion worker.');
+    let workerCode=await workerResponse.text();
+    workerCode=workerCode.replaceAll('"./const.js"','"https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/const.js"').replaceAll("'./const.js'","'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/const.js'").replaceAll('"./errors.js"','"https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/errors.js"').replaceAll("'./errors.js'","'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/errors.js'");
+    const classWorkerURL=URL.createObjectURL(new Blob([workerCode],{type:'text/javascript'}));
+    try{
+     await ff.load({classWorkerURL,coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')});
+    }catch(error){URL.revokeObjectURL(classWorkerURL);throw error}
     return ff;
    })().catch(err=>{thcFfmpegReady=null;throw err});
   }
