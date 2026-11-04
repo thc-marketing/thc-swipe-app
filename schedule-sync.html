@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Schedule Sync — THC Admin</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b10;--panel:#19151d;--line:#493447;--text:#fff8fc;--muted:#b8aab7;--pink:#f24d98;--gold:#e8c17b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#55244755,transparent 38%),var(--bg);color:var(--text);font:15px/1.55 system-ui,sans-serif}.wrap{width:min(100% - 28px,850px);margin:32px auto 60px}header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #ffffff20;padding-bottom:16px}a{color:#ff91c2}.brand{font-weight:900;letter-spacing:.12em;text-decoration:none;color:var(--gold)}h1{font-size:clamp(30px,5vw,42px);margin:28px 0 6px}.muted{color:var(--muted);font-size:13px}.card{margin:18px 0;padding:20px;border:1px solid #ffffff20;border-radius:16px;background:linear-gradient(145deg,#211925,#151119)}label{display:block;font-weight:800;margin:16px 0 8px}textarea{width:100%;min-height:280px;resize:vertical;padding:14px;border:1px solid var(--line);border-radius:11px;background:#100d14;color:var(--text);font:12px/1.5 ui-monospace,monospace}button{border:0;border-radius:10px;padding:13px 18px;background:linear-gradient(110deg,#f66bab,#e83f8d);color:#190d16;font-weight:900;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.status{white-space:pre-wrap;margin-top:14px;padding:12px;border-radius:10px;background:#100d14;color:var(--muted);font-size:13px}.status.error{color:#ff9bab}.status.success{color:#8df0c1}.hidden{display:none!important}.toplink{border:1px solid var(--line);border-radius:99px;padding:8px 12px;text-decoration:none}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+<body><main class="wrap">
+<header><a class="brand" href="./">TOKYO HENTAI CLUB · ADMIN</a><a class="toplink" href="./available.html">View Available Today</a></header>
+<section id="checking" class="card"><h1>Schedule Sync</h1><p class="muted">Verifying your admin account…</p></section>
+<section id="denied" class="card hidden"><h1>Admin access required</h1><p id="deniedText" class="muted">Sign in with an authorized admin account to use Schedule Sync.</p><a href="./login.html">Go to sign in</a></section>
+<section id="workspace" class="hidden">
+<h1>Import Today’s Schedule</h1><p class="muted">Paste the complete homepage HTML response copied from the official website. The importer reads the date and profile cards, removes appointment times, and updates only the schedule for that date.</p>
+<div class="card">
+ <ol class="muted"><li>Open <a href="https://hentaitokyo.com/" target="_blank" rel="noopener">hentaitokyo.com</a>.</li><li>Open Chrome DevTools → Network → select the homepage document request → Response.</li><li>Copy the complete response and paste it below.</li><li>Click Import Schedule and review the counts returned.</li></ol>
+ <label for="htmlInput">Official homepage HTML</label>
+ <textarea id="htmlInput" placeholder="Paste the complete homepage HTML response here…"></textarea>
+ <p class="muted">Do not paste only the visible page text. The complete HTML response is required. Maximum size: 8 MB.</p>
+ <button id="importButton" type="button">Import Schedule</button>
+ <div id="status" class="status" role="status">Ready when you are.</div>
+</div></section>
+</main>
+<script>
+(async()=>{
+ const SUPABASE_URL='https://dvvyqpdaoprzrarotuin.supabase.co';
+ const SUPABASE_KEY='sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24';
+ const API=SUPABASE_URL+'/functions/v1/thc-schedule-sync';
+ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+ const $=id=>document.getElementById(id);
+ try{
+  const {data:{session},error:sessionError}=await db.auth.getSession();
+  if(sessionError)throw sessionError;
+  if(!session){$('checking').classList.add('hidden');$('denied').classList.remove('hidden');$('deniedText').textContent='Please sign in with your THC admin account first.';return}
+  const {data:admin,error:adminError}=await db.from('creator_admins').select('user_id').eq('user_id',session.user.id).maybeSingle();
+  if(adminError)throw adminError;
+  $('checking').classList.add('hidden');
+  if(!admin){$('denied').classList.remove('hidden');$('deniedText').textContent='This account is not authorized to import schedules.';return}
+  $('workspace').classList.remove('hidden');
+  $('importButton').onclick=async()=>{
+   const html=$('htmlInput').value.trim(),button=$('importButton'),status=$('status');
+   if(!html){status.className='status error';status.textContent='Please paste the complete homepage HTML first.';return}
+   if(html.length>8*1024*1024){status.className='status error';status.textContent='The pasted HTML is larger than 8 MB.';return}
+   button.disabled=true;button.textContent='Importing…';status.className='status';status.textContent='Uploading and processing the official schedule…';
+   try{
+    const {data:{session:currentSession},error:authError}=await db.auth.getSession();
+    if(authError||!currentSession)throw new Error('Your session expired. Please sign in again.');
+    const response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+currentSession.access_token},body:JSON.stringify({html})});
+    const result=await response.json();
+    if(!response.ok||!result.success)throw new Error(result.error||'Import failed.');
+    const b=result.breakdown||{};
+    status.className='status success';
+    status.textContent='Schedule imported successfully.\nDate: '+result.schedule.schedule_date+'\nTotal profiles: '+result.schedule.total+'\nShinjuku: '+(b.shinjuku||0)+' · Shibuya: '+(b.shibuya||0)+' · Both: '+(b.both||0)+' · Unclassified: '+(b.unknown||0)+'\nAppointment times were not stored.';
+    $('htmlInput').value='';
+   }catch(err){status.className='status error';status.textContent='Import failed: '+(err.message||String(err))}
+   finally{button.disabled=false;button.textContent='Import Schedule'}
+  };
+ }catch(err){$('checking').classList.remove('hidden');$('checking').innerHTML='<h1>Could not verify admin access</h1><p class="muted">'+String(err.message||err)+'</p>'}
+})();
+</script></body></html>
