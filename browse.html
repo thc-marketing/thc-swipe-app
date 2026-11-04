@@ -511,16 +511,25 @@ async function loadProfiles() {
     }
     const bookingId = routeParams.get("id");
     if (routeParams.get("booking") === "1" && bookingId != null) {
-      const selected = profiles.find(p => String(p.id) === String(bookingId));
-      if (selected) {
-        const openWhenReady = () => {
-          if (typeof window.thcOpenReservation === "function") window.thcOpenReservation(selected);
-          else setTimeout(openWhenReady, 150);
-        };
-        openWhenReady();
-      } else {
-        $("status").textContent = "Selected profile was not found. Please return to the directory.";
-      }
+      // Prefer the full directory record, but fall back to the selected
+      // Available Today card so the booking form always opens for that girl.
+      const selected = profiles.find(p => String(p.id) === String(bookingId)) || {
+        id: bookingId,
+        displayName: routeParams.get("name") || "Selected girl",
+        age: routeParams.get("age") || "",
+        rank: routeParams.get("rank") || "",
+        area: routeParams.get("area") || "Tokyo",
+        photo: routeParams.get("photo") || "",
+        profileUrl: routeParams.get("profile") || ""
+      };
+      const openWhenReady = () => {
+        if (typeof window.thcOpenReservation === "function") {
+          const map = window.thcReservationProfiles;
+          if (map) map.set(String(selected.id), selected);
+          window.thcOpenReservation(selected);
+        } else setTimeout(openWhenReady, 150);
+      };
+      openWhenReady();
     }
   } catch (error) {
     $("name").textContent = "Profiles unavailable";
@@ -2101,66 +2110,30 @@ logoutBtn.onclick = async () => {
   document.getElementById('thc-outcall-fields').hidden = !outcall;
 });
 
-  // Fetch published shift times from the separate schedule Worker.
-  // The existing profile API endpoint is intentionally unchanged.
-  let scheduleRequestId = 0;
-  async function refreshStartTimes() {
-    const requestId = ++scheduleRequestId;
+  // Preferred start time is a request, not a live availability display.
+  // Offer the full customer-facing window and let staff confirm the actual slot.
+  function refreshStartTimes() {
     const timeSelect = document.getElementById('thc-time');
-    const dateValue = document.getElementById('thc-date').value;
-    const girlId = document.getElementById('thc-girl').value;
-    const durationValue = document.getElementById('thc-duration').value;
-    const previousValue = timeSelect.value;
     const hint = document.getElementById('thc-time-hint');
-    timeSelect.replaceChildren(new Option('Choose a start time', ''));
-    if (!dateValue || !girlId) {
-      hint.textContent = 'Choose a girl and date to see scheduled start times. Staff must confirm availability.';
-      return;
+    const previousValue = timeSelect.value;
+    timeSelect.replaceChildren(new Option('Anytime', 'Anytime'));
+    const options = [];
+    for (let minute = 12 * 60; minute <= 24 * 60 + 4 * 60; minute += 30) {
+      const normalized = minute % (24 * 60);
+      const hour24 = Math.floor(normalized / 60);
+      const mins = normalized % 60;
+      const suffix = hour24 < 12 ? 'AM' : 'PM';
+      const hour12 = hour24 % 12 || 12;
+      const label = hour12 + ':' + String(mins).padStart(2, '0') + ' ' + suffix;
+      options.push(label);
     }
-    if (!SCHEDULE_API_URL) {
-      hint.textContent = 'Schedule API URL is not configured yet. Please confirm times with staff.';
-      return;
+    options.forEach(value => timeSelect.add(new Option(value, value)));
+    if (previousValue && Array.from(timeSelect.options).some(option => option.value === previousValue)) {
+      timeSelect.value = previousValue;
+    } else {
+      timeSelect.value = 'Anytime';
     }
-    if (durationValue === 'extension') {
-      hint.textContent = 'For a 30-minute extension, please confirm the start time with staff.';
-      return;
-    }
-    const date = dateValue.replace(/-/g, '');
-    const profile = profileById.get(String(girlId));
-    hint.textContent = 'Loading the published schedule…';
-    timeSelect.disabled = true;
-    try {
-      const url = new URL(SCHEDULE_API_URL);
-      url.searchParams.set('date', date);
-      url.searchParams.set('girlId', String(girlId));
-      url.searchParams.set('duration', durationValue);
-      const response = await fetch(url.toString(), { cache: 'no-store' });
-      if (!response.ok) throw new Error('Schedule service returned ' + response.status);
-      const data = await response.json();
-      if (requestId !== scheduleRequestId) return;
-      if (!data || data.ok !== true) throw new Error(data && data.error ? data.error : 'Invalid schedule response');
-      if (!data.scheduled) {
-        hint.textContent = (data.companion || (profile && profile.displayName) || 'This girl') +
-          ' is not listed as scheduled for this date. Please choose another date or confirm with staff.';
-        return;
-      }
-      const times = Array.isArray(data.bookingTimes) ? data.bookingTimes : [];
-      if (!times.length) {
-        hint.textContent = 'A shift was found (' + (data.shift && data.shift.start || '?') + '–' +
-          (data.shift && data.shift.end || '?') + '), but no start times fit this duration. Please choose another duration or confirm with staff.';
-        return;
-      }
-      times.forEach(value => timeSelect.add(new Option(value, value)));
-      if (times.includes(previousValue)) timeSelect.value = previousValue;
-      hint.textContent = 'Published shift: ' + data.shift.start + '–' + data.shift.end +
-        '. Times fit the scheduled shift only; staff must confirm actual availability.';
-    } catch (error) {
-      if (requestId !== scheduleRequestId) return;
-      console.error('Could not load published schedule:', error);
-      hint.textContent = 'Could not load this girl’s schedule. Please retry or confirm times with staff.';
-    } finally {
-      if (requestId === scheduleRequestId) timeSelect.disabled = false;
-    }
+    hint.textContent = 'Choose your preferred time between 12:00 PM and 4:00 AM, or select Anytime. Our team will confirm the actual availability.';
   }
 
   function setSelectedGirl(profile) {
@@ -2189,6 +2162,7 @@ logoutBtn.onclick = async () => {
     }
   }
   window.thcOpenReservation = openReservation;
+  window.thcReservationProfiles = profileById;
 
   function populateGirls() {
     const profiles = Array.isArray(window.profiles) ? window.profiles : [];
@@ -2310,7 +2284,7 @@ logoutBtn.onclick = async () => {
       'Hello THC! I would like to request a reservation.',
       'Girl: ' + profile.displayName,
       'Date: ' + get('thc-date'),
-      'Time: ' + get('thc-time'),
+      'Preferred start time: ' + get('thc-time'),
       'Duration: ' + (get('thc-duration') === 'extension' ? 'Extension — 30 minutes' : get('thc-duration') + ' minutes') +
         ' (' + (durationPriceText || 'Please confirm with staff') + ')',
       'Type: ' + get('thc-type'),
