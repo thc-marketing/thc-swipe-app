@@ -121,8 +121,6 @@ button:active{transform:scale(.98)}
   }
   return /^[A-Za-z0-9_-]{11}$/.test(id)?id:null;
  }catch{return null}
-}
- return m?m[1]:null;
 })(item.media_url);if(id){const link=document.createElement('a');link.href='https://www.youtube.com/watch?v='+id;link.target='_blank';link.rel='noopener noreferrer';link.style.display='block';const img=document.createElement('img');img.src='https://img.youtube.com/vi/'+id+'/hqdefault.jpg';img.alt='YouTube video thumbnail';img.className='media';link.append(img);card.append(link)}else{const note=document.createElement('p');note.className='muted';note.textContent='Video URL: '+item.media_url;card.append(note)}}else{const img=document.createElement('img');img.src=item.media_url;img.alt='Announcement image';img.className='media';card.append(img)}}
    const actions=document.createElement('div');actions.className='actions';
    const toggle=document.createElement('button');toggle.textContent=item.is_published?'Hide from feed':'Publish to feed';
