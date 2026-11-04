@@ -8,12 +8,35 @@ h1{font-size:clamp(30px,5vw,44px);line-height:1.1;margin:30px 0 8px}.muted{color
 .toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 180px 180px;gap:10px;margin:22px 0 28px}.toolbar input,.toolbar select{width:100%;min-width:0;padding:13px 14px;background:#1b151e;border:1px solid var(--line);border-radius:11px;color:var(--text);font:inherit;outline:none}.toolbar input:focus,.toolbar select:focus{border-color:var(--pink)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}.girl{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:15px;background:linear-gradient(180deg,#251b29,#19131c);transition:transform .18s,border-color .18s}.girl:hover{transform:translateY(-3px);border-color:#9a6685}.girl img{width:100%;height:270px;object-fit:cover;background:#302332;display:block;transition:transform .3s}.girl:hover img{transform:scale(1.035)}.info{padding:13px}.name{font-size:18px;font-weight:850}.meta{color:var(--muted);font-size:12px;margin:5px 0 10px}.status{font-size:12px;font-weight:800;color:#8df0c1;margin:8px 0 12px}.status.later{color:#ffdb91}.actions{display:flex;gap:8px}.actions a{flex:1;text-align:center;padding:10px 7px;border-radius:9px;background:#302431;color:var(--text);text-decoration:none;font-size:12px;font-weight:800}.actions a.book{background:linear-gradient(100deg,#f16caf,#df3e91);color:#210f1b}.section-title{margin:28px 0 10px;font-size:17px;letter-spacing:.08em}.empty{padding:22px;border:1px dashed var(--line);border-radius:13px;color:var(--muted);text-align:center}
 @media(max-width:620px){.wrap{width:min(100% - 24px,1180px);padding-top:16px}.toolbar{grid-template-columns:1fr 1fr}.toolbar input{grid-column:1/-1}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.girl img{height:210px}.info{padding:10px}.name{font-size:15px}.actions{gap:6px}.actions a{font-size:11px;padding:9px 4px}}
-@media(max-width:360px){.girl img{height:175px}.nav a{padding:8px 10px;font-size:11px}}</style></head>
-<body><main class="wrap"><header><a class="brand" href="./profiles.html">TOKYO HENTAI CLUB</a><nav class="nav"><a class="active" href="./profiles.html">All Profiles</a><a class="" href="./available.html">Available Today</a></nav><a href="/index.html" style="color:var(--gold);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-weight:700">⌂ Back to Homepage</a></header>
+@media(max-width:360px){.girl img{height:175px}.nav a{padding:8px 10px;font-size:11px}}</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body.auth-checking main{visibility:hidden!important}</style>
+</head>
+<body class="auth-checking"><script>
+window.__thcAuthReady=(async function(){
+ const db=window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
+ try{
+  const result=await db.auth.getUser();
+  if(result.error)throw result.error;
+  if(!result.data || !result.data.user){location.replace("/login.html?next="+encodeURIComponent(location.pathname+location.search));return false}
+  window.__thcAccessGranted=true;
+  document.body.classList.remove("auth-checking");
+  db.auth.onAuthStateChange(function(event){
+   if(event==="SIGNED_OUT"){document.body.classList.add("auth-checking");location.replace("/login.html")}
+  });
+  return true;
+ }catch(e){
+  console.warn("Access verification failed:",e && e.message ? e.message : e);
+  location.replace("/login.html?next="+encodeURIComponent(location.pathname+location.search));
+  return false;
+ }
+})();
+</script>
+<main class="wrap"><header><a class="brand" href="./profiles.html">TOKYO HENTAI CLUB</a><nav class="nav"><a class="active" href="./profiles.html">All Profiles</a><a class="" href="./available.html">Available Today</a></nav><a href="/index.html" style="color:var(--gold);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-weight:700">⌂ Back to Homepage</a></header>
 <h1>All Profiles</h1><p class="muted">Browse the complete imported profile directory.</p>
 <div class="toolbar"><input id="search" type="search" placeholder="Search by name or profile ID"><select id="area"><option value="">All areas</option><option value="shinjuku">Shinjuku</option><option value="shibuya">Shibuya</option></select><select id="rank"><option value="">All ranks</option><option>Silver</option><option>Gold</option><option>Diamond</option><option>AV Star</option></select></div>
 <div id="content" class="grid"><div class="empty">Loading profiles…</div></div><p id="foot" class="muted"></p></main>
 <script>
+(async function(){await window.__thcAuthReady;if(!window.__thcAccessGranted)return;
 const mode="all";
 const content=document.getElementById('content');
 let profiles=[];
@@ -23,4 +46,5 @@ function card(p){const later=!isNow(p);const el=document.createElement('article'
 function render(){const q=document.getElementById('search').value.trim().toLowerCase();const area=document.getElementById('area').value;const rank=document.getElementById('rank').value;let list=profiles.filter(p=>{const hay=[p.displayName,p.id,p.area,p.rank].join(' ').toLowerCase();return (!q||hay.includes(q))&&(!area||String(p.area||'').toLowerCase().includes(area))&&(!rank||p.rank===rank)});if(mode==='today')list=list.filter(p=>isNow(p)||isLater(p));content.replaceChildren();if(mode==='today'){const now=list.filter(isNow),later=list.filter(p=>!isNow(p));for(const [label,items] of [['AVAILABLE NOW',now],['AVAILABLE LATER',later]]){const h=document.createElement('h2');h.className='section-title';h.textContent=label+' ('+items.length+')';content.append(h);if(!items.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No profiles in this section.';content.append(empty)}else{const grid=document.createElement('div');grid.className='grid';items.forEach(p=>grid.append(card(p)));content.append(grid)}}}else{if(!list.length){content.innerHTML='<div class="empty">No matching profiles found.</div>'}else list.forEach(p=>content.append(card(p)))}document.getElementById('foot').textContent=list.length+' profiles shown. Availability is based on the imported profile snapshot and may need staff confirmation.'}
 ['search','area','rank'].forEach(id=>document.getElementById(id).addEventListener('input',render));
 fetch('./profiles.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(data=>{if(!Array.isArray(data))throw Error('Invalid profile data');profiles=data;render()}).catch(e=>{content.innerHTML='<div class="empty">Could not load profiles: '+e.message+'</div>'});
+})();
 </script></body></html>
