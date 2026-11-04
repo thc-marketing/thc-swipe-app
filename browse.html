@@ -130,7 +130,7 @@ body.booking-only .top .pill{display:none}
 #girlProfileScreen .gallery-strip{display:none}
 #girlProfileScreen .detail-section{background:transparent;border:0;border-radius:0;padding:15px 2px;margin:0}
 #girlProfileScreen .detail-section p{margin:7px 0;line-height:1.55}
-#girlProfileScreen #girlProfileStatus{font-size:13px;color:#e8c17b;font-weight:700}
+#girlProfileScreen #girlProfileStatus{display:none!important}
 #girlProfileScreen #girlProfileArea{font-size:12px;color:#b8aab7}
 #girlProfileScreen #girlProfileBio{font-size:14px;color:#fff8fc}
 #girlProfileScreen #girlProfileTag{display:inline-block;padding:5px 10px;border:1px solid #6b5432;border-radius:99px;color:#e8c17b;font-size:11px}
@@ -142,6 +142,7 @@ body.booking-only .top .pill{display:none}
 #girlProfileScreen #girlProfileOfficial{width:100%;margin-top:8px}
 #girlProfileScreen .profile-book{font-size:15px;padding:15px}
 body.profile-view-only .app{display:none!important}
+#girlProfileScreen [hidden]{display:none!important}
 
  
 /* Directory-first layout: no swipe deck or swipe controls */
@@ -247,7 +248,6 @@ body.profile-view-only .app{display:none!important}
           <span id="girlProfileTag" class="ig-tag"></span>
         </div>
         <div class="ig-bio">
-          <p id="girlProfileStatus" class="ig-status"></p>
           <p id="girlProfileBio"></p>
           <p id="girlProfileArea" class="ig-location"></p>
         </div>
@@ -1327,8 +1327,6 @@ async function openGirlProfile(p) {
     } catch(err){followBtn.disabled=true;followNote.textContent=err.message||"Follow unavailable";}
   })();
   // Availability and work-schedule fields are hidden on public profiles.
-  $("girlProfileStatus").textContent = "";
-  $("girlProfileStatus").hidden = true;
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
   let followerCountLabel=document.getElementById("girlFollowerCount");if(!followerCountLabel){followerCountLabel=document.createElement("p");followerCountLabel.id="girlFollowerCount";followerCountLabel.style.cssText="margin:5px 0 0;color:#b8aab7;font-size:12px";$("girlProfileArea").after(followerCountLabel)}followerCountLabel.textContent="Followers: —";
   if (!profileBioLoaded) {
