@@ -101,11 +101,21 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  const $=id=>document.getElementById(id);let offset=0,file=null,loading=false,selectedPurchase=null;
  const {data:{user:verifiedUser},error:verifiedAuthError}=await db.auth.getUser();
- const initialAuth={session:verifiedUser?{user:verifiedUser}:null};
+ let currentCustomerUser=verifiedUser||null;
+ const initialAuth={session:currentCustomerUser?{user:currentCustomerUser}:null};
  if(verifiedAuthError)console.warn('Could not verify the current customer session:',verifiedAuthError.message);
+ db.auth.onAuthStateChange((event,session)=>{
+  currentCustomerUser=session?.user||null;
+  if(event==='SIGNED_OUT'&&!location.pathname.endsWith('/login.html'))currentCustomerUser=null;
+ });
  window.thcSupabase=window.thcSupabase||db;
- document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));});
- function showPanel(panelId){
+ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='purchases'){showPanel('purchases');return}document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));});
+ async function showPanel(panelId){
+  if(panelId==='purchases'){
+   const {data:{user},error}=await db.auth.getUser();
+   if(error||!user){location.replace('/login.html');return}
+   currentCustomerUser=user;
+  }
   document.querySelectorAll('.panel').forEach(panel=>panel.classList.toggle('active',panel.id===panelId));
   document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===panelId));
   const target=$(panelId);
