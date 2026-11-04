@@ -1806,6 +1806,14 @@ logoutBtn.onclick = async () => {
 
       if (result.error) throw result.error;
 
+      if (mode === "login") {
+        const { data: verified, error: verifyError } = await client.auth.getUser();
+        if (verifyError || !verified?.user) {
+          await client.auth.signOut({ scope: "local" });
+          throw verifyError || new Error("Your sign-in could not be verified. Please try again.");
+        }
+      }
+
       if (mode === "signup" && !result.data.session) {
         say("Account registration started. Check your email for a confirmation link, then log in.");
         setMode("login");
@@ -1821,15 +1829,20 @@ logoutBtn.onclick = async () => {
     }
   });
 
-  client.auth.getSession().then(({ data, error }) => {
+  client.auth.getUser().then(({ data, error }) => {
     if (error) {
-      say("Could not check your session. Please log in again.", true);
+      gate.style.display = "flex";
+      logoutBtn.hidden = true;
+      say("Could not verify your saved session. Please log in again.", true);
       return;
     }
-    if (data.session) {
-  gate.style.display = "none";
-  logoutBtn.hidden = false;
-}
+    if (data?.user) {
+      gate.style.display = "none";
+      logoutBtn.hidden = false;
+    } else {
+      gate.style.display = "flex";
+      logoutBtn.hidden = true;
+    }
   });
 
   client.auth.onAuthStateChange((event, session) => {
