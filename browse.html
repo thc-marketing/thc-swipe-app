@@ -1326,8 +1326,9 @@ async function openGirlProfile(p) {
       followBtn.onclick=async()=>{followBtn.disabled=true;try{if(following){const {error}=await fdb.from("creator_follows").delete().eq("creator_id",creatorId).eq("follower_id",user.id);if(error)throw error;following=false}else{const {error}=await fdb.from("creator_follows").insert({creator_id:creatorId,follower_id:user.id});if(error)throw error;following=true}paint();const {count:newCount,error:countError}=await fdb.from("creator_follows").select("creator_id",{count:"exact",head:true}).eq("creator_id",creatorId);if(!countError)followerCountLabel.textContent="Followers: "+(newCount||0).toLocaleString()}catch(err){followNote.textContent=err.message||"Could not update follow";}finally{followBtn.disabled=false}};
     } catch(err){followBtn.disabled=true;followNote.textContent=err.message||"Follow unavailable";}
   })();
-  $("girlProfileStatus").textContent =
-    "Status: " + (p.status || "Contact to confirm");
+  // Availability and work-schedule fields are hidden on public profiles.
+  $("girlProfileStatus").textContent = "";
+  $("girlProfileStatus").hidden = true;
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
   let followerCountLabel=document.getElementById("girlFollowerCount");if(!followerCountLabel){followerCountLabel=document.createElement("p");followerCountLabel.id="girlFollowerCount";followerCountLabel.style.cssText="margin:5px 0 0;color:#b8aab7;font-size:12px";$("girlProfileArea").after(followerCountLabel)}followerCountLabel.textContent="Followers: —";
   if (!profileBioLoaded) {
@@ -1484,8 +1485,7 @@ async function openGirlProfile(p) {
       age: p.age,
       rank: p.rank,
       area: p.area,
-      bio: p.bio,
-      status: p.status
+      bio: p.bio
     };
     Object.entries(listingFields).forEach(([key, value]) => {
       if ((details[key] === undefined || details[key] === null || details[key] === "") &&
@@ -1494,8 +1494,11 @@ async function openGirlProfile(p) {
       }
     });
 
+    const hiddenProfileFields = /^(status|available\s*now|next\s*appointment\s*time|last\s*working\s*date)$/i;
     const fields = Object.entries(details).filter(([key, value]) =>
       !/photo|image|gallery/i.test(key) &&
+      !hiddenProfileFields.test(String(key).replace(/[_-]+/g, " ").trim()) &&
+      !/^(available now|last working date|next appointment time)$/i.test(String(value).trim()) &&
       value !== null && value !== undefined && value !== "" &&
       !(Array.isArray(value) && !value.length)
     );
