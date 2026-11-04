@@ -65,7 +65,7 @@ button:active{transform:scale(.98)}
 <form id="officialAnnouncementForm" class="card">
 <label for="officialAnnouncementTitle">Headline</label><input id="officialAnnouncementTitle" class="field" maxlength="120" required placeholder="e.g. Weekend Special Offer">
 <label for="officialAnnouncementBody">Announcement / promotion details</label><textarea id="officialAnnouncementBody" class="field" rows="5" maxlength="5000" placeholder="Write your announcement…"></textarea>
-<label for="officialAnnouncementMedia">Image URL (optional)</label><input id="officialAnnouncementMedia" class="field" type="url" placeholder="https://…">
+<label for="officialAnnouncementMedia">Image or video URL (optional)</label><input id="officialAnnouncementMedia" class="field" type="url" placeholder="Paste an image URL or YouTube link"><small class="muted">YouTube links automatically display the video's thumbnail in the feed. Visitors can tap it to watch on YouTube.</small>
 <button class="primary" type="submit">Publish to main feed</button><div id="officialAnnouncementStatus" class="status"></div>
 </form><div id="officialAnnouncementList"></div>
 </section>
@@ -100,7 +100,7 @@ button:active{transform:scale(.98)}
   if(ue||!user){$('officialAnnouncementStatus').textContent='Sign in with the THC administrator account.';return}
   const {data:admin,error:ae}=await db.from('creator_admins').select('user_id').eq('user_id',user.id).maybeSingle();
   if(ae||!admin){$('officialAnnouncementStatus').textContent='Access denied. This account is not a THC administrator.';return}
-  const {data:items,error}=await db.from('official_thc_announcements').select('id,title,body,media_url,is_published,created_at').order('created_at',{ascending:false}).limit(100);
+  const {data:items,error}=await db.from('official_thc_announcements').select('id,title,body,media_url,media_type,is_published,created_at').order('created_at',{ascending:false}).limit(100);
   if(error){$('officialAnnouncementStatus').textContent='Could not load announcements: '+error.message;return}
   $('officialAnnouncementStatus').textContent=(items||[]).length+' official announcement(s).';
   for(const item of items||[]){
@@ -109,7 +109,10 @@ button:active{transform:scale(.98)}
    const body=document.createElement('p');body.className='muted';body.textContent=item.body||'';
    const state=document.createElement('p');state.className='muted';state.textContent=(item.is_published?'Published to feed':'Hidden from feed')+' · '+new Date(item.created_at).toLocaleString();
    card.append(title,body,state);
-   if(item.media_url){const img=document.createElement('img');img.src=item.media_url;img.alt='Announcement image';img.className='media';card.append(img)}
+   if(item.media_url){if(item.media_type==='video'){const id=(function ytId(url){
+ const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/i);
+ return m?m[1]:null;
+})(item.media_url);if(id){const link=document.createElement('a');link.href='https://www.youtube.com/watch?v='+id;link.target='_blank';link.rel='noopener noreferrer';link.style.display='block';const img=document.createElement('img');img.src='https://img.youtube.com/vi/'+id+'/hqdefault.jpg';img.alt='YouTube video thumbnail';img.className='media';link.append(img);card.append(link)}else{const note=document.createElement('p');note.className='muted';note.textContent='Video URL: '+item.media_url;card.append(note)}}else{const img=document.createElement('img');img.src=item.media_url;img.alt='Announcement image';img.className='media';card.append(img)}}
    const actions=document.createElement('div');actions.className='actions';
    const toggle=document.createElement('button');toggle.textContent=item.is_published?'Hide from feed':'Publish to feed';
    toggle.onclick=async()=>{toggle.disabled=true;const {error}=await db.from('official_thc_announcements').update({is_published:!item.is_published,updated_at:new Date().toISOString()}).eq('id',item.id);if(error){$('officialAnnouncementStatus').textContent='Update failed: '+error.message;toggle.disabled=false;return}await loadOfficialAnnouncementAdmin()};
@@ -123,7 +126,13 @@ button:active{transform:scale(.98)}
   $('officialAnnouncementStatus').textContent='Publishing announcement…';
   try{
    const title=$('officialAnnouncementTitle').value.trim(),body=$('officialAnnouncementBody').value.trim(),media=$('officialAnnouncementMedia').value.trim();
-   const {error}=await db.from('official_thc_announcements').insert({title,body,media_url:media||null,is_published:true});
+   const videoId=(function ytId(url){
+ const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/i);
+ return m?m[1]:null;
+})(media);
+   const mediaType=videoId?'video':'image';
+   if(media && !videoId && !/^https?:\\/\\//i.test(media))throw new Error('Please enter a valid image URL or YouTube link.');
+   const {error}=await db.from('official_thc_announcements').insert({title,body,media_url:media||null,media_type:mediaType,is_published:true});
    if(error)throw error;
    $('officialAnnouncementForm').reset();$('officialAnnouncementStatus').textContent='Announcement published to the customer feed.';
    await loadOfficialAnnouncementAdmin();
