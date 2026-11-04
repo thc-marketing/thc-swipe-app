@@ -87,6 +87,20 @@ button:active{transform:scale(.98)}
  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  const $=id=>document.getElementById(id);
  const say=s=>$('status').textContent=s;
+ function getYoutubeId(value){
+  try{
+   const u=new URL(value),host0=u.hostname.toLowerCase(),host=host0.startsWith('www.')?host0.slice(4):host0;
+   const parts=u.pathname.split('/').filter(Boolean);
+   let id='';
+   if(host==='youtu.be')id=parts[0]||'';
+   else if(host==='youtube.com'||host==='m.youtube.com'){
+    if(u.pathname==='/watch')id=u.searchParams.get('v')||'';
+    else if(['embed','shorts','live'].includes(parts[0]))id=parts[1]||'';
+   }
+   return /^[A-Za-z0-9_-]{11}$/.test(id)?id:null;
+  }catch{return null}
+ }
+
  function setAdminPanel(id){
   ['pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection','officialAnnouncementsSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
   document.querySelectorAll('#adminNav button').forEach(btn=>btn.classList.toggle('active',btn.dataset.panel===id));
