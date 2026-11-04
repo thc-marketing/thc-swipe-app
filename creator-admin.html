@@ -30,8 +30,9 @@ button:active{transform:scale(.98)}
 .dashboard-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:26px 0 18px}.dashboard-head h1{margin:0 0 5px;font-size:clamp(27px,5vw,38px)}.eyebrow{font-size:11px;letter-spacing:.16em;font-weight:800;color:var(--pink);text-transform:uppercase}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 8px;padding:7px;background:#100d14;border:1px solid #ffffff16;border-radius:14px}.nav button{flex:1;min-width:140px;padding:12px 14px;background:transparent;border:1px solid transparent;color:var(--muted)}.nav button.active{background:linear-gradient(110deg,#f66bab,#e83f8d)!important;color:#190d16!important}.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 0 12px}.panel-heading h2{margin:0}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.creator-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin:9px 0;border:1px solid #ffffff16;border-radius:13px;background:#100d14}.creator-row .muted{margin:4px 0 0}.section-note{margin:5px 0 16px}.pill-status{display:inline-flex;align-items:center;border:1px solid #ffffff20;border-radius:99px;padding:5px 10px;font-size:11px;color:var(--muted)}.panel{min-height:140px}@media(max-width:520px){.creator-row{align-items:flex-start;flex-direction:column}.creator-row button{width:100%}.nav button{min-width:calc(50% - 8px)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body.admin-auth-checking #adminNav,body.admin-auth-checking #pendingPanel,body.admin-auth-checking #publishedSection,body.admin-auth-checking #creatorAccountsSection,body.admin-auth-checking #storyReviewSection,body.admin-auth-checking #scheduleSyncSection,body.admin-auth-checking #officialAnnouncementsSection,body.admin-auth-checking #refresh,body.admin-auth-checking #logout{display:none!important}</style>
 </head>
-<body><main class="wrap">
+<body class="admin-auth-checking"><main class="wrap">
 <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>THC · ADMIN REVIEW</strong></div></header>
 <div class="dashboard-head"><div><div class="eyebrow">Tokyo Hentai Club · Management</div><h1>Creator Admin</h1><p class="muted">Manage creator submissions, published posts, and individual Creator Hub accounts in one place.</p></div><div class="toolbar"><button id="refresh" class="hidden" type="button">↻ Refresh</button><button id="logout" class="hidden" type="button">Sign out</button></div></div>
 <section id="loginCard" class="card">
@@ -276,6 +277,7 @@ button:active{transform:scale(.98)}
  let adminReady=false,adminBusy=false;
  function showAdminLogin(message){
   adminReady=false;
+  document.body.classList.add('admin-auth-checking');
   $('loginCard').classList.remove('hidden');
   ['adminNav','pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection','officialAnnouncementsSection'].forEach(id=>$(id)?.classList.add('hidden'));
   $('refresh').classList.add('hidden');$('logout').classList.add('hidden');
@@ -295,6 +297,7 @@ button:active{transform:scale(.98)}
     return;
    }
    adminReady=true;
+   document.body.classList.remove('admin-auth-checking');
    $('loginCard').classList.add('hidden');$('adminNav').classList.remove('hidden');
    $('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');
    $('publishedSection').classList.remove('hidden');$('creatorAccountsSection').classList.remove('hidden');
