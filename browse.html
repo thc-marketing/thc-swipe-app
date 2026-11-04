@@ -498,7 +498,8 @@ async function loadProfiles() {
     })).filter(g => g.id != null && g.displayName);
 
     $("count").textContent = "01 / " + String(profiles.length).padStart(2, "0");
-    document.querySelector(".pill").innerHTML = '<i class="dot"></i> Imported profiles';
+    const importedPill = document.querySelector(".pill");
+    if (importedPill) importedPill.innerHTML = '<i class="dot"></i> Imported profiles';
     render();
     window.profiles = profiles;
     const profileId = routeParams.get("profile") || routeParams.get("cc");
