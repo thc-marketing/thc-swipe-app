@@ -131,7 +131,7 @@ body.booking-only .top .pill{display:none}
 #girlProfileScreen .detail-section{background:transparent;border:0;border-radius:0;padding:15px 2px;margin:0}
 #girlProfileScreen .detail-section p{margin:7px 0;line-height:1.55}
 #girlProfileScreen #girlProfileStatus{display:none!important}
-#girlProfileScreen #girlProfileArea{font-size:12px;color:#b8aab7}
+#girlProfileScreen #girlProfileArea{font-size:12px;color:#b8aab7}#girlProfileScreen #girlFollowerCount{display:inline-flex;flex-direction:column;align-items:flex-start;gap:0;margin:10px 0 0!important;color:#b8aab7;font-size:11px;font-weight:700;line-height:1.2;letter-spacing:.08em;text-transform:uppercase}#girlProfileScreen #girlFollowerCount .follower-number{font-size:25px;font-weight:850;line-height:1.15;letter-spacing:-.04em;color:#fff8fc;text-transform:none;font-variant-numeric:tabular-nums}
 #girlProfileScreen #girlProfileBio{font-size:14px;color:#fff8fc}
 #girlProfileScreen #girlProfileTag{display:inline-block;padding:5px 10px;border:1px solid #6b5432;border-radius:99px;color:#e8c17b;font-size:11px}
 #girlProfileScreen .instagram-profile-meta{border-top:1px solid #ffffff20;margin-top:8px;padding-top:14px}
@@ -1315,20 +1315,22 @@ async function openGirlProfile(p) {
       const {data:comp,error:compErr}=await fdb.from("companion_profiles").select("creator_user_id,photos,photo_url,rank,area,age,height,measurements,body_type,english,smoke,tattoos").eq("id",p.id).maybeSingle();
       if(compErr)throw compErr;
       const creatorId=comp?.creator_user_id;
-      if(!creatorId){followBtn.disabled=true;followNote.textContent="Follow is not available for this profile yet.";followerCountLabel.textContent="Followers: 0";return}
-      const {count:followers,error:followersError}=await fdb.from("creator_follows").select("creator_id",{count:"exact",head:true}).eq("creator_id",creatorId);if(followersError)throw followersError;followerCountLabel.textContent="Followers: "+(followers||0).toLocaleString();
+      if(!creatorId){followBtn.disabled=true;followNote.textContent="Follow is not available for this profile yet.";setFollowerCount(0);return}
+      const {count:followers,error:followersError}=await fdb.from("creator_follows").select("creator_id",{count:"exact",head:true}).eq("creator_id",creatorId);if(followersError)throw followersError;setFollowerCount(followers||0);
       if(!user){followBtn.textContent="Log in to follow";followBtn.onclick=()=>location.href="login.html";return}
       const {data:existing,error:readErr}=await fdb.from("creator_follows").select("creator_id").eq("creator_id",creatorId).eq("follower_id",user.id).maybeSingle();
       if(readErr)throw readErr;
       let following=!!existing;
       const paint=()=>{followBtn.textContent=following?"✓ Following":"＋ Follow";followBtn.style.background=following?"#39303c":"#ed4c9b"};
       paint();
-      followBtn.onclick=async()=>{followBtn.disabled=true;try{if(following){const {error}=await fdb.from("creator_follows").delete().eq("creator_id",creatorId).eq("follower_id",user.id);if(error)throw error;following=false}else{const {error}=await fdb.from("creator_follows").insert({creator_id:creatorId,follower_id:user.id});if(error)throw error;following=true}paint();const {count:newCount,error:countError}=await fdb.from("creator_follows").select("creator_id",{count:"exact",head:true}).eq("creator_id",creatorId);if(!countError)followerCountLabel.textContent="Followers: "+(newCount||0).toLocaleString()}catch(err){followNote.textContent=err.message||"Could not update follow";}finally{followBtn.disabled=false}};
+      followBtn.onclick=async()=>{followBtn.disabled=true;try{if(following){const {error}=await fdb.from("creator_follows").delete().eq("creator_id",creatorId).eq("follower_id",user.id);if(error)throw error;following=false}else{const {error}=await fdb.from("creator_follows").insert({creator_id:creatorId,follower_id:user.id});if(error)throw error;following=true}paint();const {count:newCount,error:countError}=await fdb.from("creator_follows").select("creator_id",{count:"exact",head:true}).eq("creator_id",creatorId);if(!countError)setFollowerCount(newCount||0)}catch(err){followNote.textContent=err.message||"Could not update follow";}finally{followBtn.disabled=false}};
     } catch(err){followBtn.disabled=true;followNote.textContent=err.message||"Follow unavailable";}
   })();
   // Availability and work-schedule fields are hidden on public profiles.
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
-  let followerCountLabel=document.getElementById("girlFollowerCount");if(!followerCountLabel){followerCountLabel=document.createElement("p");followerCountLabel.id="girlFollowerCount";followerCountLabel.style.cssText="margin:5px 0 0;color:#b8aab7;font-size:12px";$("girlProfileArea").after(followerCountLabel)}followerCountLabel.textContent="Followers: —";
+  let followerCountLabel=document.getElementById("girlFollowerCount");if(!followerCountLabel){followerCountLabel=document.createElement("p");followerCountLabel.id="girlFollowerCount";followerCountLabel.className="follower-count";$("girlProfileArea").after(followerCountLabel)}
+  const setFollowerCount=count=>{const number=document.createElement("strong");number.className="follower-number";number.textContent=Number(count||0).toLocaleString();const label=document.createElement("span");label.textContent="Followers";followerCountLabel.replaceChildren(number,label)};
+  setFollowerCount("—");
   if (!profileBioLoaded) {
     profileBioElement.textContent = "";
     profileBioElement.hidden = true;
