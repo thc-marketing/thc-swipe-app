@@ -88,6 +88,73 @@ button:active{transform:scale(.98)}
   await refresh();
  }
  
+
+ async function renderOfficialAnnouncementEngagement(item,card){
+  const box=document.createElement('div');box.className='engagement';
+  const actions=document.createElement('div');actions.className='engagement-actions';
+  const like=document.createElement('button');like.type='button';like.className='like-button';like.textContent='♡ Like';
+  const counts=document.createElement('span');counts.className='engagement-count';counts.textContent='Loading likes and comments…';
+  actions.append(like,counts);
+  const list=document.createElement('div');list.className='comment-list';
+  const form=document.createElement('form');form.className='comment-form';
+  const input=document.createElement('input');input.className='comment-input';input.maxLength=1000;input.placeholder='Write a comment…';input.setAttribute('aria-label','Write a comment');
+  const submit=document.createElement('button');submit.type='submit';submit.className='comment-submit';submit.textContent='Post';
+  const hint=document.createElement('div');hint.className='comment-hint';
+  form.append(input,submit);box.append(actions,list,form,hint);card.append(box);
+  async function refresh(){
+   const [{data:likes,error:le},{data:comments,error:ce}]=await Promise.all([
+    db.from('official_thc_announcement_likes').select('user_id').eq('announcement_id',item.id),
+    db.from('official_thc_announcement_comments').select('id,user_id,body,created_at').eq('announcement_id',item.id).order('created_at',{ascending:false}).limit(20)
+   ]);
+   if(le||ce){counts.textContent='Likes and comments unavailable';return}
+   const {data:{user}}=await db.auth.getUser();
+   const liked=!!user&&(likes||[]).some(x=>x.user_id===user.id);
+   like.classList.toggle('liked',liked);like.textContent=liked?'♥ Liked':'♡ Like';
+   counts.textContent=(likes||[]).length+' likes · '+(comments||[]).length+' comments';
+   const userIds=[...new Set((comments||[]).map(x=>x.user_id))];
+   const {data:profiles}=userIds.length?await db.from('customer_profiles').select('user_id,username').in('user_id',userIds):{data:[]};
+   const names=new Map((profiles||[]).map(x=>[x.user_id,x.username]));
+   list.replaceChildren();
+   for(const comment of comments||[]){
+    const entry=document.createElement('div');entry.className='comment-item';
+    const meta=document.createElement('small');meta.textContent='@'+(names.get(comment.user_id)||'customer')+' · '+new Date(comment.created_at).toLocaleString();
+    const body=document.createElement('span');body.textContent=comment.body;
+    entry.append(meta,body);list.append(entry);
+   }
+  }
+  async function requireCustomer(){
+   const {data,error}=await db.auth.getUser();if(error)throw error;
+   if(data.user)return data.user;
+   hint.textContent='Sign in to like and comment.';return null;
+  }
+  like.onclick=async()=>{
+   like.disabled=true;
+   try{
+    const user=await requireCustomer();if(!user)return;
+    const {data:existing,error}=await db.from('official_thc_announcement_likes').select('id').eq('announcement_id',item.id).eq('user_id',user.id).maybeSingle();
+    if(error)throw error;
+    const result=existing
+     ?await db.from('official_thc_announcement_likes').delete().eq('id',existing.id)
+     :await db.from('official_thc_announcement_likes').insert({announcement_id:item.id,user_id:user.id});
+    if(result.error)throw result.error;
+    hint.textContent='';await refresh();
+   }catch(e){hint.textContent='Could not update your like: '+(e.message||String(e))}
+   finally{like.disabled=false}
+  };
+  form.onsubmit=async e=>{
+   e.preventDefault();const body=input.value.trim();if(!body)return;
+   submit.disabled=true;
+   try{
+    const user=await requireCustomer();if(!user)return;
+    const {error}=await db.from('official_thc_announcement_comments').insert({announcement_id:item.id,user_id:user.id,body});
+    if(error)throw error;
+    input.value='';hint.textContent='Comment posted.';await refresh();
+   }catch(e){hint.textContent='Could not post comment: '+(e.message||String(e))}
+   finally{submit.disabled=false}
+  };
+  await refresh();
+ }
+
  async function loadOfficialAnnouncements(){
   const {data:items,error}=await db.from('official_thc_announcements').select('id,title,body,media_url,media_type,created_at').eq('is_published',true).order('created_at',{ascending:false}).limit(20);
   if(error)throw error;
@@ -104,6 +171,7 @@ button:active{transform:scale(.98)}
    if(item.body){const body=document.createElement('p');body.textContent=item.body;body.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6';card.append(body)}
    if(item.media_url){if(item.media_type==='video'){const id=(function getYoutubeId(value){try{const u=new URL(value),host0=u.hostname.toLowerCase(),host=host0.startsWith('www.')?host0.slice(4):host0;const parts=u.pathname.split('/').filter(Boolean);let id='';if(host==='youtu.be')id=parts[0]||'';else if(host==='youtube.com'||host==='m.youtube.com'){if(u.pathname==='/watch')id=u.searchParams.get('v')||'';else if(['embed','shorts','live'].includes(parts[0]))id=parts[1]||''}return /^[A-Za-z0-9_-]{11}$/.test(id)?id:null}catch{return null}})(item.media_url);if(id){const link=document.createElement('a');link.href='https://www.youtube.com/watch?v='+id;link.target='_blank';link.rel='noopener noreferrer';link.style.cssText='display:block;position:relative;margin-top:12px';const img=document.createElement('img');img.src='https://img.youtube.com/vi/'+id+'/hqdefault.jpg';img.alt='Play Tokyo Hentai Club video on YouTube';img.loading='lazy';img.style.cssText='display:block;width:100%;max-height:560px;object-fit:contain;border-radius:12px';const play=document.createElement('span');play.textContent='▶';play.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#e62117;color:white;border-radius:14px;padding:10px 22px;font-size:24px';link.append(img,play);card.append(link)}else{const link=document.createElement('a');link.href=item.media_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Watch video';card.append(link)}}else{const img=document.createElement('img');img.src=item.media_url;img.alt='Tokyo Hentai Club promotion';img.loading='lazy';img.style.cssText='display:block;width:100%;max-height:560px;object-fit:contain;border-radius:12px;margin-top:12px';card.append(img)}}
    const date=document.createElement('div');date.className='meta';date.textContent=new Date(item.created_at).toLocaleString();card.append(date);
+   await renderOfficialAnnouncementEngagement(item,card);
    $('posts').append(card);
   }
  }
