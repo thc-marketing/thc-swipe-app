@@ -56,7 +56,7 @@ function card(p){
  const info=document.createElement('div');info.className='info';
  const name=document.createElement('div');name.className='name';name.textContent=(p.display_name||'Profile')+(p.age?' · '+p.age:'');
  const meta=document.createElement('div');meta.className='meta';meta.textContent=[p.rank,p.area==='both'?'Shinjuku & Shibuya':p.area,p.id?'ID '+p.id:''].filter(Boolean).join(' · ');
- const note=document.createElement('div');note.className='availability-note';note.textContent='confirm the availability with the staff';
+ const note=document.createElement('div');note.className='availability-note';note.textContent='Confirm the availability with the staff';
  const actions=document.createElement('div');actions.className='actions';
  const view=document.createElement('a');view.href=p.profile_url||('https://hentaitokyo.com/profile?cc='+encodeURIComponent(p.id));view.target='_blank';view.rel='noopener';view.textContent='Official Profile';
  const book=document.createElement('a');book.className='book';const bookingParams=new URLSearchParams({booking:'1',id:String(p.id),name:p.display_name||'',age:p.age||'',rank:p.rank||'',area:p.area||'Tokyo',photo:p.photo_url||'',profile:p.profile_url||''});book.href='./browse.html?'+bookingParams.toString();book.textContent='Book';
