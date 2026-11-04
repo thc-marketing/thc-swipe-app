@@ -10,11 +10,11 @@
 <section id="checking" class="card"><h1>Schedule Sync</h1><p class="muted">Verifying your admin account…</p></section>
 <section id="denied" class="card hidden"><h1>Admin access required</h1><p id="deniedText" class="muted">Sign in with an authorized admin account to use Schedule Sync.</p><a href="./login.html">Go to sign in</a></section>
 <section id="workspace" class="hidden">
-<h1>Import Today’s Schedule</h1><p class="muted">Paste the complete homepage HTML response copied from the official website. The importer reads the date and profile cards, removes appointment times, and updates only the schedule for that date.</p>
+<h1>Import Today’s Schedule</h1><p class="muted">Paste the complete Schedule page HTML response copied from the official website. The importer reads each girl’s shift hours and profile details, keeps appointment times private, and updates only the schedule date found in the page.</p>
 <div class="card">
- <ol class="muted"><li>Open <a href="https://hentaitokyo.com/" target="_blank" rel="noopener">hentaitokyo.com</a>.</li><li>Open Chrome DevTools → Network → select the homepage document request → Response.</li><li>Copy the complete response and paste it below.</li><li>Click Import Schedule and review the counts returned.</li></ol>
- <label for="htmlInput">Official homepage HTML</label>
- <textarea id="htmlInput" placeholder="Paste the complete homepage HTML response here…"></textarea>
+ <ol class="muted"><li>Open the official <a href="https://hentaitokyo.com/schedule" target="_blank" rel="noopener">Schedule page</a>.</li><li>Open Chrome DevTools → Network → select the schedule document request → Response.</li><li>Copy the complete response and paste it below.</li><li>Click Import Schedule and review the counts returned.</li></ol>
+ <label for="htmlInput">Official Schedule page HTML</label>
+ <textarea id="htmlInput" placeholder="Paste the complete Schedule page HTML response here…"></textarea>
  <p class="muted">Do not paste only the visible page text. The complete HTML response is required. Maximum size: 8 MB.</p>
  <button id="importButton" type="button">Import Schedule</button>
  <div id="status" class="status" role="status">Ready when you are.</div>
@@ -38,7 +38,7 @@
   $('workspace').classList.remove('hidden');
   $('importButton').onclick=async()=>{
    const html=$('htmlInput').value.trim(),button=$('importButton'),status=$('status');
-   if(!html){status.className='status error';status.textContent='Please paste the complete homepage HTML first.';return}
+   if(!html){status.className='status error';status.textContent='Please paste the complete Schedule page HTML first.';return}
    if(html.length>8*1024*1024){status.className='status error';status.textContent='The pasted HTML is larger than 8 MB.';return}
    button.disabled=true;button.textContent='Importing…';status.className='status';status.textContent='Uploading and processing the official schedule…';
    try{
@@ -49,7 +49,7 @@
     if(!response.ok||!result.success)throw new Error(result.error||'Import failed.');
     const b=result.breakdown||{};
     status.className='status success';
-    status.textContent='Schedule imported successfully.\nDate: '+result.schedule.schedule_date+'\nTotal profiles: '+result.schedule.total+'\nShinjuku: '+(b.shinjuku||0)+' · Shibuya: '+(b.shibuya||0)+' · Both: '+(b.both||0)+' · Unclassified: '+(b.unknown||0)+'\nAppointment times were not stored.';
+    status.textContent='Schedule imported successfully.\nDate: '+result.schedule.schedule_date+'\nTotal profiles: '+result.schedule.total+'\nShinjuku: '+(b.shinjuku||0)+' · Shibuya: '+(b.shibuya||0)+' · Both: '+(b.both||0)+' · Unclassified: '+(b.unknown||0)+'\nShift hours were imported where available. Appointment times were not stored.';
     $('htmlInput').value='';
    }catch(err){status.className='status error';status.textContent='Import failed: '+(err.message||String(err))}
    finally{button.disabled=false;button.textContent='Import Schedule'}
