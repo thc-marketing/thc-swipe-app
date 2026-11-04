@@ -1958,6 +1958,7 @@ logoutBtn.onclick = async () => {
   const result = document.getElementById('thc-reserve-result');
   const profileById = new Map();
   let currentPersonalOptions = [];
+  let lockedProfileId = null;
 
   function getOptionText(option) {
     if (typeof option === 'string') return option.trim();
@@ -2139,6 +2140,7 @@ logoutBtn.onclick = async () => {
   function setSelectedGirl(profile) {
     if (!profile) return;
     const selectedId = String(profile.id);
+    lockedProfileId = selectedId;
     profileById.set(selectedId, profile);
     if (![...girlSelect.options].some(option => option.value === selectedId)) {
       girlSelect.add(new Option(profile.displayName || 'Selected girl', selectedId));
@@ -2156,6 +2158,7 @@ logoutBtn.onclick = async () => {
     modal.style.display = 'flex';
     if (profile && profile.id != null) setSelectedGirl(profile);
     else {
+      lockedProfileId = null;
       document.getElementById('thc-reserve-title').textContent = 'Request Reservation';
       renderOptions([]);
       updateDurationPrice();
@@ -2203,12 +2206,22 @@ logoutBtn.onclick = async () => {
   }
 
   function populateFromList(profiles) {
+    const selectedId = lockedProfileId || girlSelect.value;
     girlSelect.replaceChildren(new Option('Choose a girl', ''));
     (profiles || []).forEach(profile => {
       if (profile.id == null) return;
       profileById.set(String(profile.id), profile);
       girlSelect.add(new Option(profile.displayName, String(profile.id)));
     });
+    // Keep the booking profile even when it is not in the general profile list.
+    if (selectedId && ![...girlSelect.options].some(option => option.value === selectedId)) {
+      const selectedProfile = profileById.get(selectedId);
+      if (selectedProfile) {
+        girlSelect.add(new Option(selectedProfile.displayName || 'Selected girl', selectedId));
+      }
+    }
+    if (selectedId) girlSelect.value = selectedId;
+    if (lockedProfileId) girlSelect.disabled = true;
   }
 
   // Expose only the live profile list needed by the reservation selector.
