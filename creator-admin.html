@@ -47,7 +47,7 @@ button:active{transform:scale(.98)}
 <button type="button" data-panel="creatorAccountsSection">Creator Accounts</button>
 <button type="button" data-panel="scheduleSyncSection">Schedule Sync</button>
 </nav>
-<section id="pendingPanel" class="panel">
+<section id="pendingPanel" class="panel hidden">
 <div class="panel-heading"><div><h2>Pending Review</h2><p class="muted section-note">Review new creator submissions before they appear publicly.</p></div><span class="pill-status">Moderation</span></div>
 <div id="queue"></div>
 </section>
@@ -277,7 +277,7 @@ button:active{transform:scale(.98)}
  function showAdminLogin(message){
   adminReady=false;
   $('loginCard').classList.remove('hidden');
-  ['adminNav','pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection'].forEach(id=>$(id)?.classList.add('hidden'));
+  ['adminNav','pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection','officialAnnouncementsSection'].forEach(id=>$(id)?.classList.add('hidden'));
   $('refresh').classList.add('hidden');$('logout').classList.add('hidden');
   ['queue','publishedQueue','officialAnnouncementList'].forEach(id=>$(id)?.replaceChildren());
   if(message)say(message);
