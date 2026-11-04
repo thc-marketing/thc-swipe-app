@@ -40,7 +40,7 @@ window.__thcAuthReady=(async function(){
 <header><a class="brand" href="./">TOKYO HENTAI CLUB</a><nav class="nav"><a href="./profiles.html">All Profiles</a><a class="active" href="./available.html">Available Today</a></nav><a href="/index.html" style="color:var(--gold);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-weight:700">⌂ Home</a></header>
 <section class="hero"><div class="eyebrow">FIND YOUR TONIGHT</div><h1>Available Today</h1><p>Check the official schedule for today’s confirmed availability in Shinjuku and Shibuya. Incall: 12:00 PM–12:00 AM · Outcall: 12:00 PM–4:00 AM.</p></section>
 <div class="toolbar"><input id="search" type="search" placeholder="Search name or profile ID"><select id="area"><option value="">All areas</option><option value="shinjuku">Shinjuku</option><option value="shibuya">Shibuya</option><option value="both">Both</option></select><select id="rank"><option value="">All ranks</option><option>Silver</option><option>Gold</option><option>Diamond</option><option>AV Star</option></select></div>
-<div class="source-note"><strong>Today’s schedule:</strong> Profiles shown here are taken from the latest schedule imported by our team. Exact appointment times are hidden. Please submit a booking request so staff can confirm availability.</div><div id="content"><div class="empty">Loading profiles…</div></div>
+<div class="source-note"><strong>Today’s schedule:</strong> Shift hours show each girl’s scheduled working window. Individual appointment times remain private. Please submit a booking request so staff can confirm availability.</div><div id="content"><div class="empty">Loading profiles…</div></div>
 <p class="foot" id="foot">Availability is based on the imported profile snapshot and should be confirmed with staff.</p>
 </main>
 <script>
@@ -56,7 +56,9 @@ function card(p){
  const info=document.createElement('div');info.className='info';
  const name=document.createElement('div');name.className='name';name.textContent=(p.display_name||'Profile')+(p.age?' · '+p.age:'');
  const meta=document.createElement('div');meta.className='meta';meta.textContent=[p.rank,p.area==='both'?'Shinjuku & Shibuya':p.area,p.id?'ID '+p.id:''].filter(Boolean).join(' · ');
- const time=document.createElement('div');time.className='time';time.textContent='Listed on today’s official schedule';
+ const time=document.createElement('div');time.className='time';
+ const shift=String(p.shift_time||p.shiftTime||p.work_time||'').trim();
+ time.textContent=shift?'🕒 Shift: '+shift:'🕒 Shift hours not provided';
  const actions=document.createElement('div');actions.className='actions';
  const view=document.createElement('a');view.href=p.profile_url||('https://hentaitokyo.com/profile?cc='+encodeURIComponent(p.id));view.target='_blank';view.rel='noopener';view.textContent='Official Profile';
  const book=document.createElement('a');book.className='book';const bookingParams=new URLSearchParams({booking:'1',id:String(p.id),name:p.display_name||'',age:p.age||'',rank:p.rank||'',area:p.area||'Tokyo',photo:p.photo_url||'',profile:p.profile_url||''});book.href='./browse.html?'+bookingParams.toString();book.textContent='Book';
@@ -87,7 +89,7 @@ async function loadSchedule(){
   const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Tokyo'});
   if(result.schedule.schedule_date!==today){content.innerHTML='<div class="empty">The latest imported schedule is for '+result.schedule.schedule_date+'. Today’s schedule has not been imported yet.</div>';return}
   profiles=Array.isArray(result.schedule.cards)?result.schedule.cards:[];
-  document.querySelector('.source-note').innerHTML='<strong>Schedule date:</strong> '+result.schedule.schedule_date+' · '+profiles.length+' scheduled profiles. Exact appointment times are not shown.';
+  document.querySelector('.source-note').innerHTML='<strong>Schedule date:</strong> '+result.schedule.schedule_date+' · '+profiles.length+' scheduled profiles. Shift hours are shown where available; appointment times remain private.';
   document.getElementById('foot').textContent='Schedule imported '+new Date(result.schedule.imported_at).toLocaleString()+' · Confirm details with staff.';
   render();
  }catch(e){content.innerHTML='<div class="empty">Could not load today’s schedule: '+String(e.message||e)+'</div>'}
