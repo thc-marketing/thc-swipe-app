@@ -1299,7 +1299,7 @@ async function openGirlProfile(p) {
   (async()=>{
     try {
       const fdb=window.thcSupabase||window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
-      const {data:comp,error:compErr}=await fdb.from("companion_profiles").select("creator_user_id,photos,photo_url").eq("id",p.id).maybeSingle();
+      const {data:comp,error:compErr}=await fdb.from("companion_profiles").select("creator_user_id,photos,photo_url,rank,area,age,height,measurements,body_type,english,smoke,tattoos").eq("id",p.id).maybeSingle();
       if(compErr)throw compErr;
       const creatorId=comp?.creator_user_id;
       if(!creatorId){followBtn.disabled=true;followNote.textContent="Follow is not available for this profile yet.";followerCountLabel.textContent="Followers: 0";return}
@@ -1374,6 +1374,18 @@ async function openGirlProfile(p) {
   document.body.classList.add("profile-view-only");
   const profileTabs=document.querySelectorAll("#girlProfileTabs [data-profile-tab]");profileTabs.forEach(tab=>{tab.onclick=()=>{const photos=tab.dataset.profileTab==="photos";profileTabs.forEach(t=>t.classList.toggle("active",t===tab));gallery.hidden=!photos;const postSection=$("girlCreatorPosts");if(postSection)postSection.hidden=photos;}});
   loadGirlCreatorPosts(p);
+
+  // Load the structured profile fields maintained in Creator Admin.
+  try {
+    const detailDb=window.thcSupabase||window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
+    const {data:structured,error:structuredError}=await detailDb.from("companion_profiles").select("rank,area,age,height,measurements,body_type,english,smoke,tattoos").eq("id",p.id).maybeSingle();
+    if(structuredError)throw structuredError;
+    if(structured){
+      const fields=[["Rank",structured.rank],["Area",structured.area],["Height",structured.height],["Age",structured.age],["Measurements",structured.measurements],["Body Type",structured.body_type],["English",structured.english],["Smoke",structured.smoke],["Tattoos",structured.tattoos]];
+      const rows=fields.filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
+      if(rows.length){detailsPanel.replaceChildren();const heading=document.createElement("h3");heading.textContent="Profile Details";detailsPanel.append(heading);rows.forEach(([label,value])=>{const row=document.createElement("div");const strong=document.createElement("strong");strong.textContent=label+": ";row.append(strong,document.createTextNode(String(value)));detailsPanel.append(row)});}
+    }
+  } catch(detailError) { console.warn("Structured profile details could not load:",detailError); }
 
   // Saved official-page extracts are used as a fallback when the profile API
   // does not return full details. Their schedule is explicitly a dated snapshot.
