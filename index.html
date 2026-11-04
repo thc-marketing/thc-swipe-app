@@ -237,7 +237,7 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
       entry.append(meta,body);list.append(entry);
     }
   }
-  async function requireCustomer(){const {data,error}=await db.auth.getUser();if(error)throw error;if(data.user)return data.user;hint.textContent='Sign in to like and comment.';return null}
+  async function requireCustomer(){const {data,error}=await db.auth.getUser();if(error)throw error;if(data.user)return data.user;hint.replaceChildren(document.createTextNode('Sign in to like and comment. '));const link=document.createElement('a');link.href='browse.html';link.textContent='Sign in to your account';link.style.color='#ff91c2';hint.append(link);return null}
   like.onclick=async()=>{like.disabled=true;try{const user=await requireCustomer();if(!user)return;const {data:eng}=await db.rpc('get_free_post_engagement',{p_post_id:post.post_id});const row=Array.isArray(eng)?eng[0]:eng;const result=row?.liked_by_me?await db.from('creator_post_likes').delete().eq('post_id',post.post_id).eq('user_id',user.id):await db.from('creator_post_likes').insert({post_id:post.post_id,user_id:user.id});if(result.error)throw result.error;hint.textContent='';await refresh()}catch(e){hint.textContent='Could not update your like: '+(e.message||String(e))}finally{like.disabled=false}};
   form.onsubmit=async e=>{e.preventDefault();const body=input.value.trim();if(!body)return;submit.disabled=true;try{const user=await requireCustomer();if(!user)return;const {error}=await db.from('creator_post_comments').insert({post_id:post.post_id,user_id:user.id,body});if(error)throw error;input.value='';hint.textContent='Comment posted.';await refresh()}catch(err){hint.textContent='Could not post comment: '+(err.message||String(err))}finally{submit.disabled=false}};
   await refresh();
@@ -269,7 +269,7 @@ body{background:radial-gradient(ellipse at 78% 0%,#70234e55,transparent 34%),rad
     db.from('official_thc_announcement_likes').select('user_id').eq('announcement_id',item.id),
     db.from('official_thc_announcement_comments').select('id,user_id,body,created_at').eq('announcement_id',item.id).order('created_at',{ascending:false}).limit(20)
    ]);
-   if(le||ce){counts.textContent='Likes and comments unavailable';return}
+   if(le||ce){const err=le||ce;counts.textContent='Could not load likes/comments: '+(err.message||'Database error');hint.textContent='Please refresh and try again.';return}
    const {data:{user}}=await db.auth.getUser();
    const liked=!!user&&(likes||[]).some(x=>x.user_id===user.id);
    like.classList.toggle('liked',liked);like.textContent=liked?'♥ Liked':'♡ Like';
