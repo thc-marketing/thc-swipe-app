@@ -255,11 +255,11 @@ body.profile-view-only .app{display:none!important}
 
     <div id="girlProfileDetails" class="ig-details"></div>
 
-    <div class="ig-feed-tabs">
-      <div class="active"><span>▦</span> FEED</div>
-      <div><span>▧</span> PHOTOS</div>
+    <div class="ig-feed-tabs" id="girlProfileTabs">
+      <button type="button" class="active" data-profile-tab="feed"><span>▦</span> FEED</button>
+      <button type="button" data-profile-tab="photos"><span>▧</span> PHOTOS</button>
     </div>
-    <div id="girlProfileGallery" class="gallery-strip ig-photo-grid"></div>
+    <div id="girlProfileGallery" class="gallery-strip ig-photo-grid" hidden></div>
     <section id="girlCreatorPosts" style="margin:18px 0;padding:0 12px"><h3 style="margin:12px 0">Latest Posts</h3><div id="girlCreatorPostsStatus" style="color:#aaa;font-size:13px">Loading posts…</div><div id="girlCreatorPostsList" style="display:grid;gap:14px"></div></section>
   </div>
 </div>
@@ -1301,19 +1301,21 @@ async function openGirlProfile(p) {
       const {data:comp,error:compErr}=await fdb.from("companion_profiles").select("creator_user_id,photos,photo_url").eq("id",p.id).maybeSingle();
       if(compErr)throw compErr;
       const creatorId=comp?.creator_user_id;
-      if(!creatorId){followBtn.disabled=true;followNote.textContent="Follow is not available for this profile yet.";return}
+      if(!creatorId){followBtn.disabled=true;followNote.textContent="Follow is not available for this profile yet.";followerCountLabel.textContent="Followers: 0";return}
+      const {count:followers,error:followersError}=await fdb.from("creator_follows").select("creator_id",{count:"exact",head:true}).eq("creator_id",creatorId);if(followersError)throw followersError;followerCountLabel.textContent="Followers: "+(followers||0).toLocaleString();
       if(!user){followBtn.textContent="Log in to follow";followBtn.onclick=()=>location.href="login.html";return}
       const {data:existing,error:readErr}=await fdb.from("creator_follows").select("creator_id").eq("creator_id",creatorId).eq("follower_id",user.id).maybeSingle();
       if(readErr)throw readErr;
       let following=!!existing;
       const paint=()=>{followBtn.textContent=following?"✓ Following":"＋ Follow";followBtn.style.background=following?"#39303c":"#ed4c9b"};
       paint();
-      followBtn.onclick=async()=>{followBtn.disabled=true;try{if(following){const {error}=await fdb.from("creator_follows").delete().eq("creator_id",creatorId).eq("follower_id",user.id);if(error)throw error;following=false}else{const {error}=await fdb.from("creator_follows").insert({creator_id:creatorId,follower_id:user.id});if(error)throw error;following=true}paint()}catch(err){followNote.textContent=err.message||"Could not update follow";}finally{followBtn.disabled=false}};
+      followBtn.onclick=async()=>{followBtn.disabled=true;try{if(following){const {error}=await fdb.from("creator_follows").delete().eq("creator_id",creatorId).eq("follower_id",user.id);if(error)throw error;following=false}else{const {error}=await fdb.from("creator_follows").insert({creator_id:creatorId,follower_id:user.id});if(error)throw error;following=true}paint();const {count:newCount,error:countError}=await fdb.from("creator_follows").select("creator_id",{count:"exact",head:true}).eq("creator_id",creatorId);if(!countError)followerCountLabel.textContent="Followers: "+(newCount||0).toLocaleString()}catch(err){followNote.textContent=err.message||"Could not update follow";}finally{followBtn.disabled=false}};
     } catch(err){followBtn.disabled=true;followNote.textContent=err.message||"Follow unavailable";}
   })();
   $("girlProfileStatus").textContent =
     "Status: " + (p.status || "Contact to confirm");
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
+  let followerCountLabel=document.getElementById("girlFollowerCount");if(!followerCountLabel){followerCountLabel=document.createElement("p");followerCountLabel.id="girlFollowerCount";followerCountLabel.style.cssText="margin:5px 0 0;color:#b8aab7;font-size:12px";$("girlProfileArea").after(followerCountLabel)}followerCountLabel.textContent="Followers: —";
   $("girlProfileBio").textContent =
     p.bio || "Contact us for more information.";
   $("girlProfileTag").textContent = p.tag || "";
@@ -1369,6 +1371,7 @@ async function openGirlProfile(p) {
   detailsPanel.textContent = "Loading profile details…";
   screen.style.display = "block";
   document.body.classList.add("profile-view-only");
+  const profileTabs=document.querySelectorAll("#girlProfileTabs [data-profile-tab]");profileTabs.forEach(tab=>{tab.onclick=()=>{const photos=tab.dataset.profileTab==="photos";profileTabs.forEach(t=>t.classList.toggle("active",t===tab));gallery.hidden=!photos;const postSection=$("girlCreatorPosts");if(postSection)postSection.hidden=photos;}});
   loadGirlCreatorPosts(p);
 
   // Saved official-page extracts are used as a fallback when the profile API
