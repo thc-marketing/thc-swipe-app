@@ -36,7 +36,7 @@ function card(p){
  const time=document.createElement('div');time.className='time';time.textContent='Listed on today’s official schedule';
  const actions=document.createElement('div');actions.className='actions';
  const view=document.createElement('a');view.href=p.profile_url||('https://hentaitokyo.com/profile?cc='+encodeURIComponent(p.id));view.target='_blank';view.rel='noopener';view.textContent='Official Profile';
- const book=document.createElement('a');book.className='book';book.href='./browse.html?booking=1&id='+encodeURIComponent(p.id);book.textContent='Book';
+ const book=document.createElement('a');book.className='book';const bookingParams=new URLSearchParams({booking:'1',id:String(p.id),name:p.display_name||'',age:p.age||'',rank:p.rank||'',area:p.area||'Tokyo',photo:p.photo_url||'',profile:p.profile_url||''});book.href='./browse.html?'+bookingParams.toString();book.textContent='Book';
  actions.append(view,book);info.append(name,meta,time,actions);el.append(photo,info);return el;
 }
 function render(){
