@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>THC Admin</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b10;--panel:#19151d;--line:#493447;--text:#fff8fc;--muted:#b8aab7;--pink:#f24d98;--gold:#e8c17b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0%,#55244755,transparent 38%),var(--bg);color:var(--text);font:15px/1.55 system-ui,sans-serif}.wrap{width:min(100% - 28px,900px);margin:36px auto 60px}.brand{font-weight:900;letter-spacing:.12em;color:var(--gold);text-decoration:none}h1{font-size:clamp(30px,5vw,42px);margin:28px 0 6px}.muted{color:var(--muted);font-size:13px}.card{margin:18px 0;padding:22px;border:1px solid #ffffff20;border-radius:16px;background:linear-gradient(145deg,#211925,#151119)}.link{display:inline-flex;margin-top:12px;padding:12px 17px;border-radius:10px;background:linear-gradient(110deg,#f66bab,#e83f8d);color:#190d16;text-decoration:none;font-weight:900}.hidden{display:none!important}a{color:#ff91c2}
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+<body><main class="wrap"><a class="brand" href="./">TOKYO HENTAI CLUB · ADMIN</a>
+<section id="checking" class="card"><h1>Admin Dashboard</h1><p class="muted">Checking your account permissions…</p></section>
+<section id="denied" class="card hidden"><h1>Admin access required</h1><p id="deniedText" class="muted">Please sign in with an authorized admin account.</p><a href="./login.html">Go to sign in</a></section>
+<section id="dashboard" class="hidden"><h1>Admin Dashboard</h1><p class="muted">Manage internal tools for Tokyo Hentai Club.</p>
+<div class="card"><h2>Daily Schedule</h2><p class="muted">Import the latest official homepage schedule. Appointment times are not stored or displayed in Available Today.</p><a class="link" href="./schedule-sync.html">Open Schedule Sync</a></div>
+<div class="card"><a href="./available.html">View Available Today</a> · <a href="./profiles.html">View All Profiles</a></div></section>
+</main><script>
+(async()=>{
+ const URL='https://dvvyqpdaoprzrarotuin.supabase.co';
+ const KEY='sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24';
+ const db=window.supabase.createClient(URL,KEY);
+ const $=id=>document.getElementById(id);
+ try{
+  const {data:{session},error}=await db.auth.getSession();
+  if(error)throw error;
+  $('checking').classList.add('hidden');
+  if(!session){$('denied').classList.remove('hidden');$('deniedText').textContent='Sign in with your THC admin account to access this page.';return}
+  const {data:admin,error:adminError}=await db.from('creator_admins').select('user_id').eq('user_id',session.user.id).maybeSingle();
+  if(adminError)throw adminError;
+  if(!admin){$('denied').classList.remove('hidden');$('deniedText').textContent='This account is not authorized to access the admin dashboard.';return}
+  $('dashboard').classList.remove('hidden');
+ }catch(e){$('checking').innerHTML='<h1>Could not verify access</h1><p class="muted">'+String(e.message||e)+'</p>'}
+})();
+</script></body></html>
