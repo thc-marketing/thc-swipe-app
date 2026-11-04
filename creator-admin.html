@@ -111,7 +111,7 @@ button:active{transform:scale(.98)}
    card.append(title,body,state);
    if(item.media_url){if(item.media_type==='video'){const id=(function getYoutubeId(value){
  try{
-  const u=new URL(value),host=u.hostname.toLowerCase().replace(/^www\\./,'');
+  const u=new URL(value),host0=u.hostname.toLowerCase(),host=host0.startsWith('www.')?host0.slice(4):host0;
   const parts=u.pathname.split('/').filter(Boolean);
   let id='';
   if(host==='youtu.be')id=parts[0]||'';
@@ -137,7 +137,7 @@ button:active{transform:scale(.98)}
    const title=$('officialAnnouncementTitle').value.trim(),body=$('officialAnnouncementBody').value.trim(),media=$('officialAnnouncementMedia').value.trim();
    const videoId=getYoutubeId(media);
    const mediaType=videoId?'video':'image';
-   if(media && !videoId && !/^https?:\\/\\//i.test(media))throw new Error('Please enter a valid image URL or YouTube link.');
+   if(media && !videoId){try{const imageUrl=new URL(media);if(!['http:','https:'].includes(imageUrl.protocol))throw new Error()}catch{throw new Error('Please enter a valid image URL or YouTube link.')}}
    const {error}=await db.from('official_thc_announcements').insert({title,body,media_url:media||null,media_type:mediaType,is_published:true});
    if(error)throw error;
    $('officialAnnouncementForm').reset();$('officialAnnouncementStatus').textContent='Announcement published to the customer feed.';
