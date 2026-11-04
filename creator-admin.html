@@ -137,7 +137,7 @@ button:active{transform:scale(.98)}
   $('officialAnnouncementStatus').textContent='Publishing announcement…';
   try{
    const title=$('officialAnnouncementTitle').value.trim(),body=$('officialAnnouncementBody').value.trim(),media=$('officialAnnouncementMedia').value.trim();
-   const videoId=getYoutubeId(media);
+   const videoId=(()=>{try{const u=new URL(media),host0=u.hostname.toLowerCase(),host=host0.startsWith('www.')?host0.slice(4):host0,parts=u.pathname.split('/').filter(Boolean);let id='';if(host==='youtu.be')id=parts[0]||'';else if(host==='youtube.com'||host==='m.youtube.com'){if(u.pathname==='/watch')id=u.searchParams.get('v')||'';else if(['embed','shorts','live'].includes(parts[0]))id=parts[1]||'';}return /^[A-Za-z0-9_-]{11}$/.test(id)?id:null;}catch{return null}})();
    const mediaType=videoId?'video':'image';
    if(media && !videoId){try{const imageUrl=new URL(media);if(!['http:','https:'].includes(imageUrl.protocol))throw new Error()}catch{throw new Error('Please enter a valid image URL or YouTube link.')}}
    const {error}=await db.from('official_thc_announcements').insert({title,body,media_url:media||null,media_type:mediaType,is_published:true});
