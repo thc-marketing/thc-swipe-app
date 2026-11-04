@@ -1273,6 +1273,19 @@ async function openGirlProfile(p) {
   if (!p) return;
   window.thcActiveProfile = p;
 
+  const profileBioElement = $("girlProfileBio");
+  let profileBioLoaded = false;
+  const setGirlProfileBio = value => {
+    const bio = typeof value === "string" ? value.trim() : "";
+    if (!bio || /^view her official profile for details and available options\.?$/i.test(bio)) return;
+    profileBioElement.textContent = bio;
+    profileBioElement.hidden = false;
+    profileBioLoaded = true;
+  };
+  profileBioElement.textContent = "";
+  profileBioElement.hidden = true;
+  setGirlProfileBio(p.bio);
+
   const screen = $("girlProfileScreen");
   const mainPhoto = $("girlProfileMainPhoto");
   const gallery = $("girlProfileGallery");
@@ -1317,8 +1330,10 @@ async function openGirlProfile(p) {
     "Status: " + (p.status || "Contact to confirm");
   $("girlProfileArea").textContent = "📍 " + (p.area || "Tokyo");
   let followerCountLabel=document.getElementById("girlFollowerCount");if(!followerCountLabel){followerCountLabel=document.createElement("p");followerCountLabel.id="girlFollowerCount";followerCountLabel.style.cssText="margin:5px 0 0;color:#b8aab7;font-size:12px";$("girlProfileArea").after(followerCountLabel)}followerCountLabel.textContent="Followers: —";
-  $("girlProfileBio").textContent =
-    p.bio || "Contact us for more information.";
+  if (!profileBioLoaded) {
+    profileBioElement.textContent = "";
+    profileBioElement.hidden = true;
+  }
   $("girlProfileTag").textContent = p.tag || "";
 
   mainPhoto.src = p.photo || "";
@@ -1379,9 +1394,10 @@ async function openGirlProfile(p) {
   let hasStructuredDetails = false;
   try {
     const detailDb=window.thcSupabase||window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
-    const {data:structured,error:structuredError}=await detailDb.from("companion_profiles").select("rank,area,age,height,measurements,body_type,english,smoke,tattoos").eq("id",p.id).maybeSingle();
+    const {data:structured,error:structuredError}=await detailDb.from("companion_profiles").select("bio,rank,area,age,height,measurements,body_type,english,smoke,tattoos").eq("id",p.id).maybeSingle();
     if(structuredError)throw structuredError;
     if(structured){
+      setGirlProfileBio(structured.bio);
       const fields=[["Rank",structured.rank],["Area",structured.area],["Height",structured.height],["Age",structured.age],["Measurements",structured.measurements],["Body Type",structured.body_type],["English",structured.english],["Smoke",structured.smoke],["Tattoos",structured.tattoos]];
       const rows=fields.filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="");
       if(rows.length){hasStructuredDetails=true;detailsPanel.replaceChildren();const heading=document.createElement("h3");heading.textContent="Profile Details";detailsPanel.append(heading);rows.forEach(([label,value])=>{const row=document.createElement("div");const strong=document.createElement("strong");strong.textContent=label+": ";row.append(strong,document.createTextNode(String(value)));detailsPanel.append(row)});}
@@ -1397,6 +1413,7 @@ async function openGirlProfile(p) {
     if (savedResponse.ok) {
       const savedProfiles = await savedResponse.json();
       const saved = savedProfiles[String(p.id)];
+      if (saved && !profileBioLoaded) setGirlProfileBio(saved.bio);
       if (saved && !hasStructuredDetails) {
         hasSavedDetails = true;
         savedProfileDetails = saved.details && typeof saved.details === "object" ? saved.details : {};
@@ -1435,6 +1452,9 @@ async function openGirlProfile(p) {
     if (!response.ok) throw new Error("Profile request failed");
 
     const data = await response.json();
+    if (!profileBioLoaded) {
+      setGirlProfileBio(data.bio || data.description || data.details?.bio || data.details?.description);
+    }
     const photoSources = [
       adminGalleryPhotos, data.photos, data.images, data.gallery, data.profilePhotos,
       data.profile_photos, data.photoList, data.photo_list,
