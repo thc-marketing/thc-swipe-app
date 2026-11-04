@@ -44,6 +44,7 @@ button:active{transform:scale(.98)}
 <button type="button" data-panel="publishedSection">Published Posts</button>
 <button type="button" data-panel="storyReviewSection">Story Approval</button>
 <button type="button" data-panel="creatorAccountsSection">Creator Accounts</button>
+<button type="button" data-panel="scheduleSyncSection">Schedule Sync</button>
 </nav>
 <section id="pendingPanel" class="panel">
 <div class="panel-heading"><div><h2>Pending Review</h2><p class="muted section-note">Review new creator submissions before they appear publicly.</p></div><span class="pill-status">Moderation</span></div>
@@ -57,6 +58,11 @@ button:active{transform:scale(.98)}
 <div id="creatorAccountsStatus" class="status">Checking administrator access…</div>
 <div id="creatorAccountsList"></div>
 <div id="creatorAccountsResult"></div>
+</section>
+<section class="panel hidden" id="scheduleSyncSection">
+<div class="panel-heading"><div><h2>Schedule Sync</h2><p class="muted section-note">Import the latest official daily schedule for the Available Today page.</p></div><span class="pill-status">Admin Only</span></div>
+<iframe title="Schedule Sync" src="./schedule-sync.html" style="display:block;width:100%;height:1050px;border:1px solid #ffffff20;border-radius:14px;background:#0d0b10" loading="lazy"></iframe>
+<p class="muted">If the importer asks you to sign in, use the same administrator account as Creator Admin.</p>
 </section>
 <section class="panel hidden" id="publishedSection">
 <div class="panel-heading"><div><h2>Published Posts</h2><p class="muted section-note">Hide a post to remove it from the public feed, or delete it permanently.</p></div><span class="pill-status">Live Content</span></div>
@@ -72,7 +78,7 @@ button:active{transform:scale(.98)}
  const $=id=>document.getElementById(id);
  const say=s=>$('status').textContent=s;
  function setAdminPanel(id){
-  ['pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
+  ['pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
   document.querySelectorAll('#adminNav button').forEach(btn=>btn.classList.toggle('active',btn.dataset.panel===id));
  }
  document.querySelectorAll('#adminNav button').forEach(btn=>btn.addEventListener('click',()=>setAdminPanel(btn.dataset.panel)));
