@@ -41,6 +41,7 @@ button:active{transform:scale(.98)}
 <div class="status" id="status">Sign in with the Supabase Auth account granted administrator access.</div>
 <nav id="adminNav" class="nav hidden" aria-label="Admin sections">
 <button type="button" class="active" data-panel="pendingPanel">Pending Review</button>
+<button type="button" data-panel="officialAnnouncementsSection">Official THC</button>
 <button type="button" data-panel="publishedSection">Published Posts</button>
 <button type="button" data-panel="storyReviewSection">Story Approval</button>
 <button type="button" data-panel="creatorAccountsSection">Creator Accounts</button>
@@ -58,6 +59,15 @@ button:active{transform:scale(.98)}
 <div id="creatorAccountsStatus" class="status">Checking administrator access…</div>
 <div id="creatorAccountsList"></div>
 <div id="creatorAccountsResult"></div>
+</section>
+<section class="panel hidden" id="officialAnnouncementsSection">
+<div class="panel-heading"><div><h2>Official THC Announcements</h2><p class="muted section-note">Publish promotions and announcements from Tokyo Hentai Club to the customer feed.</p></div><span class="pill-status">Official Brand</span></div>
+<form id="officialAnnouncementForm" class="card">
+<label for="officialAnnouncementTitle">Headline</label><input id="officialAnnouncementTitle" class="field" maxlength="120" required placeholder="e.g. Weekend Special Offer">
+<label for="officialAnnouncementBody">Announcement / promotion details</label><textarea id="officialAnnouncementBody" class="field" rows="5" maxlength="5000" placeholder="Write your announcement…"></textarea>
+<label for="officialAnnouncementMedia">Image URL (optional)</label><input id="officialAnnouncementMedia" class="field" type="url" placeholder="https://…">
+<button class="primary" type="submit">Publish to main feed</button><div id="officialAnnouncementStatus" class="status"></div>
+</form><div id="officialAnnouncementList"></div>
 </section>
 <section class="panel hidden" id="scheduleSyncSection">
 <div class="panel-heading"><div><h2>Schedule Sync</h2><p class="muted section-note">Import the latest official daily schedule for the Available Today page.</p></div><span class="pill-status">Admin Only</span></div>
@@ -78,11 +88,48 @@ button:active{transform:scale(.98)}
  const $=id=>document.getElementById(id);
  const say=s=>$('status').textContent=s;
  function setAdminPanel(id){
-  ['pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
+  ['pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection','officialAnnouncementsSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
   document.querySelectorAll('#adminNav button').forEach(btn=>btn.classList.toggle('active',btn.dataset.panel===id));
  }
  document.querySelectorAll('#adminNav button').forEach(btn=>btn.addEventListener('click',()=>setAdminPanel(btn.dataset.panel)));
 
+
+ async function loadOfficialAnnouncementAdmin(){
+  const box=$('officialAnnouncementList');box.replaceChildren();
+  const {data:{user},error:ue}=await db.auth.getUser();
+  if(ue||!user){$('officialAnnouncementStatus').textContent='Sign in with the THC administrator account.';return}
+  const {data:admin,error:ae}=await db.from('creator_admins').select('user_id').eq('user_id',user.id).maybeSingle();
+  if(ae||!admin){$('officialAnnouncementStatus').textContent='Access denied. This account is not a THC administrator.';return}
+  const {data:items,error}=await db.from('official_thc_announcements').select('id,title,body,media_url,is_published,created_at').order('created_at',{ascending:false}).limit(100);
+  if(error){$('officialAnnouncementStatus').textContent='Could not load announcements: '+error.message;return}
+  $('officialAnnouncementStatus').textContent=(items||[]).length+' official announcement(s).';
+  for(const item of items||[]){
+   const card=document.createElement('article');card.className='card';
+   const title=document.createElement('h3');title.textContent=item.title;
+   const body=document.createElement('p');body.className='muted';body.textContent=item.body||'';
+   const state=document.createElement('p');state.className='muted';state.textContent=(item.is_published?'Published to feed':'Hidden from feed')+' · '+new Date(item.created_at).toLocaleString();
+   card.append(title,body,state);
+   if(item.media_url){const img=document.createElement('img');img.src=item.media_url;img.alt='Announcement image';img.className='media';card.append(img)}
+   const actions=document.createElement('div');actions.className='actions';
+   const toggle=document.createElement('button');toggle.textContent=item.is_published?'Hide from feed':'Publish to feed';
+   toggle.onclick=async()=>{toggle.disabled=true;const {error}=await db.from('official_thc_announcements').update({is_published:!item.is_published,updated_at:new Date().toISOString()}).eq('id',item.id);if(error){$('officialAnnouncementStatus').textContent='Update failed: '+error.message;toggle.disabled=false;return}await loadOfficialAnnouncementAdmin()};
+   const del=document.createElement('button');del.className='reject';del.textContent='Delete';
+   del.onclick=async()=>{if(!confirm('Delete this official announcement permanently?'))return;del.disabled=true;const {error}=await db.from('official_thc_announcements').delete().eq('id',item.id);if(error){$('officialAnnouncementStatus').textContent='Delete failed: '+error.message;del.disabled=false;return}await loadOfficialAnnouncementAdmin()};
+   actions.append(toggle,del);card.append(actions);box.append(card);
+  }
+ }
+ $('officialAnnouncementForm').onsubmit=async e=>{
+  e.preventDefault();const btn=$('officialAnnouncementForm').querySelector('button[type="submit"]');btn.disabled=true;
+  $('officialAnnouncementStatus').textContent='Publishing announcement…';
+  try{
+   const title=$('officialAnnouncementTitle').value.trim(),body=$('officialAnnouncementBody').value.trim(),media=$('officialAnnouncementMedia').value.trim();
+   const {error}=await db.from('official_thc_announcements').insert({title,body,media_url:media||null,is_published:true});
+   if(error)throw error;
+   $('officialAnnouncementForm').reset();$('officialAnnouncementStatus').textContent='Announcement published to the customer feed.';
+   await loadOfficialAnnouncementAdmin();
+  }catch(err){$('officialAnnouncementStatus').textContent='Could not publish: '+(err.message||String(err))}
+  finally{btn.disabled=false}
+ };
  async function loadQueue(){
   $('queue').replaceChildren();say('Loading review queue…');
   const {data,error}=await db.rpc('list_pending_creator_posts');
@@ -209,9 +256,9 @@ button:active{transform:scale(.98)}
   say(decision==='publish'?'Post published.':'Post rejected and removed from the review queue.');
   await loadQueue();
  }
- $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');setAdminPanel('pendingPanel');await loadQueue();await loadPublished();await loadStoryQueue();$('creatorAccountsSection').classList.remove('hidden');await loadCreatorAccounts()};
- $('refresh').onclick=async()=>{await loadQueue();await loadPublished();await loadStoryQueue();await loadCreatorAccounts()};
+ $('loginForm').onsubmit=async e=>{e.preventDefault();say('Signing in…');const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say('Sign-in failed: '+error.message);return}$('loginCard').classList.add('hidden');$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');setAdminPanel('pendingPanel');await loadQueue();await loadPublished();await loadStoryQueue();$('creatorAccountsSection').classList.remove('hidden');await loadCreatorAccounts();await loadOfficialAnnouncementAdmin()};
+ $('refresh').onclick=async()=>{await loadQueue();await loadPublished();await loadStoryQueue();await loadCreatorAccounts();await loadOfficialAnnouncementAdmin()};
  $('logout').onclick=async()=>{await db.auth.signOut();$('loginCard').classList.remove('hidden');$('publishedSection').classList.add('hidden');$('creatorAccountsSection').classList.add('hidden');$('refresh').classList.add('hidden');$('logout').classList.add('hidden');$('queue').replaceChildren();$('publishedQueue').replaceChildren();say('Signed out.')};
- db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished();loadStoryQueue();$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');setAdminPanel('pendingPanel');loadCreatorAccounts()}});
+ db.auth.getSession().then(({data})=>{if(data.session){$('loginCard').classList.add('hidden');$('publishedSection').classList.remove('hidden');$('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');loadQueue();loadPublished();loadStoryQueue();loadOfficialAnnouncementAdmin();$('adminNav').classList.remove('hidden');$('pendingPanel').classList.remove('hidden');setAdminPanel('pendingPanel');loadCreatorAccounts()}});
 })();
 </script></body></html>
