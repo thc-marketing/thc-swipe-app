@@ -2138,9 +2138,14 @@ logoutBtn.onclick = async () => {
 
   function setSelectedGirl(profile) {
     if (!profile) return;
-    girlSelect.value = String(profile.id);
+    const selectedId = String(profile.id);
+    profileById.set(selectedId, profile);
+    if (![...girlSelect.options].some(option => option.value === selectedId)) {
+      girlSelect.add(new Option(profile.displayName || 'Selected girl', selectedId));
+    }
+    girlSelect.value = selectedId;
     document.getElementById('thc-reserve-title').textContent =
-      'Request ' + profile.displayName;
+      'Request ' + (profile.displayName || 'Reservation');
     loadOptionsForGirl(profile);
     updateDurationPrice();
     refreshStartTimes();
