@@ -13,8 +13,30 @@ header{display:flex;align-items:center;justify-content:space-between;gap:14px;fl
 @media(max-width:900px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.photo{height:235px}}
 @media(max-width:620px){.wrap{width:min(100% - 24px,1180px);padding-top:16px}.toolbar{grid-template-columns:1fr 1fr}.toolbar input{grid-column:1/-1}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.photo{height:210px}.info{padding:10px}.name{font-size:15px}.actions{gap:6px}.actions a{font-size:11px;padding:9px 4px}}
 @media(max-width:360px){.photo{height:175px}.nav a{padding:8px 10px;font-size:11px}}
-</style></head>
-<body><main class="wrap">
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body.auth-checking main{visibility:hidden!important}</style>
+</head>
+<body class="auth-checking"><script>
+window.__thcAuthReady=(async function(){
+ const db=window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
+ try{
+  const result=await db.auth.getUser();
+  if(result.error)throw result.error;
+  if(!result.data || !result.data.user){location.replace("/login.html?next="+encodeURIComponent(location.pathname+location.search));return false}
+  window.__thcAccessGranted=true;
+  document.body.classList.remove("auth-checking");
+  db.auth.onAuthStateChange(function(event){
+   if(event==="SIGNED_OUT"){document.body.classList.add("auth-checking");location.replace("/login.html")}
+  });
+  return true;
+ }catch(e){
+  console.warn("Access verification failed:",e && e.message ? e.message : e);
+  location.replace("/login.html?next="+encodeURIComponent(location.pathname+location.search));
+  return false;
+ }
+})();
+</script>
+<main class="wrap">
 <header><a class="brand" href="./">TOKYO HENTAI CLUB</a><nav class="nav"><a href="./profiles.html">All Profiles</a><a class="active" href="./available.html">Available Today</a></nav><a href="/index.html" style="color:var(--gold);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-weight:700">⌂ Home</a></header>
 <section class="hero"><div class="eyebrow">FIND YOUR TONIGHT</div><h1>Available Today</h1><p>Check the official schedule for today’s confirmed availability in Shinjuku and Shibuya. Incall: 12:00 PM–12:00 AM · Outcall: 12:00 PM–4:00 AM.</p></section>
 <div class="toolbar"><input id="search" type="search" placeholder="Search name or profile ID"><select id="area"><option value="">All areas</option><option value="shinjuku">Shinjuku</option><option value="shibuya">Shibuya</option><option value="both">Both</option></select><select id="rank"><option value="">All ranks</option><option>Silver</option><option>Gold</option><option>Diamond</option><option>AV Star</option></select></div>
@@ -22,6 +44,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:14px;fl
 <p class="foot" id="foot">Availability is based on the imported profile snapshot and should be confirmed with staff.</p>
 </main>
 <script>
+(async function(){await window.__thcAuthReady;if(!window.__thcAccessGranted)return;
 const content=document.getElementById('content');
 const API='https://dvvyqpdaoprzrarotuin.supabase.co/functions/v1/thc-schedule-sync';
 let profiles=[];
@@ -70,4 +93,5 @@ async function loadSchedule(){
  }catch(e){content.innerHTML='<div class="empty">Could not load today’s schedule: '+String(e.message||e)+'</div>'}
 }
 loadSchedule();
+})();
 </script></body></html>
