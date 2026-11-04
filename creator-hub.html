@@ -81,12 +81,7 @@ button:active{transform:scale(.98)}
  const SUPABASE_URL='https://dvvyqpdaoprzrarotuin.supabase.co';
  const SUPABASE_KEY='sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24';
  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
- const {data:{subscription:authSubscription}}=db.auth.onAuthStateChange((event,session)=>{
-  if(event==='SIGNED_OUT'||!session){
-   activeCreatorUser=null;activeCreatorProfile=null;
-   location.replace('creator-login.html?loggedout=1');
-  }
- });
+
  const $=id=>document.getElementById(id);let file=null;
  const showTab=id=>{document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('main .panel[id]').forEach(p=>p.classList.toggle('active',p.id===id));const editor=$('creatorProfileEditor');if(editor)editor.hidden=id!=='account';const composer=$('creatorStoryComposer');if(composer&&id!=='dashboard')composer.hidden=true;if(id==='posts'&&activeCreatorUser)loadCreatorHome(activeCreatorUser,activeCreatorProfile);if(id==='account'&&activeCreatorUser){$('accountName').textContent=activeCreatorProfile?.display_name||'Creator account';$('accountEmail').textContent=activeCreatorUser.email||''}window.scrollTo({top:0,behavior:'smooth'});};
  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
@@ -143,6 +138,12 @@ button:active{transform:scale(.98)}
  async function makePreview(file){return new Promise(resolve=>{const url=URL.createObjectURL(file);const isVideo=file.type.startsWith('video/');const source=isVideo?document.createElement('video'):new Image();if(isVideo){source.muted=true;source.playsInline=true;source.preload='metadata'}const cleanup=()=>URL.revokeObjectURL(url);source.onerror=()=>{cleanup();resolve(null)};source.onload=()=>{try{const w=isVideo?source.videoWidth:source.naturalWidth,h=isVideo?source.videoHeight:source.naturalHeight;const scale=Math.min(1,1000/Math.max(w,h));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));canvas.getContext('2d').drawImage(source,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{cleanup();resolve(blob)},'image/jpeg',0.72)}catch(e){cleanup();resolve(null)}};if(isVideo){source.onloadedmetadata=()=>{source.currentTime=Math.min(1,Math.max(0,source.duration/2||0.5))};source.onseeked=source.onload;source.src=url}else{source.src=url}})}
 
  let activeCreatorUser=null,activeCreatorProfile=null,storyFile=null;
+ const {data:{subscription:authSubscription}}=db.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_OUT'||!session){
+   activeCreatorUser=null;activeCreatorProfile=null;
+   location.replace('creator-login.html?loggedout=1');
+  }
+ });
  async function storyUrl(path){if(/^https?:\/\//i.test(path||''))return path;const {data,error}=await db.storage.from('creator-media').createSignedUrl(path,3600);if(error)throw error;return data.signedUrl}
  function mediaNode(path,type,alt){const el=document.createElement(type==='video'?'video':'img');el.alt=alt||'Creator media';if(type==='video'){el.muted=true;el.playsInline=true}storyUrl(path).then(url=>{el.src=url}).catch(err=>{el.alt='Media unavailable: '+err.message});return el}
  async function loadCreatorInstagram(user,profile){
