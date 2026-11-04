@@ -106,7 +106,7 @@ button:active{transform:scale(.98)}
     db.from('official_thc_announcement_likes').select('user_id').eq('announcement_id',item.id),
     db.from('official_thc_announcement_comments').select('id,user_id,body,created_at').eq('announcement_id',item.id).order('created_at',{ascending:false}).limit(20)
    ]);
-   if(le||ce){counts.textContent='Likes and comments unavailable';return}
+   if(le||ce){const err=le||ce;counts.textContent='Could not load likes/comments: '+(err.message||'Database error');hint.textContent='Please refresh and try again.';return}
    const {data:{user}}=await db.auth.getUser();
    const liked=!!user&&(likes||[]).some(x=>x.user_id===user.id);
    like.classList.toggle('liked',liked);like.textContent=liked?'♥ Liked':'♡ Like';
