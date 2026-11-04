@@ -2119,7 +2119,7 @@ logoutBtn.onclick = async () => {
     const previousValue = timeSelect.value;
     timeSelect.replaceChildren(new Option('Anytime', 'Anytime'));
     const options = [];
-    for (let minute = 12 * 60; minute <= 24 * 60 + 4 * 60; minute += 30) {
+    for (let minute = 12 * 60; minute <= 24 * 60 + 3 * 60; minute += 30) {
       const normalized = minute % (24 * 60);
       const hour24 = Math.floor(normalized / 60);
       const mins = normalized % 60;
@@ -2134,7 +2134,7 @@ logoutBtn.onclick = async () => {
     } else {
       timeSelect.value = 'Anytime';
     }
-    hint.textContent = 'Choose your preferred time between 12:00 PM and 4:00 AM, or select Anytime. Our team will confirm the actual availability.';
+    hint.textContent = 'Choose your preferred time between 12:00 PM and 3:00 AM, or select Anytime. Our team will confirm the actual availability.';
   }
 
   function setSelectedGirl(profile) {
