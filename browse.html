@@ -1650,11 +1650,14 @@ async function openGirlProfile(p) {
 
 
   } catch (error) {
-    console.error("Could not load profile details:", error);
-    if (!hasSavedDetails) {
+    console.error("Could not load supplementary profile photos/details:", error);
+    // The profile's structured database fields or saved extract may already
+    // have loaded successfully. Do not replace those details just because the
+    // separate profile API (used for supplementary photos/options) failed.
+    if (!hasSavedDetails && !hasStructuredDetails) {
       detailsPanel.textContent =
-        "Additional profile details could not be loaded.";
-      toast("Could not load profile details. Try again.");
+        "Additional profile details are temporarily unavailable.";
+      toast("Some supplementary profile information could not be loaded.");
     }
   }
 }
