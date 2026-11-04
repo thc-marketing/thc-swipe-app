@@ -1298,7 +1298,7 @@ async function openGirlProfile(p) {
   (async()=>{
     try {
       const fdb=window.thcSupabase||window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
-      const {data:comp,error:compErr}=await fdb.from("companion_profiles").select("creator_user_id").eq("id",p.id).maybeSingle();
+      const {data:comp,error:compErr}=await fdb.from("companion_profiles").select("creator_user_id,photos,photo_url").eq("id",p.id).maybeSingle();
       if(compErr)throw compErr;
       const creatorId=comp?.creator_user_id;
       if(!creatorId){followBtn.disabled=true;followNote.textContent="Follow is not available for this profile yet.";return}
@@ -1321,6 +1321,35 @@ async function openGirlProfile(p) {
   mainPhoto.src = p.photo || "";
   mainPhoto.alt = p.displayName || "Profile photo";
   gallery.replaceChildren();
+  let adminGalleryPhotos=[];
+  try{
+    const gdb=window.thcSupabase||window.supabase.createClient("https://dvvyqpdaoprzrarotuin.supabase.co","sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24");
+    const {data:galleryRow,error:galleryError}=await gdb.from("companion_profiles").select("photos,photo_url").eq("id",p.id).maybeSingle();
+    if(galleryError)throw galleryError;
+    adminGalleryPhotos=Array.isArray(galleryRow?.photos)?galleryRow.photos.filter(url=>typeof url==="string"&&/^https:\/\//i.test(url)):[];
+    if(galleryRow?.photo_url&&/^https:\/\//i.test(galleryRow.photo_url))adminGalleryPhotos=[galleryRow.photo_url,...adminGalleryPhotos];
+  }catch(galleryError){console.warn("Admin gallery could not load:",galleryError)}
+  adminGalleryPhotos=[...new Set(adminGalleryPhotos)];
+  const allGalleryPhotos=adminGalleryPhotos.length?adminGalleryPhotos:[p.photo].filter(Boolean);
+  if(allGalleryPhotos.length){
+    const lightbox=document.createElement("div");
+    lightbox.style.cssText="display:none;position:fixed;inset:0;z-index:100100;background:#050308ed;align-items:center;justify-content:center;padding:18px";
+    lightbox.setAttribute("role","dialog");lightbox.setAttribute("aria-modal","true");lightbox.setAttribute("aria-label",p.displayName+" photo gallery");
+    const image=document.createElement("img");image.alt=p.displayName+" photo";image.style.cssText="max-width:100%;max-height:82vh;object-fit:contain;border-radius:12px";
+    const close=document.createElement("button");close.type="button";close.textContent="×";close.style.cssText="position:absolute;right:18px;top:16px;font-size:34px;background:#211925;color:white;border:0;border-radius:50%;width:46px;height:46px";
+    const prev=document.createElement("button");prev.type="button";prev.textContent="‹";prev.style.cssText="position:absolute;left:14px;top:50%;font-size:34px";
+    const next=document.createElement("button");next.type="button";next.textContent="›";next.style.cssText="position:absolute;right:14px;top:50%;font-size:34px";
+    const count=document.createElement("small");count.style.cssText="position:absolute;bottom:18px;color:white";
+    let photoIndex=0;const paintLightbox=()=>{image.src=allGalleryPhotos[photoIndex];count.textContent=(photoIndex+1)+" / "+allGalleryPhotos.length;prev.hidden=allGalleryPhotos.length<2;next.hidden=allGalleryPhotos.length<2};
+    const closeLightbox=()=>{lightbox.style.display="none"};
+    close.onclick=closeLightbox;lightbox.addEventListener("click",event=>{if(event.target===lightbox)closeLightbox()});
+    prev.onclick=()=>{photoIndex=(photoIndex-1+allGalleryPhotos.length)%allGalleryPhotos.length;paintLightbox()};
+    next.onclick=()=>{photoIndex=(photoIndex+1)%allGalleryPhotos.length;paintLightbox()};
+    lightbox.append(image,close,prev,next,count);document.body.append(lightbox);
+    mainPhoto.style.cursor="zoom-in";mainPhoto.title="Tap to view photo gallery";
+    mainPhoto.onclick=()=>{photoIndex=0;paintLightbox();lightbox.style.display="flex"};
+    allGalleryPhotos.forEach((url,index)=>{const thumb=document.createElement("button");thumb.type="button";thumb.style.cssText="padding:0;border:0;background:none;overflow:hidden;border-radius:8px;cursor:pointer";const pic=document.createElement("img");pic.src=url;pic.alt=p.displayName+" gallery photo "+(index+1);pic.loading="lazy";pic.style.cssText="display:block;width:100%;aspect-ratio:1;object-fit:cover";thumb.append(pic);thumb.onclick=()=>{photoIndex=index;paintLightbox();lightbox.style.display="flex"};gallery.append(thumb)});
+  }else{mainPhoto.onclick=null;mainPhoto.style.cursor="default"}
 
   let detailsPanel = $("girlProfileDetails");
 
@@ -1389,7 +1418,7 @@ async function openGirlProfile(p) {
 
     const data = await response.json();
     const photoSources = [
-      data.photos, data.images, data.gallery, data.profilePhotos,
+      adminGalleryPhotos, data.photos, data.images, data.gallery, data.profilePhotos,
       data.profile_photos, data.photoList, data.photo_list,
       data.details?.photos, data.details?.images, data.details?.gallery
     ];
