@@ -1724,14 +1724,24 @@ logoutBtn.hidden = true;
 document.body.appendChild(logoutBtn);
 
 logoutBtn.onclick = async () => {
-  const { error } = await client.auth.signOut();
-  if (error) {
-    say(error.message, true);
-    return;
+  if (logoutBtn.disabled) return;
+  logoutBtn.disabled = true;
+  logoutBtn.textContent = "Signing out…";
+  say("");
+  try {
+    const { error } = await client.auth.signOut({ scope: "local" });
+    if (error) throw error;
+    logoutBtn.hidden = true;
+    gate.style.display = "flex";
+    form.reset();
+    setMode("login");
+    say("You have been securely signed out.");
+  } catch (error) {
+    say("Could not complete logout. Please check your connection and try again. " + (error.message || ""), true);
+  } finally {
+    logoutBtn.disabled = false;
+    logoutBtn.textContent = "Log out";
   }
-  logoutBtn.hidden = true;
-  gate.style.display = "flex";
-  setMode("login");
 };
   const form = $("realAuthForm");
   const message = $("authMessage");
@@ -1823,7 +1833,14 @@ logoutBtn.onclick = async () => {
   });
 
   client.auth.onAuthStateChange((event, session) => {
-    if (session) gate.style.display = "none";
+    if (event === "SIGNED_OUT" || !session) {
+      gate.style.display = "flex";
+      logoutBtn.hidden = true;
+      setMode("login");
+    } else {
+      gate.style.display = "none";
+      logoutBtn.hidden = false;
+    }
   });
 })();
 
