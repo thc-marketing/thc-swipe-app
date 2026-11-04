@@ -60,6 +60,7 @@ button:active{transform:scale(.98)}
 <div id="creatorAccountsStatus" class="status">Checking administrator access…</div>
 <div id="creatorAccountsList"></div>
 <div id="creatorAccountsResult"></div>
+<div id="companionProfileEditor" class="card" hidden style="margin-top:18px"><h3 id="companionEditorTitle">Edit girl profile</h3><input id="companionEditId" type="hidden"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"><label>Display name<input id="cpName" class="field" maxlength="120"></label><label>Age<input id="cpAge" class="field" maxlength="30"></label><label>Rank<input id="cpRank" class="field" maxlength="80"></label><label>Area / location<input id="cpArea" class="field" maxlength="120"></label><label>Availability label<input id="cpAvailability" class="field" maxlength="120"></label><label>Profile photo URL<input id="cpPhoto" class="field" type="url"></label><label>Public profile URL<input id="cpProfileUrl" class="field" type="url"></label><label>Booking URL<input id="cpBookingUrl" class="field" type="url"></label></div><label>Bio<textarea id="cpBio" class="field" rows="4" maxlength="5000"></textarea></label><label>Additional services (one per line)<textarea id="cpServices" class="field" rows="3"></textarea></label><label>Personal options (one per line)<textarea id="cpOptions" class="field" rows="3"></textarea></label><label>Details JSON<textarea id="cpDetails" class="field" rows="5" spellcheck="false"></textarea></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="primary" id="saveCompanionProfile">Save profile</button><button type="button" id="cancelCompanionEdit">Cancel</button></div><p id="companionEditStatus" class="muted"></p></div>
 </section>
 <section class="panel hidden" id="officialAnnouncementsSection">
 <div class="panel-heading"><div><h2>Official THC Announcements</h2><p class="muted section-note">Publish promotions and announcements from Tokyo Hentai Club to the customer feed.</p></div><span class="pill-status">Official Brand</span></div>
@@ -231,24 +232,17 @@ button:active{transform:scale(.98)}
  }
 
  async function loadCreatorAccounts(){
-  const box=$('creatorAccountsList');box.replaceChildren();$('creatorAccountsResult').replaceChildren();
-  $('creatorAccountsStatus').textContent='Checking administrator access…';
-  const {data:{user},error:ue}=await db.auth.getUser();
-  if(ue||!user){$('creatorAccountsStatus').textContent='Sign in with the THC administrator account.';return}
-  const {data:admin,error:ae}=await db.from('creator_admins').select('user_id').eq('user_id',user.id).maybeSingle();
-  if(ae||!admin){$('creatorAccountsStatus').textContent='Access denied. This account is not a THC administrator.';return}
-  const {data:rows,error}=await db.from('companion_profiles').select('id,display_name,creator_user_id').eq('is_active',true).eq('is_published',true).order('display_name');
-  if(error){$('creatorAccountsStatus').textContent='Could not load creator profiles: '+error.message;return}
-  $('creatorAccountsStatus').textContent=rows.length+' active published profiles. Accounts already linked are marked as created.';
-  for(const p of rows){
-   const line=document.createElement('div');line.className='creator-row';
-   const name=document.createElement('strong');name.textContent=p.display_name||'Creator';
-   const state=document.createElement('p');state.className='muted';state.textContent=p.creator_user_id?'Account linked':'No creator login yet';
-   const btn=document.createElement('button');btn.textContent=p.creator_user_id?'Already created':'Create login';btn.disabled=!!p.creator_user_id;
-   btn.onclick=()=>createCreatorAccount(p,btn);
-   const info=document.createElement('div');info.append(name,state);line.append(info,btn);box.append(line);
-  }
+ const box=$('creatorAccountsList');box.replaceChildren();$('creatorAccountsResult').replaceChildren();$('companionProfileEditor').hidden=true;$('creatorAccountsStatus').textContent='Checking administrator access…';
+ const {data:{user},error:ue}=await db.auth.getUser();if(ue||!user){$('creatorAccountsStatus').textContent='Sign in with the THC administrator account.';return}
+ const {data:admin,error:ae}=await db.from('creator_admins').select('user_id').eq('user_id',user.id).maybeSingle();if(ae||!admin){$('creatorAccountsStatus').textContent='Access denied. This account is not a THC administrator.';return}
+ const {data:rows,error}=await db.from('companion_profiles').select('id,display_name,age,rank,area,bio,availability_label,photo_url,profile_url,booking_url,details,additional_services,personal_options,is_published,is_active,creator_user_id').order('display_name');
+ if(error){$('creatorAccountsStatus').textContent='Could not load profiles: '+error.message;return}
+ $('creatorAccountsStatus').textContent=rows.length+' girl profiles. Edit profile details or manage creator logins.';
+ for(const p of rows){const line=document.createElement('div');line.className='creator-row';const info=document.createElement('div');const name=document.createElement('strong');name.textContent=p.display_name||'Creator';const state=document.createElement('p');state.className='muted';state.textContent=(p.is_active?'Active':'Inactive')+' · '+(p.is_published?'Published':'Unpublished')+' · '+(p.creator_user_id?'Account linked':'No creator login');info.append(name,state);const actions=document.createElement('div');actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap';const edit=document.createElement('button');edit.type='button';edit.textContent='Edit profile';edit.onclick=()=>openCompanionEditor(p);const btn=document.createElement('button');btn.textContent=p.creator_user_id?'Already created':'Create login';btn.disabled=!!p.creator_user_id;btn.onclick=()=>createCreatorAccount(p,btn);actions.append(edit,btn);line.append(info,actions);box.append(line)}
  }
+ function openCompanionEditor(p){$('companionEditId').value=p.id;$('companionEditorTitle').textContent='Edit profile · '+(p.display_name||'Girl');$('cpName').value=p.display_name||'';$('cpAge').value=p.age||'';$('cpRank').value=p.rank||'';$('cpArea').value=p.area||'';$('cpAvailability').value=p.availability_label||'';$('cpPhoto').value=p.photo_url||'';$('cpProfileUrl').value=p.profile_url||'';$('cpBookingUrl').value=p.booking_url||'';$('cpBio').value=p.bio||'';$('cpServices').value=(p.additional_services||[]).join('\n');$('cpOptions').value=(p.personal_options||[]).join('\n');$('cpDetails').value=JSON.stringify(p.details||{},null,2);$('companionEditStatus').textContent='';$('companionProfileEditor').hidden=false;$('companionProfileEditor').scrollIntoView({behavior:'smooth',block:'center'})}
+ $('cancelCompanionEdit').onclick=()=>{$('companionProfileEditor').hidden=true};
+ $('saveCompanionProfile').onclick=async()=>{const btn=$('saveCompanionProfile');btn.disabled=true;$('companionEditStatus').textContent='Saving profile…';try{const details=JSON.parse($('cpDetails').value||'{}');if(!details||Array.isArray(details)||typeof details!=='object')throw new Error('Details must be a JSON object.');const lines=id=>$(id).value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);const patch={display_name:$('cpName').value.trim(),age:$('cpAge').value.trim()||null,rank:$('cpRank').value.trim()||null,area:$('cpArea').value.trim()||null,availability_label:$('cpAvailability').value.trim()||null,photo_url:$('cpPhoto').value.trim()||null,profile_url:$('cpProfileUrl').value.trim()||null,booking_url:$('cpBookingUrl').value.trim()||null,bio:$('cpBio').value.trim()||null,additional_services:lines('cpServices'),personal_options:lines('cpOptions'),details,updated_at:new Date().toISOString()};if(!patch.display_name)throw new Error('Display name is required.');const {data,error}=await db.from('companion_profiles').update(patch).eq('id',$('companionEditId').value).select('id').maybeSingle();if(error)throw error;if(!data)throw new Error('No profile was updated. Check administrator permissions.');$('companionEditStatus').textContent='Profile saved successfully.';await loadCreatorAccounts();$('companionProfileEditor').hidden=true;say('Girl profile updated: '+patch.display_name)}catch(e){$('companionEditStatus').textContent='Save failed: '+(e.message||String(e))}finally{btn.disabled=false}};
  async function createCreatorAccount(p,btn){
   if(!window.confirm('Create a Creator Hub login for '+p.display_name+'?'))return;
   btn.disabled=true;btn.textContent='Creating…';$('creatorAccountsResult').replaceChildren();
