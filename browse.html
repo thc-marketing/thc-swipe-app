@@ -271,6 +271,7 @@ if(routeParams.get('booking')==='1') document.body.classList.add('booking-only')
 const API_URL = "https://833d8cc1-thc-live-profiles.thc-girls.workers.dev/";
 // Set this to the deployed thc-schedule-api Worker URL. Keep the profile API above unchanged.
 const SCHEDULE_API_URL = "https://thc-schedule-api.thc-girls.workers.dev/";
+let user = null;
 let profiles = []
 let index = 0;
 const previousIndexes = [];
@@ -533,6 +534,11 @@ async function loadProfiles() {
       openWhenReady();
     }
   } catch (error) {
+    const directoryCount = $("directoryCount");
+    if (directoryCount) {
+      directoryCount.textContent = "Profiles could not load: " + String(error && error.message || "Connection error") + ". Tap Retry below.";
+      directoryCount.style.color = "#ff9eae";
+    }
     $("name").textContent = "Profiles unavailable";
     $("status").textContent = "PLEASE TRY AGAIN";
     $("bio").textContent = "Imported profiles could not load (" + String(error && error.message || "unknown error") + "). Please retry.";
@@ -1831,7 +1837,8 @@ logoutBtn.onclick = async () => {
   });
 
   client.auth.getUser().then(({ data, error }) => {
-    if (error || !data?.user) {
+    user = data?.user || null;
+    if (error || !user) {
       location.replace("/login.html?next="+encodeURIComponent(location.pathname+location.search));
       return;
     }
@@ -1843,6 +1850,7 @@ logoutBtn.onclick = async () => {
   });
 
   client.auth.onAuthStateChange((event, session) => {
+    user = session?.user || null;
     if (event === "SIGNED_OUT" || !session) {
       gate.style.display = "flex";
       logoutBtn.hidden = true;
