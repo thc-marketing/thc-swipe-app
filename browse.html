@@ -1328,6 +1328,7 @@ async function openGirlProfile(p) {
     if(galleryError)throw galleryError;
     adminGalleryPhotos=Array.isArray(galleryRow?.photos)?galleryRow.photos.filter(url=>typeof url==="string"&&/^https:\/\//i.test(url)):[];
     if(galleryRow?.photo_url&&/^https:\/\//i.test(galleryRow.photo_url))adminGalleryPhotos=[galleryRow.photo_url,...adminGalleryPhotos];
+    if(adminGalleryPhotos.length)mainPhoto.src=adminGalleryPhotos[0];
   }catch(galleryError){console.warn("Admin gallery could not load:",galleryError)}
   adminGalleryPhotos=[...new Set(adminGalleryPhotos)];
   const allGalleryPhotos=adminGalleryPhotos.length?adminGalleryPhotos:[p.photo].filter(Boolean);
