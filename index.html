@@ -373,7 +373,7 @@ body.auth-checking main{visibility:hidden!important}
   if(reset){offset=0;$('posts').replaceChildren();}
   $('feedStatus').textContent='Loading posts…';
   try{
-   if(reset){try{await loadOfficialAnnouncements()}catch(e){console.warn('Official announcements unavailable; continuing with creator feed:',e)}}
+   if(reset){loadOfficialAnnouncements().catch(e=>console.warn('Official announcements unavailable; continuing with creator feed:',e));}
    const {data:previews,error:previewError}=await db.rpc('list_creator_post_previews',{p_limit:10,p_offset:offset});
    if(previewError)throw previewError;
    const freeMedia=new Map();
@@ -404,21 +404,20 @@ body.auth-checking main{visibility:hidden!important}
     const profileId=profileIdByCreator.get(p.creator_id);
     if(profileId){const link=document.createElement('a');link.href='browse.html?profile='+encodeURIComponent(profileId);link.style.cssText='display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none';link.setAttribute('aria-label','View '+(p.display_name||'creator')+' profile');link.append(avatar,name);head.append(link);}else{head.append(avatar,name);}
     c.append(head);
-    const caption=document.createElement('p');caption.style.whiteSpace='pre-wrap';caption.textContent=p.caption||'';c.append(caption);
+    const caption=document.createElement('p');caption.style.whiteSpace='pre-wrap';caption.textContent=p.caption||'';c.append(caption);$('posts').append(c);
     if(p.is_paid){
      if(p.preview_media_url){
-      try{
-       const {data:preview,error}=await db.storage.from('creator-media').createSignedUrl(p.preview_media_url,3600);
+      void db.storage.from('creator-media').createSignedUrl(p.preview_media_url,3600).then(({data:preview,error})=>{
        if(!error&&preview?.signedUrl){
         const wrap=document.createElement('div');wrap.className='locked-preview';
         const img=document.createElement('img');img.src=preview.signedUrl;img.alt='Blurred premium content preview';
         const overlay=document.createElement('div');overlay.className='locked-overlay';
-        const mark=document.createElement('div');mark.className='lock-mark';mark.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2ZM9 6a3 3 0 0 1 6 0v2H9Zm4 9.73V18h-2v-2.27a2 2 0 1 1 2 0Z"/></svg>';
+        const mark=document.createElement('div');mark.className='lock-mark';mark.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2ZM9 6a3 3 0 0 1 6 0v2H9Zm4 9.73V18h-2v-2.27a2 2 0 1 1 2 0Z"/></svg>';
         const title=document.createElement('div');title.className='locked-title';title.textContent='PREMIUM CONTENT';
         const sub=document.createElement('div');sub.className='locked-sub';sub.textContent='Purchase to unlock this post';
         overlay.append(mark,title,sub);wrap.append(img,overlay);c.append(wrap);
        }
-      }catch(e){console.warn('Premium preview unavailable:',e)}
+      }).catch(e=>console.warn('Premium preview unavailable:',e));
      }
      const label=document.createElement('div');label.className='meta';label.textContent='PREMIUM POST · ¥'+Number(p.price_yen).toLocaleString('ja-JP');
      const buy=document.createElement('button');buy.type='button';buy.className='buy-button';buy.textContent='BUY NOW · ¥'+Number(p.price_yen).toLocaleString('ja-JP');
@@ -431,11 +430,10 @@ body.auth-checking main{visibility:hidden!important}
      c.append(label,buy);
     }else{
      const path=freeMedia.get(p.post_id);
-     if(path){try{const {data:signed,error}=await db.storage.from('creator-media').createSignedUrl(path,3600);if(!error&&signed?.signedUrl)c.append(media(signed.signedUrl,p.media_type,p.caption));else{const warn=document.createElement('p');warn.className='muted';warn.textContent='Media is temporarily unavailable.';c.append(warn);}}catch(e){console.warn('Free post media unavailable:',e)}}
+     if(path){void db.storage.from('creator-media').createSignedUrl(path,3600).then(({data:signed,error})=>{if(!error&&signed?.signedUrl)c.append(media(signed.signedUrl,p.media_type,p.caption));else{const warn=document.createElement('p');warn.className='muted';warn.textContent='Media is temporarily unavailable.';c.append(warn);}}).catch(e=>console.warn('Free post media unavailable:',e));}
     }
-    if(!p.is_paid)await renderEngagement(p,c);
+    if(!p.is_paid)void renderEngagement(p,c).catch(e=>console.warn('Post engagement unavailable:',e));
     const date=document.createElement('div');date.className='meta';date.textContent=p.published_at?new Date(p.published_at).toLocaleString():'';c.append(date);
-    $('posts').append(c);
    }
    offset+=(previews||[]).length;
    $('feedStatus').textContent=$('posts').children.length?'':'No creator posts yet.';
