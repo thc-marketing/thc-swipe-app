@@ -409,6 +409,7 @@ body.auth-checking main{visibility:hidden!important}
     const caption=document.createElement('p');caption.style.whiteSpace='pre-wrap';caption.textContent=p.caption||'';c.append(caption);$('posts').append(c);
     if(p.is_paid){
      if(p.preview_media_url){
+      const mediaSlot=document.createElement('div');mediaSlot.className='post-media-slot';c.append(mediaSlot);
       void db.storage.from('creator-media').createSignedUrl(p.preview_media_url,3600).then(({data:preview,error})=>{
        if(!error&&preview?.signedUrl){
         const wrap=document.createElement('div');wrap.className='locked-preview';
@@ -417,7 +418,7 @@ body.auth-checking main{visibility:hidden!important}
         const mark=document.createElement('div');mark.className='lock-mark';mark.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2ZM9 6a3 3 0 0 1 6 0v2H9Zm4 9.73V18h-2v-2.27a2 2 0 1 1 2 0Z"/></svg>';
         const title=document.createElement('div');title.className='locked-title';title.textContent='PREMIUM CONTENT';
         const sub=document.createElement('div');sub.className='locked-sub';sub.textContent='Purchase to unlock this post';
-        overlay.append(mark,title,sub);wrap.append(img,overlay);c.append(wrap);
+        overlay.append(mark,title,sub);wrap.append(img,overlay);mediaSlot.replaceChildren(wrap);
        }
       }).catch(e=>console.warn('Premium preview unavailable:',e));
      }
@@ -432,10 +433,10 @@ body.auth-checking main{visibility:hidden!important}
      c.append(label,buy);
     }else{
      const path=freeMedia.get(p.post_id);
-     if(path){void db.storage.from('creator-media').createSignedUrl(path,3600).then(({data:signed,error})=>{if(!error&&signed?.signedUrl)c.append(media(signed.signedUrl,p.media_type,p.caption));else{const warn=document.createElement('p');warn.className='muted';warn.textContent='Media is temporarily unavailable.';c.append(warn);}}).catch(e=>console.warn('Free post media unavailable:',e));}
+     if(path){const mediaSlot=document.createElement('div');mediaSlot.className='post-media-slot';c.append(mediaSlot);void db.storage.from('creator-media').createSignedUrl(path,3600).then(({data:signed,error})=>{if(!error&&signed?.signedUrl)mediaSlot.replaceChildren(media(signed.signedUrl,p.media_type,p.caption));else{const warn=document.createElement('p');warn.className='muted';warn.textContent='Media is temporarily unavailable.';mediaSlot.replaceChildren(warn);}}).catch(e=>console.warn('Free post media unavailable:',e));}
     }
-    if(!p.is_paid)void renderEngagement(p,c).catch(e=>console.warn('Post engagement unavailable:',e));
     const date=document.createElement('div');date.className='meta';date.textContent=p.published_at?new Date(p.published_at).toLocaleString():'';c.append(date);
+    if(!p.is_paid)void renderEngagement(p,c).catch(e=>console.warn('Post engagement unavailable:',e));
    }
    offset+=(previews||[]).length;
    const feedCards=Array.from($('posts').children);
