@@ -374,7 +374,7 @@ body.auth-checking main{visibility:hidden!important}
   if(reset){offset=0;$('posts').replaceChildren();}
   $('feedStatus').textContent='Loading posts…';
   try{
-   if(reset){await loadOfficialAnnouncements();}
+   if(reset){try{await loadOfficialAnnouncements();}catch(e){console.warn('Official announcements unavailable; continuing with creator feed:',e);}}
    const {data:previews,error:previewError}=await db.rpc('list_creator_post_previews',{p_limit:10,p_offset:offset});
    if(previewError)throw previewError;
    const freeMedia=new Map();
