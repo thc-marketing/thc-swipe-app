@@ -86,7 +86,7 @@ async function loadSchedule(){
   if(!result.schedule){content.innerHTML='<div class="empty">Today’s schedule has not been imported yet. Please check back later.</div>';return}
   const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Tokyo'});
   if(result.schedule.schedule_date!==today){content.innerHTML='<div class="empty">The latest imported schedule is for '+result.schedule.schedule_date+'. Today’s schedule has not been imported yet.</div>';return}
-  profiles=Array.isArray(result.schedule.cards)?result.schedule.cards:[];
+  profiles=Array.isArray(result.schedule.cards)?result.schedule.cards.filter(p=>! /booked\s*out/i.test(String(p.status||''))):[];
   document.querySelector('.source-note').innerHTML='<strong>Schedule date:</strong> '+result.schedule.schedule_date+' · '+profiles.length+' scheduled profiles. Individual appointment times remain private.';
   document.getElementById('foot').textContent='Schedule imported '+new Date(result.schedule.imported_at).toLocaleString()+' · Confirm details with staff.';
   render();
