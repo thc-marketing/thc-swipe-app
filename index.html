@@ -352,6 +352,7 @@ body.auth-checking main{visibility:hidden!important}
   if(error)throw error;
   for(const item of (items||[])){
    const card=document.createElement('article');card.className='card official-thc-announcement';
+   card.dataset.createdAt=item.created_at||'';
    card.style.border='1px solid #f24d9877';
    const head=document.createElement('div');head.style.cssText='display:flex;align-items:center;gap:11px;margin-bottom:10px';
    const logo=document.createElement('img');logo.src='thc-logo.png';logo.alt='Tokyo Hentai Club';logo.style.cssText='width:42px;height:42px;object-fit:contain;border-radius:50%;background:#100d14;padding:4px';
@@ -373,7 +374,7 @@ body.auth-checking main{visibility:hidden!important}
   if(reset){offset=0;$('posts').replaceChildren();}
   $('feedStatus').textContent='Loading posts…';
   try{
-   if(reset){loadOfficialAnnouncements().catch(e=>console.warn('Official announcements unavailable; continuing with creator feed:',e));}
+   if(reset){await loadOfficialAnnouncements();}
    const {data:previews,error:previewError}=await db.rpc('list_creator_post_previews',{p_limit:10,p_offset:offset});
    if(previewError)throw previewError;
    const freeMedia=new Map();
@@ -398,6 +399,7 @@ body.auth-checking main{visibility:hidden!important}
    }
    for(const p of (previews||[])){
     const c=document.createElement('article');c.className='card';
+    c.dataset.createdAt=p.published_at||p.created_at||'';
     const head=document.createElement('div');head.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:10px';
     const avatar=document.createElement('img');avatar.src=avatarByCreator.get(p.creator_id)||'';avatar.alt=(p.display_name||'Creator')+' profile photo';avatar.style.cssText='width:44px;height:44px;border-radius:50%;object-fit:cover;background:#302530';if(!avatar.src)avatar.style.display='none';
     const name=document.createElement('strong');name.textContent=p.display_name||'THC Creator';
@@ -436,7 +438,16 @@ body.auth-checking main{visibility:hidden!important}
     const date=document.createElement('div');date.className='meta';date.textContent=p.published_at?new Date(p.published_at).toLocaleString():'';c.append(date);
    }
    offset+=(previews||[]).length;
-   $('feedStatus').textContent=$('posts').children.length?'':'No creator posts yet.';
+   const feedCards=Array.from($('posts').children);
+   feedCards.sort((a,b)=>{
+    const aTime=Date.parse(a.dataset.createdAt||'')||0;
+    const bTime=Date.parse(b.dataset.createdAt||'')||0;
+    return bTime-aTime;
+   });
+   const feedFragment=document.createDocumentFragment();
+   for(const card of feedCards)feedFragment.append(card);
+   $('posts').append(feedFragment);
+   $('feedStatus').textContent=$('posts').children.length?'':'No posts yet.';
    $('more').style.display=previews&&previews.length===10?'block':'none';
   }catch(e){console.error('Creator feed load failed:',e);$('feedStatus').textContent='Feed error: '+(e?.message||String(e))+(e?.code?' (code '+e.code+')':'')+(e?.hint?' · '+e.hint:'');}
   finally{loading=false;}
