@@ -20,7 +20,7 @@
 (async()=>{
 const URL='https://dvvyqpdaoprzrarotuin.supabase.co',KEY='sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24';
 const db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
-let user=null,room=null,current=null,chatTimer=null,creator=false,processedTrack=null,cameraStream=null,faceMesh=null,rendering=false,activeFilter="none",cameraCanvas=null,cameraVideo=null,latestFaceLandmarks=null;
+let user=null,room=null,current=null,chatTimer=null,creator=false,processedTrack=null,cameraStream=null,faceMesh=null,rendering=false,activeFilter="none",cameraCanvas=null,cameraVideo=null,latestFaceLandmarks=null,rawCameraTrack=null,filterFrame=null;
 const say=t=>$('status').textContent=t;
 async function api(action,extra={}){const {data:{session}}=await db.auth.getSession();if(!session?.access_token)throw new Error('Please sign in again.');const res=await fetch(URL+'/functions/v1/thc-live-control',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':KEY},body:JSON.stringify({action,...extra})});const out=await res.json();if(!res.ok)throw new Error(out.error||'Livestream request failed.');return out}
 async function loadMyLiveRequests(){
@@ -78,33 +78,71 @@ function paintCameraFrame(results){
  if(activeFilter==="beauty"){ctx.save();ctx.globalAlpha=.055;ctx.fillStyle="#ffdce8";ctx.fillRect(0,0,w,h);ctx.restore()}
  const landmarks=results&&results.multiFaceLandmarks&&results.multiFaceLandmarks[0];if(landmarks)drawAccessory(ctx,landmarks,w,h);
 }
+function drawFilterFrame(){
+ if(!cameraCanvas||!cameraVideo||!cameraVideo.videoWidth)return;
+ const ctx=cameraCanvas.getContext("2d"),w=cameraCanvas.width,h=cameraCanvas.height;
+ const sourceW=cameraVideo.videoWidth,sourceH=cameraVideo.videoHeight;
+ const scale=Math.max(w/sourceW,h/sourceH),dw=sourceW*scale,dh=sourceH*scale;
+ const dx=(w-dw)/2,dy=(h-dh)/2;
+ const filters={beauty:"brightness(1.08) saturate(1.12) contrast(.96)",warm:"sepia(.24) saturate(1.22)",cool:"saturate(.92) hue-rotate(12deg) brightness(1.04)",vintage:"sepia(.38) contrast(.92) saturate(.78)",bw:"grayscale(1)"};
+ ctx.save();ctx.filter=filters[activeFilter]||"none";ctx.drawImage(cameraVideo,dx,dy,dw,dh);ctx.restore();
+ if(activeFilter==="beauty"){ctx.save();ctx.globalAlpha=.045;ctx.fillStyle="#ffe2ee";ctx.fillRect(0,0,w,h);ctx.restore()}
+ ctx.save();
+ const cx=w*.5,headY=h*.285,unit=w*.22;
+ if(activeFilter==="cat"){
+  ctx.fillStyle="#f7a5d0";ctx.strokeStyle="#542b49";ctx.lineWidth=7;
+  for(const sign of [-1,1]){const x=cx+sign*unit*.95;ctx.beginPath();ctx.moveTo(x-unit*.55,headY+unit*.55);ctx.lineTo(x-unit*.12,headY-unit*.72);ctx.lineTo(x+unit*.62,headY+unit*.55);ctx.closePath();ctx.fill();ctx.stroke()}
+ }else if(activeFilter==="glasses"){
+  ctx.strokeStyle="#211522";ctx.fillStyle="#ffffff28";ctx.lineWidth=9;
+  for(const x of [cx-unit*.52,cx+unit*.52]){ctx.beginPath();ctx.ellipse(x,h*.385,unit*.46,unit*.3,0,0,Math.PI*2);ctx.fill();ctx.stroke()}
+  ctx.beginPath();ctx.moveTo(cx-unit*.08,h*.385);ctx.lineTo(cx+unit*.08,h*.385);ctx.stroke();
+ }else if(activeFilter==="hearts"){
+  ctx.font="64px system-ui";ctx.textAlign="center";ctx.fillText("💖",cx-unit*1.65,headY);ctx.fillText("💕",cx+unit*1.65,headY-unit*.35);ctx.fillText("✨",cx+unit*1.45,h*.49);
+ }
+ ctx.restore();
+}
 async function startFilteredCamera(){
  const grid=$("videoGrid");
- $("filterPanel").classList.add("hidden");
+ $("filterPanel").classList.remove("hidden");
  $("filterStatus").textContent="Starting camera… please allow camera access.";
  try{
   if(!navigator.mediaDevices?.getUserMedia)throw new Error("Camera access is unavailable. Open this page over HTTPS in a supported browser.");
+  // Keep the existing camera constraints unchanged; filters are applied only after capture.
   cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",aspectRatio:{ideal:9/16},width:{ideal:720},height:{ideal:1280}},audio:false});
-  const videoTrack=cameraStream.getVideoTracks()[0];
-  if(!videoTrack||videoTrack.readyState!=="live")throw new Error("The camera opened but did not provide a live video track.");
-  cameraVideo=document.createElement("video");
-  cameraVideo.autoplay=true;cameraVideo.muted=true;cameraVideo.playsInline=true;
-  cameraVideo.srcObject=cameraStream;
+  rawCameraTrack=cameraStream.getVideoTracks()[0];
+  if(!rawCameraTrack||rawCameraTrack.readyState!=="live")throw new Error("The camera opened but did not provide a live video track.");
+  cameraVideo=document.createElement("video");cameraVideo.autoplay=true;cameraVideo.muted=true;cameraVideo.playsInline=true;cameraVideo.srcObject=cameraStream;
   await cameraVideo.play();
   if(!cameraVideo.videoWidth)await new Promise((resolve,reject)=>{
-   const timeout=setTimeout(()=>reject(new Error("Camera started but no picture arrived. Check that another app is not using your camera.")),10000);
+   const timeout=setTimeout(()=>reject(new Error("Camera started but no picture arrived.")),10000);
    cameraVideo.addEventListener("loadeddata",()=>{clearTimeout(timeout);resolve()},{once:true});
    cameraVideo.addEventListener("error",()=>{clearTimeout(timeout);reject(new Error("Could not read the camera video."))},{once:true});
   });
-  if(!cameraVideo.videoWidth)throw new Error("Camera video is blank. Check browser camera permissions and try another camera.");
-  processedTrack=videoTrack;
-  const preview=document.createElement("video");
-  preview.autoplay=true;preview.muted=true;preview.playsInline=true;
-  preview.srcObject=cameraStream;
-  grid.replaceChildren(preview);
-  await preview.play();
-  await room.localParticipant.publishTrack(videoTrack,{source:LivekitClient.Track.Source.Camera});
-  $("filterStatus").textContent="Camera connected.";
+  if(!cameraVideo.videoWidth)throw new Error("Camera video is blank. Check browser camera permissions.");
+  // Publish the proven working camera first so filter setup can never leave a black stream.
+  await room.localParticipant.publishTrack(rawCameraTrack,{source:LivekitClient.Track.Source.Camera});
+  const preview=document.createElement("video");preview.autoplay=true;preview.muted=true;preview.playsInline=true;preview.srcObject=cameraStream;grid.replaceChildren(preview);await preview.play();
+  try{
+   cameraCanvas=document.createElement("canvas");cameraCanvas.width=720;cameraCanvas.height=1280;
+   drawFilterFrame();
+   const output=cameraCanvas.captureStream(24),filteredTrack=output.getVideoTracks()[0];
+   if(!filteredTrack)throw new Error("Could not create the filtered video track.");
+   rendering=true;
+   const render=()=>{if(!rendering)return;drawFilterFrame();filterFrame=requestAnimationFrame(render)};
+   filterFrame=requestAnimationFrame(render);
+   await room.localParticipant.publishTrack(filteredTrack,{source:LivekitClient.Track.Source.Camera});
+   try{await room.localParticipant.unpublishTrack(rawCameraTrack)}catch(e){}
+   processedTrack=filteredTrack;
+   const filteredStream=new MediaStream([filteredTrack]);
+   preview.srcObject=filteredStream;await preview.play();
+   $("filterStatus").textContent="Filters are ready. Choose an effect; viewers will see it. Camera settings are unchanged.";
+  }catch(filterError){
+   console.warn("Filter processing unavailable; keeping the original camera",filterError);
+   rendering=false;if(filterFrame)cancelAnimationFrame(filterFrame);filterFrame=null;
+   if(processedTrack){try{await room.localParticipant.unpublishTrack(processedTrack)}catch(e){}processedTrack.stop();processedTrack=null}
+   cameraCanvas=null;
+   $("filterStatus").textContent="Camera is working. Filters could not start, so the original camera is kept active.";
+  }
   await room.localParticipant.setMicrophoneEnabled(true);
  }catch(e){
   await stopFilteredCamera();
@@ -113,13 +151,15 @@ async function startFilteredCamera(){
  }
 }
 async function stopFilteredCamera(){
- rendering=false;
+ rendering=false;if(filterFrame)cancelAnimationFrame(filterFrame);filterFrame=null;
  if(faceMesh){try{await faceMesh.close()}catch(e){}faceMesh=null}
  if(processedTrack&&room){try{await room.localParticipant.unpublishTrack(processedTrack)}catch(e){}}
  if(processedTrack){processedTrack.stop();processedTrack=null}
+ if(rawCameraTrack&&room){try{await room.localParticipant.unpublishTrack(rawCameraTrack)}catch(e){}}
+ rawCameraTrack=null;
  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
  if(cameraVideo){cameraVideo.pause();cameraVideo.srcObject=null;cameraVideo=null}
- cameraCanvas=null;
+ cameraCanvas=null;latestFaceLandmarks=null;
 }
 
 async function enter(data){current=data.session;room=new LivekitClient.Room({adaptiveStream:true,dynacast:true});room.on(LivekitClient.RoomEvent.TrackSubscribed,(track,p)=>attachTrack(track,p));room.on(LivekitClient.RoomEvent.TrackUnsubscribed,(track)=>track.detach().forEach(el=>el.remove()));room.on(LivekitClient.RoomEvent.LocalTrackPublished,track=>{if(track.kind==='video')attachTrack(track,room.localParticipant,true)});room.on(LivekitClient.RoomEvent.Disconnected,()=>{$('videoGrid').replaceChildren()});await room.connect(data.serverUrl,data.token);room.on(LivekitClient.RoomEvent.ParticipantConnected,updateViewerCount);room.on(LivekitClient.RoomEvent.ParticipantDisconnected,updateViewerCount);updateViewerCount();$('roomTitle').textContent=current.title;$('roomDescription').textContent=current.description||'';$('overlayTitle').childNodes[0].textContent=current.title||'Live now';$('overlayDescription').textContent=current.description||'';$('room').classList.remove('hidden');$('liveList').classList.add('hidden');$('startCard').classList.add('hidden');const isCreator=data.role==='creator'||data.role==='host';$('end').classList.toggle('hidden',!isCreator);if(isCreator){try{await startFilteredCamera()}catch(cameraError){$('videoGrid').textContent='Could not start your camera: '+(cameraError?.message||String(cameraError));throw cameraError}}for(const p of room.remoteParticipants.values())for(const pub of p.trackPublications.values())if(pub.videoTrack||pub.track)attachTrack(pub.videoTrack||pub.track,p);await loadChat();if(chatTimer)clearInterval(chatTimer);chatTimer=setInterval(loadChat,3000);if(viewerCountTimer)clearInterval(viewerCountTimer);viewerCountTimer=setInterval(updateViewerCount,2000)}
