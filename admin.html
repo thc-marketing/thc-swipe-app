@@ -8,7 +8,7 @@
 <section id="checking" class="card"><h1>Admin Dashboard</h1><p class="muted">Checking your account permissions…</p></section>
 <section id="denied" class="card hidden"><h1>Admin access required</h1><p id="deniedText" class="muted">Please sign in with an authorized admin account.</p><a href="./login.html">Go to sign in</a></section>
 <section id="dashboard" class="hidden"><h1>Admin Dashboard</h1><p class="muted">Manage internal tools for Tokyo Hentai Club.</p>
-<div class="card"><h2>Daily Schedule</h2><p class="muted">Import the latest official homepage schedule. Appointment times are not stored or displayed in Available Today.</p><a class="link" href="./schedule-sync.html">Open Schedule Sync</a></div>
+<div class="card"><h2>Livestream Approvals</h2><p class="muted">Review creator requests before streams become visible to customers.</p><div id="liveApprovalStatus" class="muted">Loading requests…</div><div id="liveApprovalList"></div><button id="refreshLiveApprovals" type="button">Refresh requests</button></div>\n<div class="card"><h2>Daily Schedule</h2><p class="muted">Import the latest official homepage schedule. Appointment times are not stored or displayed in Available Today.</p><a class="link" href="./schedule-sync.html">Open Schedule Sync</a></div>
 <div class="card"><a href="./available.html">View Available Today</a> · <a href="./profiles.html">View All Profiles</a></div></section>
 </main><script>
 (async()=>{
@@ -24,7 +24,7 @@
   const {data:admin,error:adminError}=await db.from('creator_admins').select('user_id').eq('user_id',session.user.id).maybeSingle();
   if(adminError)throw adminError;
   if(!admin){$('denied').classList.remove('hidden');$('deniedText').textContent='This account is not authorized to access the admin dashboard.';return}
-  $('dashboard').classList.remove('hidden');
+  $('dashboard').classList.remove('hidden');\n  loadLiveApprovals();
  }catch(e){$('checking').innerHTML='<h1>Could not verify access</h1><p class="muted">'+String(e.message||e)+'</p>'}
 })();
 </script></body></html>
