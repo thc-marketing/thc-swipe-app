@@ -54,7 +54,7 @@ button:active{transform:scale(.98)}
 <div id="queue"></div>
 </section>
 
-<section class="panel hidden" id="livestreamApprovalSection"><div class="panel-heading"><div><h2>Livestream Approval</h2><p class="muted section-note">Review, end, and delete livestream requests and stream records.</p></div><span class="pill-status">Live Moderation</span></div><div id="livestreamApprovalQueue" class="status">Loading livestream requests…</div></section>
+<section class="panel hidden" id="livestreamApprovalSection"><div class="panel-heading"><div><h2>Livestream Approval & Controls</h2><p class="muted section-note">Review requests, end broadcasts, and delete livestream records.</p></div><div class="toolbar"><button type="button" id="testLiveKitConnection">Test LiveKit connection</button><span class="pill-status">Live Moderation</span></div></div><div id="livestreamApprovalQueue" class="status">Loading livestream requests…</div></section>
 <section class="panel hidden" id="storyReviewSection"><div class="panel-heading"><div><h2>Story Approval</h2><p class="muted section-note">Stories stay private until an administrator approves them. Approved stories remain visible until they expire.</p></div><span class="pill-status">Story Moderation</span></div><div id="storyReviewQueue"></div></section>
 <section class="panel hidden" id="creatorAccountsSection">
 <div class="panel-heading"><div><h2>Creator Accounts</h2><p class="muted section-note">Create and manage individual Creator Hub logins for active, published profiles.</p></div><span class="pill-status">Access Setup</span></div>
@@ -125,6 +125,7 @@ button:active{transform:scale(.98)}
   if(!response.ok)throw new Error(result.error||'Livestream approval request failed.');
   return result;
  }
+ $('testLiveKitConnection').onclick=async()=>{const btn=$('testLiveKitConnection');btn.disabled=true;btn.textContent='Testing…';try{const result=await liveAdminAction('test_livekit');say('LiveKit connection successful. Active rooms: '+result.activeRooms)}catch(e){say('LiveKit connection test failed: '+e.message)}finally{btn.disabled=false;btn.textContent='Test LiveKit connection'}};
  async function loadLivestreamApprovalQueue(){
   const box=$('livestreamApprovalQueue'); if(!box)return;
   box.textContent='Loading all livestream records…';
