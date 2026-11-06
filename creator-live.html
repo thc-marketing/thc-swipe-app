@@ -10,6 +10,7 @@
 <header><a class="brand" href="./creator-hub.html">TOKYO HENTAI CLUB</a></header>
 <h1>THC <span style="color:var(--pink)">LIVE</span></h1><p class="muted">Live chats, Q&As and behind-the-scenes sessions with approved creators.</p>
 <section id="startCard" class="card hidden"><h2>Go Live</h2><label>Stream title<input id="liveTitle" class="field" maxlength="80" placeholder="What are you chatting about?"></label><label>Description (optional)<textarea id="liveDescription" class="field" maxlength="240" rows="2" placeholder="Tell viewers what to expect"></textarea></label><button id="startLive" class="primary">Start livestream</button></section>
+<section id="myLiveRequests" class="card hidden"><h2>My livestreams & requests</h2><div id="myLiveRequestsList" class="muted">Loading your livestream records…</div></section>
 <section id="status" class="muted card">Checking your account…</section>
 <section id="liveList"><h2>Live now</h2><div id="sessions"></div></section>
 <section id="room" class="card hidden"><div class="session"><div><span class="live-pill">● LIVE</span><h2 id="roomTitle">Live room</h2><p id="roomDescription" class="muted"></p></div><div class="actions"><button id="report" type="button">Report</button><button id="leave" type="button">Leave</button><button id="end" class="danger hidden" type="button">End stream</button></div></div>
@@ -22,6 +23,30 @@ const db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id)
 let user=null,room=null,current=null,chatTimer=null,creator=false;
 const say=t=>$('status').textContent=t;
 async function api(action,extra={}){const {data:{session}}=await db.auth.getSession();if(!session?.access_token)throw new Error('Please sign in again.');const res=await fetch(URL+'/functions/v1/thc-live-control',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':KEY},body:JSON.stringify({action,...extra})});const out=await res.json();if(!res.ok)throw new Error(out.error||'Livestream request failed.');return out}
+async function loadMyLiveRequests(){
+ if(!creator)return;
+ const box=$('myLiveRequestsList');box.textContent='Loading your livestream records…';
+ try{
+  const result=await api('list_mine');box.replaceChildren();
+  if(!result.requests?.length){box.textContent='You have no previous livestream requests.';$('myLiveRequests').classList.remove('hidden');return}
+  for(const item of result.requests){
+   const card=document.createElement('div');card.className='card';
+   const title=document.createElement('h3');title.textContent=item.title||'Untitled livestream';
+   const meta=document.createElement('p');meta.className='muted';meta.textContent='Status: '+String(item.status).toUpperCase()+' · '+new Date(item.created_at).toLocaleString();
+   const actions=document.createElement('div');actions.className='actions';
+   if(item.status==='live'){
+    const end=document.createElement('button');end.className='danger';end.textContent='End stream';
+    end.onclick=async()=>{if(!confirm('End your livestream now?'))return;end.disabled=true;try{await api('end',{sessionId:item.id});await loadMyLiveRequests();await loadSessions();say('Your livestream has ended.')}catch(e){say(e.message);end.disabled=false}};actions.append(end);
+   }
+   if(item.status!=='live'){
+    const del=document.createElement('button');del.className='danger';del.textContent='Delete request';
+    del.onclick=async()=>{if(!confirm('Delete this livestream record?'))return;del.disabled=true;try{await api('delete',{sessionId:item.id});await loadMyLiveRequests();say('Livestream record deleted.')}catch(e){say(e.message);del.disabled=false}};actions.append(del);
+   }
+   card.append(title,meta,actions);box.append(card);
+  }
+  $('myLiveRequests').classList.remove('hidden');
+ }catch(e){box.textContent='Could not load your livestream records: '+e.message;$('myLiveRequests').classList.remove('hidden')}
+}
 async function loadSessions(){const {data,error}=await db.from('live_sessions').select('id,title,description,started_at,creator_id').eq('status','live').order('started_at',{ascending:false});if(error){$('sessions').textContent=error.message;return}const root=$('sessions');root.replaceChildren();if(!data?.length){root.innerHTML='<div class="card muted">No one is live right now. Check back soon.</div>';return}const ids=[...new Set(data.map(s=>s.creator_id).filter(Boolean))];let names=new Map();if(ids.length){const {data:profiles}=await db.from('creator_profiles').select('user_id,display_name').in('user_id',ids);names=new Map((profiles||[]).map(p=>[p.user_id,p.display_name]))}for(const s of data){const card=document.createElement('div');card.className='card session';const info=document.createElement('div');const title=document.createElement('h3');title.textContent=s.title;const desc=document.createElement('p');desc.className='muted';desc.textContent=(names.get(s.creator_id)||'THC Creator')+' · '+(s.description||'Live now');info.append(title,desc);const b=document.createElement('button');b.className='primary';b.textContent='Watch live';b.onclick=()=>join(s.id);card.append(info,b);root.append(card)}}
 function attachTrack(track,participant){if(!track||track.kind!=='video')return;const el=track.attach();el.autoplay=true;el.playsInline=true;el.dataset.participant=participant.identity;$('videoGrid').append(el)}
 async function enter(data){current=data.session;room=new LivekitClient.Room({adaptiveStream:true,dynacast:true});room.on(LivekitClient.RoomEvent.TrackSubscribed,(track,p)=>attachTrack(track,p));room.on(LivekitClient.RoomEvent.TrackUnsubscribed,(track)=>track.detach().forEach(el=>el.remove()));room.on(LivekitClient.RoomEvent.Disconnected,()=>{$('videoGrid').replaceChildren()});await room.connect(data.serverUrl,data.token);$('roomTitle').textContent=current.title;$('roomDescription').textContent=current.description||'';$('room').classList.remove('hidden');$('liveList').classList.add('hidden');$('startCard').classList.add('hidden');$('end').classList.toggle('hidden',data.role!=='creator');if(data.role==='creator'){await room.localParticipant.setCameraEnabled(true);await room.localParticipant.setMicrophoneEnabled(true)}for(const p of room.remoteParticipants.values())for(const pub of p.trackPublications.values())if(pub.track)attachTrack(pub.track,p);await loadChat();if(chatTimer)clearInterval(chatTimer);chatTimer=setInterval(loadChat,3000)}
@@ -33,6 +58,6 @@ $('leave').onclick=leave;
 $('end').onclick=async()=>{if(!current)return;try{await api('end',{sessionId:current.id});await leave();say('Livestream ended.')}catch(e){say(e.message)}};
 $('report').onclick=async()=>{if(!current)return;const reason=prompt('What is the issue with this livestream?');if(!reason)return;const {error}=await db.from('live_room_reports').insert({live_session_id:current.id,reporter_id:user.id,reason:reason.slice(0,500)});say(error?error.message:'Report submitted. Thank you.')};
 $('startLive').onclick=async()=>{try{const b=$('startLive');b.disabled=true;say('Sending livestream request…');const data=await api('start',{title:$('liveTitle').value,description:$('liveDescription').value});const requestId=data.session.id;say('Request sent to admin. Waiting for approval…');const wait=setInterval(async()=>{const {data:check}=await db.from('live_sessions').select('status').eq('id',requestId).maybeSingle();if(check?.status==='live'){clearInterval(wait);try{const live=await api('join',{sessionId:requestId,creatorMode:true});await enter(live);say('Your livestream is approved. You are live.')}catch(e){say(e.message)}}else if(check?.status==='ended'){clearInterval(wait);say('Your livestream request was not approved.')}},4000)}catch(e){say(e.message)}finally{$('startLive').disabled=false}};
-try{const {data:{user:u},error}=await db.auth.getUser();if(error||!u){location.replace('./creator-login.html');return}user=u;const {data:p}=await db.from('creator_profiles').select('is_creator,is_approved').eq('user_id',u.id).maybeSingle();creator=!!p?.is_creator&&!!p?.is_approved;if(creator)$('startCard').classList.remove('hidden');else{location.replace('./creator-login.html');return;}say(creator?'Creator access approved. You can go live or watch a stream.':'Signed in. Choose a livestream to watch.');await loadSessions();setInterval(loadSessions,10000)}catch(e){say(e.message)}
+try{const {data:{user:u},error}=await db.auth.getUser();if(error||!u){location.replace('./creator-login.html');return}user=u;const {data:p}=await db.from('creator_profiles').select('is_creator,is_approved').eq('user_id',u.id).maybeSingle();creator=!!p?.is_creator&&!!p?.is_approved;if(creator)$('startCard').classList.remove('hidden');else{location.replace('./creator-login.html');return;}say(creator?'Creator access approved. You can go live or watch a stream.':'Signed in. Choose a livestream to watch.');await loadSessions();await loadMyLiveRequests();setInterval(loadSessions,10000);setInterval(loadMyLiveRequests,15000)}catch(e){say(e.message)}
 })();
 </script></body></html>
