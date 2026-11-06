@@ -30,7 +30,7 @@ button:active{transform:scale(.98)}
 .dashboard-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:26px 0 18px}.dashboard-head h1{margin:0 0 5px;font-size:clamp(27px,5vw,38px)}.eyebrow{font-size:11px;letter-spacing:.16em;font-weight:800;color:var(--pink);text-transform:uppercase}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 8px;padding:7px;background:#100d14;border:1px solid #ffffff16;border-radius:14px}.nav button{flex:1;min-width:140px;padding:12px 14px;background:transparent;border:1px solid transparent;color:var(--muted)}.nav button.active{background:linear-gradient(110deg,#f66bab,#e83f8d)!important;color:#190d16!important}.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 0 12px}.panel-heading h2{margin:0}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.creator-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin:9px 0;border:1px solid #ffffff16;border-radius:13px;background:#100d14}.creator-row .muted{margin:4px 0 0}.section-note{margin:5px 0 16px}.pill-status{display:inline-flex;align-items:center;border:1px solid #ffffff20;border-radius:99px;padding:5px 10px;font-size:11px;color:var(--muted)}.panel{min-height:140px}@media(max-width:520px){.creator-row{align-items:flex-start;flex-direction:column}.creator-row button{width:100%}.nav button{min-width:calc(50% - 8px)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>body.admin-auth-checking #adminNav,body.admin-auth-checking #pendingPanel,body.admin-auth-checking #publishedSection,body.admin-auth-checking #creatorAccountsSection,body.admin-auth-checking #storyReviewSection,body.admin-auth-checking #scheduleSyncSection,body.admin-auth-checking #officialAnnouncementsSection,body.admin-auth-checking #refresh,body.admin-auth-checking #logout{display:none!important}</style>
+<style>body.admin-auth-checking #adminNav,body.admin-auth-checking #pendingPanel,body.admin-auth-checking #publishedSection,body.admin-auth-checking #creatorAccountsSection,body.admin-auth-checking #storyReviewSection,body.admin-auth-checking #livestreamApprovalSection,body.admin-auth-checking #scheduleSyncSection,body.admin-auth-checking #officialAnnouncementsSection,body.admin-auth-checking #refresh,body.admin-auth-checking #logout{display:none!important}</style>
 </head>
 <body class="admin-auth-checking"><main class="wrap">
 <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>THC · ADMIN REVIEW</strong></div></header>
@@ -45,6 +45,7 @@ button:active{transform:scale(.98)}
 <button type="button" data-panel="officialAnnouncementsSection">Official THC</button>
 <button type="button" data-panel="publishedSection">Published Posts</button>
 <button type="button" data-panel="storyReviewSection">Story Approval</button>
+<button type="button" data-panel="livestreamApprovalSection">Livestream Approval</button>
 <button type="button" data-panel="creatorAccountsSection">Creator Accounts</button>
 <button type="button" data-panel="scheduleSyncSection">Schedule Sync</button>
 </nav>
@@ -53,6 +54,7 @@ button:active{transform:scale(.98)}
 <div id="queue"></div>
 </section>
 
+<section class="panel hidden" id="livestreamApprovalSection"><div class="panel-heading"><div><h2>Livestream Approval</h2><p class="muted section-note">Review creator livestream requests. Streams are visible to customers only after approval.</p></div><span class="pill-status">Live Moderation</span></div><div id="livestreamApprovalQueue" class="status">Loading livestream requests…</div></section>
 <section class="panel hidden" id="storyReviewSection"><div class="panel-heading"><div><h2>Story Approval</h2><p class="muted section-note">Stories stay private until an administrator approves them. Approved stories remain visible until they expire.</p></div><span class="pill-status">Story Moderation</span></div><div id="storyReviewQueue"></div></section>
 <section class="panel hidden" id="creatorAccountsSection">
 <div class="panel-heading"><div><h2>Creator Accounts</h2><p class="muted section-note">Create and manage individual Creator Hub logins for active, published profiles.</p></div><span class="pill-status">Access Setup</span></div>
@@ -104,11 +106,49 @@ button:active{transform:scale(.98)}
  }
 
  function setAdminPanel(id){
-  ['pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection','officialAnnouncementsSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
+  ['pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','livestreamApprovalSection','scheduleSyncSection','officialAnnouncementsSection'].forEach(panel=>$(panel).classList.toggle('hidden',panel!==id));
   document.querySelectorAll('#adminNav button').forEach(btn=>btn.classList.toggle('active',btn.dataset.panel===id));
  }
  document.querySelectorAll('#adminNav button').forEach(btn=>btn.addEventListener('click',()=>setAdminPanel(btn.dataset.panel)));
 
+
+
+ async function liveAdminAction(action,sessionId){
+  const {data:{session},error}=await db.auth.getSession();
+  if(error||!session?.access_token)throw new Error('Admin session expired. Please sign in again.');
+  const response=await fetch(SUPABASE_URL+'/functions/v1/thc-live-control',{
+   method:'POST',
+   headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SUPABASE_KEY},
+   body:JSON.stringify({action,sessionId})
+  });
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.error||'Livestream approval request failed.');
+  return result;
+ }
+ async function loadLivestreamApprovalQueue(){
+  const box=$('livestreamApprovalQueue');
+  if(!box)return;
+  box.textContent='Loading livestream requests…';
+  try{
+   const result=await liveAdminAction('list_pending');
+   box.replaceChildren();
+   if(!result.requests?.length){box.textContent='No livestream requests waiting for approval.';return}
+   const intro=document.createElement('p');intro.className='muted';intro.textContent=result.requests.length+' request(s) waiting for approval.';box.append(intro);
+   for(const request of result.requests){
+    const card=document.createElement('article');card.className='card';
+    const title=document.createElement('h3');title.textContent=request.title||'Untitled livestream';
+    const creator=document.createElement('p');creator.className='muted';creator.textContent='Creator: '+(request.creator_name||'THC Creator');
+    const description=document.createElement('p');description.textContent=request.description||'No description provided.';
+    const date=document.createElement('p');date.className='muted';date.textContent='Requested: '+new Date(request.created_at).toLocaleString();
+    const actions=document.createElement('div');actions.style.display='flex';actions.style.gap='10px';actions.style.flexWrap='wrap';
+    const approve=document.createElement('button');approve.className='primary';approve.textContent='Approve livestream';
+    const reject=document.createElement('button');reject.textContent='Reject';
+    approve.onclick=async()=>{approve.disabled=reject.disabled=true;try{await liveAdminAction('approve',request.id);await loadLivestreamApprovalQueue();say('Livestream approved.')}catch(error){say('Approval failed: '+error.message);approve.disabled=reject.disabled=false}};
+    reject.onclick=async()=>{approve.disabled=reject.disabled=true;try{await liveAdminAction('reject',request.id);await loadLivestreamApprovalQueue();say('Livestream request rejected.')}catch(error){say('Rejection failed: '+error.message);approve.disabled=reject.disabled=false}};
+    actions.append(approve,reject);card.append(title,creator,description,date,actions);box.append(card);
+   }
+  }catch(error){box.textContent='Could not load livestream requests: '+error.message}
+ }
 
  async function loadOfficialAnnouncementAdmin(){
   const box=$('officialAnnouncementList');box.replaceChildren();
@@ -276,7 +316,7 @@ $('saveCompanionProfile').onclick=async()=>{const btn=$('saveCompanionProfile');
   adminReady=false;
   document.body.classList.add('admin-auth-checking');
   $('loginCard').classList.remove('hidden');
-  ['adminNav','pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','scheduleSyncSection','officialAnnouncementsSection'].forEach(id=>$(id)?.classList.add('hidden'));
+  ['adminNav','pendingPanel','publishedSection','creatorAccountsSection','storyReviewSection','livestreamApprovalSection','scheduleSyncSection','officialAnnouncementsSection'].forEach(id=>$(id)?.classList.add('hidden'));
   $('refresh').classList.add('hidden');$('logout').classList.add('hidden');
   ['queue','publishedQueue','officialAnnouncementList'].forEach(id=>$(id)?.replaceChildren());
   if(message)say(message);
@@ -299,7 +339,7 @@ $('saveCompanionProfile').onclick=async()=>{const btn=$('saveCompanionProfile');
    $('refresh').classList.remove('hidden');$('logout').classList.remove('hidden');
    $('publishedSection').classList.remove('hidden');$('creatorAccountsSection').classList.remove('hidden');
    $('pendingPanel').classList.remove('hidden');setAdminPanel('pendingPanel');
-   await loadQueue();await loadPublished();await loadStoryQueue();await loadCreatorAccounts();await loadOfficialAnnouncementAdmin();
+   await loadQueue();await loadPublished();await loadStoryQueue();await loadLivestreamApprovalQueue();await loadCreatorAccounts();await loadOfficialAnnouncementAdmin();
   }catch(err){showAdminLogin('Administrator verification failed: '+(err?.message||String(err)))}
   finally{adminBusy=false}
  }
