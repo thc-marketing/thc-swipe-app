@@ -54,7 +54,7 @@ button:active{transform:scale(.98)}
 <div id="queue"></div>
 </section>
 
-<section class="panel hidden" id="livestreamApprovalSection"><div class="panel-heading"><div><h2>Livestream Approval</h2><p class="muted section-note">Review creator livestream requests. Streams are visible to customers only after approval.</p></div><span class="pill-status">Live Moderation</span></div><div id="livestreamApprovalQueue" class="status">Loading livestream requests…</div></section>
+<section class="panel hidden" id="livestreamApprovalSection"><div class="panel-heading"><div><h2>Livestream Approval</h2><p class="muted section-note">Review, end, and delete livestream requests and stream records.</p></div><span class="pill-status">Live Moderation</span></div><div id="livestreamApprovalQueue" class="status">Loading livestream requests…</div></section>
 <section class="panel hidden" id="storyReviewSection"><div class="panel-heading"><div><h2>Story Approval</h2><p class="muted section-note">Stories stay private until an administrator approves them. Approved stories remain visible until they expire.</p></div><span class="pill-status">Story Moderation</span></div><div id="storyReviewQueue"></div></section>
 <section class="panel hidden" id="creatorAccountsSection">
 <div class="panel-heading"><div><h2>Creator Accounts</h2><p class="muted section-note">Create and manage individual Creator Hub logins for active, published profiles.</p></div><span class="pill-status">Access Setup</span></div>
@@ -126,28 +126,30 @@ button:active{transform:scale(.98)}
   return result;
  }
  async function loadLivestreamApprovalQueue(){
-  const box=$('livestreamApprovalQueue');
-  if(!box)return;
-  box.textContent='Loading livestream requests…';
+  const box=$('livestreamApprovalQueue'); if(!box)return;
+  box.textContent='Loading all livestream records…';
   try{
-   const result=await liveAdminAction('list_pending');
-   box.replaceChildren();
-   if(!result.requests?.length){box.textContent='No livestream requests waiting for approval.';return}
-   const intro=document.createElement('p');intro.className='muted';intro.textContent=result.requests.length+' request(s) waiting for approval.';box.append(intro);
+   const result=await liveAdminAction('list_all'); box.replaceChildren();
+   if(!result.requests?.length){box.textContent='No livestream requests or stream records.';return}
+   const intro=document.createElement('p');intro.className='muted';intro.textContent='All requests and streams, newest first. Use End stream for active broadcasts, then Delete record to remove them.';box.append(intro);
    for(const request of result.requests){
     const card=document.createElement('article');card.className='card';
     const title=document.createElement('h3');title.textContent=request.title||'Untitled livestream';
     const creator=document.createElement('p');creator.className='muted';creator.textContent='Creator: '+(request.creator_name||'THC Creator');
+    const state=document.createElement('p');state.className='muted';state.textContent='Status: '+String(request.status||'unknown').toUpperCase()+' · Requested: '+new Date(request.created_at).toLocaleString();
     const description=document.createElement('p');description.textContent=request.description||'No description provided.';
-    const date=document.createElement('p');date.className='muted';date.textContent='Requested: '+new Date(request.created_at).toLocaleString();
-    const actions=document.createElement('div');actions.style.display='flex';actions.style.gap='10px';actions.style.flexWrap='wrap';
-    const approve=document.createElement('button');approve.className='primary';approve.textContent='Approve livestream';
-    const reject=document.createElement('button');reject.textContent='Reject';
-    approve.onclick=async()=>{approve.disabled=reject.disabled=true;try{await liveAdminAction('approve',request.id);await loadLivestreamApprovalQueue();say('Livestream approved.')}catch(error){say('Approval failed: '+error.message);approve.disabled=reject.disabled=false}};
-    reject.onclick=async()=>{approve.disabled=reject.disabled=true;try{await liveAdminAction('reject',request.id);await loadLivestreamApprovalQueue();say('Livestream request rejected.')}catch(error){say('Rejection failed: '+error.message);approve.disabled=reject.disabled=false}};
-    actions.append(approve,reject);card.append(title,creator,description,date,actions);box.append(card);
+    const actions=document.createElement('div');actions.className='actions';
+    const approve=document.createElement('button');approve.className='primary';approve.textContent='Approve request';approve.hidden=request.status!=='scheduled';
+    const reject=document.createElement('button');reject.textContent='Reject';reject.hidden=request.status!=='scheduled';
+    const end=document.createElement('button');end.className='reject';end.textContent='End stream';end.hidden=request.status!=='live';
+    const del=document.createElement('button');del.className='reject';del.textContent='Delete record';
+    approve.onclick=async()=>{approve.disabled=reject.disabled=true;try{await liveAdminAction('approve',request.id);await loadLivestreamApprovalQueue();say('Livestream approved.')}catch(e){say('Approval failed: '+e.message);approve.disabled=reject.disabled=false}};
+    reject.onclick=async()=>{approve.disabled=reject.disabled=true;try{await liveAdminAction('reject',request.id);await loadLivestreamApprovalQueue();say('Livestream request rejected.')}catch(e){say('Rejection failed: '+e.message);approve.disabled=reject.disabled=false}};
+    end.onclick=async()=>{if(!confirm('End this livestream now?'))return;end.disabled=true;try{await liveAdminAction('end',request.id);await loadLivestreamApprovalQueue();say('Livestream ended.')}catch(e){say('Could not end stream: '+e.message);end.disabled=false}};
+    del.onclick=async()=>{if(!confirm('Permanently delete this livestream record?'))return;del.disabled=true;try{await liveAdminAction('delete',request.id);await loadLivestreamApprovalQueue();say('Livestream record deleted.')}catch(e){say('Could not delete record: '+e.message);del.disabled=false}};
+    actions.append(approve,reject,end,del);card.append(title,creator,state,description,actions);box.append(card);
    }
-  }catch(error){box.textContent='Could not load livestream requests: '+error.message}
+  }catch(error){box.textContent='Could not load livestream records: '+error.message}
  }
 
  async function loadOfficialAnnouncementAdmin(){
