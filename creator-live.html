@@ -82,7 +82,11 @@ function drawFilterFrame(){
  if(!cameraCanvas||!cameraVideo||!cameraVideo.videoWidth)return;
  const ctx=cameraCanvas.getContext("2d"),w=cameraCanvas.width,h=cameraCanvas.height;
  const sourceW=cameraVideo.videoWidth,sourceH=cameraVideo.videoHeight;
- const scale=Math.max(w/sourceW,h/sourceH),dw=sourceW*scale,dh=sourceH*scale;
+ // Fill the vertical canvas with a soft background, then fit the entire camera frame on top.
+ // This preserves the 9:16 output without enlarging/cropping the creator's actual image.
+ const coverScale=Math.max(w/sourceW,h/sourceH),bgW=sourceW*coverScale,bgH=sourceH*coverScale;
+ ctx.save();ctx.filter="blur(32px) brightness(.48)";ctx.drawImage(cameraVideo,(w-bgW)/2,(h-bgH)/2,bgW,bgH);ctx.restore();
+ const scale=Math.min(w/sourceW,h/sourceH),dw=sourceW*scale,dh=sourceH*scale;
  const dx=(w-dw)/2,dy=(h-dh)/2;
  const filters={beauty:"brightness(1.08) saturate(1.12) contrast(.96)",warm:"sepia(.24) saturate(1.22)",cool:"saturate(.92) hue-rotate(12deg) brightness(1.04)",vintage:"sepia(.38) contrast(.92) saturate(.78)",bw:"grayscale(1)"};
  ctx.save();ctx.filter=filters[activeFilter]||"none";ctx.drawImage(cameraVideo,dx,dy,dw,dh);ctx.restore();
