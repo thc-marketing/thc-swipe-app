@@ -79,25 +79,38 @@ function paintCameraFrame(results){
  const landmarks=results&&results.multiFaceLandmarks&&results.multiFaceLandmarks[0];if(landmarks)drawAccessory(ctx,landmarks,w,h);
 }
 async function startFilteredCamera(){
- const grid=$("videoGrid");$("filterPanel").classList.remove("hidden");$("filterStatus").textContent="Starting camera… please allow camera access.";
+ const grid=$("videoGrid");
+ $("filterPanel").classList.add("hidden");
+ $("filterStatus").textContent="Starting camera… please allow camera access.";
  try{
+  if(!navigator.mediaDevices?.getUserMedia)throw new Error("Camera access is unavailable. Open this page over HTTPS in a supported browser.");
   cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:720},height:{ideal:1280}},audio:false});
-  cameraVideo=document.createElement("video");cameraVideo.autoplay=true;cameraVideo.muted=true;cameraVideo.playsInline=true;cameraVideo.srcObject=cameraStream;
-  await new Promise((resolve,reject)=>{cameraVideo.onloadedmetadata=resolve;cameraVideo.onerror=reject;setTimeout(()=>reject(new Error("Camera did not start. Check browser camera permissions.")),10000)});
+  const videoTrack=cameraStream.getVideoTracks()[0];
+  if(!videoTrack||videoTrack.readyState!=="live")throw new Error("The camera opened but did not provide a live video track.");
+  cameraVideo=document.createElement("video");
+  cameraVideo.autoplay=true;cameraVideo.muted=true;cameraVideo.playsInline=true;
+  cameraVideo.srcObject=cameraStream;
   await cameraVideo.play();
-  cameraCanvas=document.createElement("canvas");cameraCanvas.width=720;cameraCanvas.height=1280;
-  paintCameraFrame(null);
-  if(window.FaceMesh){try{faceMesh=new FaceMesh({locateFile:file=>"https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/"+file});faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:.55,minTrackingConfidence:.55});faceMesh.onResults(results=>{latestFaceLandmarks=results&&results.multiFaceLandmarks&&results.multiFaceLandmarks[0]||null});await faceMesh.initialize()}catch(filterError){console.warn("Face tracking unavailable; continuing with video effects",filterError);faceMesh=null}}
-  const output=cameraCanvas.captureStream(24);processedTrack=output.getVideoTracks()[0];
-  const preview=document.createElement("video");preview.autoplay=true;preview.muted=true;preview.playsInline=true;preview.srcObject=output;grid.replaceChildren(preview);await preview.play();
-  rendering=true;
-  let lastFaceCheck=0;
-  const frame=async timestamp=>{if(!rendering)return;paintCameraFrame(latestFaceLandmarks?{multiFaceLandmarks:[latestFaceLandmarks]}:null);if(faceMesh&&timestamp-lastFaceCheck>100){lastFaceCheck=timestamp;faceMesh.send({image:cameraVideo}).catch(e=>{console.warn("Face tracking frame failed",e);faceMesh=null})}if(rendering)requestAnimationFrame(frame)};
-  latestFaceLandmarks=null;requestAnimationFrame(frame);
-  await room.localParticipant.publishTrack(processedTrack,{source:LivekitClient.Track.Source.Camera});
-  $("filterStatus").textContent=faceMesh?"Camera ready. Choose an effect; viewers see the filtered video.":"Camera ready. Color effects work; face tracking is temporarily unavailable.";
+  if(!cameraVideo.videoWidth)await new Promise((resolve,reject)=>{
+   const timeout=setTimeout(()=>reject(new Error("Camera started but no picture arrived. Check that another app is not using your camera.")),10000);
+   cameraVideo.addEventListener("loadeddata",()=>{clearTimeout(timeout);resolve()},{once:true});
+   cameraVideo.addEventListener("error",()=>{clearTimeout(timeout);reject(new Error("Could not read the camera video."))},{once:true});
+  });
+  if(!cameraVideo.videoWidth)throw new Error("Camera video is blank. Check browser camera permissions and try another camera.");
+  processedTrack=videoTrack;
+  const preview=document.createElement("video");
+  preview.autoplay=true;preview.muted=true;preview.playsInline=true;
+  preview.srcObject=cameraStream;
+  grid.replaceChildren(preview);
+  await preview.play();
+  await room.localParticipant.publishTrack(videoTrack,{source:LivekitClient.Track.Source.Camera});
+  $("filterStatus").textContent="Camera connected.";
   await room.localParticipant.setMicrophoneEnabled(true);
- }catch(e){await stopFilteredCamera();$("filterStatus").textContent="Camera could not start: "+(e&&e.message||String(e));throw e}
+ }catch(e){
+  await stopFilteredCamera();
+  $("filterStatus").textContent="Camera could not start: "+(e&&e.message||String(e));
+  throw e;
+ }
 }
 async function stopFilteredCamera(){
  rendering=false;
