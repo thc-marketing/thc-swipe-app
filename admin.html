@@ -8,7 +8,7 @@
 <section id="checking" class="card"><h1>Admin Dashboard</h1><p class="muted">Checking your account permissions…</p></section>
 <section id="denied" class="card hidden"><h1>Admin access required</h1><p id="deniedText" class="muted">Please sign in with an authorized admin account.</p><a href="./login.html">Go to sign in</a></section>
 <section id="dashboard" class="hidden"><h1>Admin Dashboard</h1><p class="muted">Manage internal tools for Tokyo Hentai Club.</p>
-<div class="card"><h2>Livestream Approvals</h2><p class="muted">Review creator requests before streams become visible to customers.</p><div id="liveApprovalStatus" class="muted">Loading requests…</div><div id="liveApprovalList"></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><button id="refreshLiveApprovals" type="button">Refresh requests</button><button id="testLiveKitConnection" type="button">Test LiveKit connection</button></div></div>
+<div class="card"><h2>Livestream Approvals</h2><p class="muted">Review creator requests before streams become visible to customers.</p><div id="liveApprovalStatus" class="muted">Loading requests…</div><div id="liveApprovalList"></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"><button id="refreshLiveApprovals" type="button">Refresh requests</button><button id="testLiveKitConnection" type="button">Test LiveKit connection</button></div><p id="liveKitTestStatus" class="muted" role="status" aria-live="polite" style="margin:10px 0 0;white-space:pre-wrap"></p></div>
 <div class="card"><h2>Daily Schedule</h2><p class="muted">Import the latest official homepage schedule. Appointment times are not stored or displayed in Available Today.</p><a class="link" href="./schedule-sync.html">Open Schedule Sync</a></div>
 <div class="card"><a href="./available.html">View Available Today</a> · <a href="./profiles.html">View All Profiles</a></div></section>
 </main><script>
@@ -56,8 +56,7 @@ async function loadLiveApprovals(){
  }catch(e){status.textContent=e.message}
 }
 $('refreshLiveApprovals')?.addEventListener('click',loadLiveApprovals);
-$('testLiveKitConnection')?.addEventListener('click',async()=>{const button=$('testLiveKitConnection');button.disabled=true;button.textContent='Testing…';try{const result=await liveAdminAction('test_livekit');statusMessage('LiveKit connection successful. Active rooms: '+result.activeRooms)}catch(e){statusMessage('LiveKit connection test failed: '+e.message)}finally{button.disabled=false;button.textContent='Test LiveKit connection'}});
-function statusMessage(message){const status=$('liveApprovalStatus');if(status)status.textContent=message;}
+$('testLiveKitConnection')?.addEventListener('click',async()=>{const button=$('testLiveKitConnection');const output=$('liveKitTestStatus');button.disabled=true;button.textContent='Testing…';if(output)output.textContent='Connecting to LiveKit and checking the configured credentials…';try{const result=await liveAdminAction('test_livekit');if(!result?.ok)throw new Error(result?.error||'The test returned no success confirmation.');if(output)output.textContent='SUCCESS — LiveKit connection verified. Active rooms: '+result.activeRooms;}catch(e){if(output)output.textContent='FAILED — '+(e?.message||String(e));}finally{button.disabled=false;button.textContent='Test LiveKit connection'}});
 
 })();
 </script></body></html>
