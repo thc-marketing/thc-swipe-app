@@ -20,7 +20,7 @@
 (async()=>{
 const URL='https://dvvyqpdaoprzrarotuin.supabase.co',KEY='sb_publishable_Gr1caEBRuLlT-ieg8Ssh1A_DOurj_24';
 const db=window.supabase.createClient(URL,KEY),$=id=>document.getElementById(id);
-let user=null,room=null,current=null,chatTimer=null,creator=false,processedTrack=null,cameraStream=null,faceMesh=null,rendering=false,activeFilter="none",cameraCanvas=null,cameraVideo=null;
+let user=null,room=null,current=null,chatTimer=null,creator=false,processedTrack=null,cameraStream=null,faceMesh=null,rendering=false,activeFilter="none",cameraCanvas=null,cameraVideo=null,latestFaceLandmarks=null;
 const say=t=>$('status').textContent=t;
 async function api(action,extra={}){const {data:{session}}=await db.auth.getSession();if(!session?.access_token)throw new Error('Please sign in again.');const res=await fetch(URL+'/functions/v1/thc-live-control',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':KEY},body:JSON.stringify({action,...extra})});const out=await res.json();if(!res.ok)throw new Error(out.error||'Livestream request failed.');return out}
 async function loadMyLiveRequests(){
@@ -71,7 +71,7 @@ function drawAccessory(ctx,landmarks,w,h){
  }
 }
 function paintCameraFrame(results){
- if(!cameraCanvas||!cameraVideo)return;
+ if(!cameraCanvas||!cameraVideo||!cameraVideo.videoWidth)return;
  const ctx=cameraCanvas.getContext("2d"),w=cameraCanvas.width,h=cameraCanvas.height;
  const filters={beauty:"brightness(1.09) saturate(1.12) contrast(.96)",warm:"sepia(.22) saturate(1.25) hue-rotate(-8deg)",cool:"saturate(.9) hue-rotate(12deg) brightness(1.04)",vintage:"sepia(.35) contrast(.9) saturate(.78)",bw:"grayscale(1)"};
  ctx.save();ctx.filter=filters[activeFilter]||"none";ctx.drawImage(cameraVideo,0,0,w,h);ctx.restore();
@@ -79,21 +79,25 @@ function paintCameraFrame(results){
  const landmarks=results&&results.multiFaceLandmarks&&results.multiFaceLandmarks[0];if(landmarks)drawAccessory(ctx,landmarks,w,h);
 }
 async function startFilteredCamera(){
- const grid=$("videoGrid");$("filterPanel").classList.remove("hidden");
+ const grid=$("videoGrid");$("filterPanel").classList.remove("hidden");$("filterStatus").textContent="Starting camera… please allow camera access.";
  try{
   cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:720},height:{ideal:1280}},audio:false});
-  cameraVideo=document.createElement("video");cameraVideo.autoplay=true;cameraVideo.muted=true;cameraVideo.playsInline=true;cameraVideo.srcObject=cameraStream;await cameraVideo.play();
+  cameraVideo=document.createElement("video");cameraVideo.autoplay=true;cameraVideo.muted=true;cameraVideo.playsInline=true;cameraVideo.srcObject=cameraStream;
+  await new Promise((resolve,reject)=>{cameraVideo.onloadedmetadata=resolve;cameraVideo.onerror=reject;setTimeout(()=>reject(new Error("Camera did not start. Check browser camera permissions.")),10000)});
+  await cameraVideo.play();
   cameraCanvas=document.createElement("canvas");cameraCanvas.width=720;cameraCanvas.height=1280;
-  if(window.FaceMesh){faceMesh=new FaceMesh({locateFile:file=>"https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/"+file});faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:.55,minTrackingConfidence:.55});faceMesh.onResults(paintCameraFrame);await faceMesh.initialize()}
+  paintCameraFrame(null);
+  if(window.FaceMesh){try{faceMesh=new FaceMesh({locateFile:file=>"https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/"+file});faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:.55,minTrackingConfidence:.55});faceMesh.onResults(results=>{latestFaceLandmarks=results&&results.multiFaceLandmarks&&results.multiFaceLandmarks[0]||null});await faceMesh.initialize()}catch(filterError){console.warn("Face tracking unavailable; continuing with video effects",filterError);faceMesh=null}}
   const output=cameraCanvas.captureStream(24);processedTrack=output.getVideoTracks()[0];
   const preview=document.createElement("video");preview.autoplay=true;preview.muted=true;preview.playsInline=true;preview.srcObject=output;grid.replaceChildren(preview);await preview.play();
-  await room.localParticipant.publishTrack(processedTrack,{source:LivekitClient.Track.Source.Camera});
   rendering=true;
-  const frame=async()=>{if(!rendering)return;try{if(faceMesh)await faceMesh.send({image:cameraVideo});else paintCameraFrame(null)}catch(e){console.warn("Face filter frame failed",e);paintCameraFrame(null)}if(rendering)requestAnimationFrame(frame)};
-  requestAnimationFrame(frame);
-  $("filterStatus").textContent=window.FaceMesh?"Filters are ready. Your selected effect is visible to viewers.":"Basic color effects are ready; face tracking could not load.";
+  let lastFaceCheck=0;
+  const frame=async timestamp=>{if(!rendering)return;paintCameraFrame(latestFaceLandmarks?{multiFaceLandmarks:[latestFaceLandmarks]}:null);if(faceMesh&&timestamp-lastFaceCheck>100){lastFaceCheck=timestamp;faceMesh.send({image:cameraVideo}).catch(e=>{console.warn("Face tracking frame failed",e);faceMesh=null})}if(rendering)requestAnimationFrame(frame)};
+  latestFaceLandmarks=null;requestAnimationFrame(frame);
+  await room.localParticipant.publishTrack(processedTrack,{source:LivekitClient.Track.Source.Camera});
+  $("filterStatus").textContent=faceMesh?"Camera ready. Choose an effect; viewers see the filtered video.":"Camera ready. Color effects work; face tracking is temporarily unavailable.";
   await room.localParticipant.setMicrophoneEnabled(true);
- }catch(e){await stopFilteredCamera();$("filterStatus").textContent="Camera/filter setup failed: "+(e&&e.message||String(e));throw e}
+ }catch(e){await stopFilteredCamera();$("filterStatus").textContent="Camera could not start: "+(e&&e.message||String(e));throw e}
 }
 async function stopFilteredCamera(){
  rendering=false;
