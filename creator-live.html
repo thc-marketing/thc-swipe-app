@@ -59,7 +59,7 @@ async function startCamera(){
  const grid=$("videoGrid");
  try{
   if(!navigator.mediaDevices?.getUserMedia)throw new Error("Camera access is unavailable. Open this page over HTTPS in a supported browser.");
-  cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",aspectRatio:{ideal:9/16},width:{ideal:720},height:{ideal:1280}},audio:false});
+  cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1280},height:{ideal:720}},audio:false});
   const videoTrack=cameraStream.getVideoTracks()[0];
   if(!videoTrack||videoTrack.readyState!=="live")throw new Error("The camera opened but did not provide a live video track.");
   cameraVideo=document.createElement("video");
