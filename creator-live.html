@@ -79,7 +79,12 @@ async function startCamera(){
   grid.replaceChildren(preview);
   await preview.play();
   await room.localParticipant.publishTrack(videoTrack,{source:LivekitClient.Track.Source.Camera});
-  await room.localParticipant.setMicrophoneEnabled(true);
+  try{
+   await room.localParticipant.setMicrophoneEnabled(true);
+  }catch(micError){
+   console.warn("Microphone could not be enabled; continuing with video:",micError);
+   say("Camera is on, but microphone access is unavailable. Allow microphone access in your browser settings if you want audio.");
+  }
  }catch(e){
   await stopCamera();
   throw e;
